@@ -22,6 +22,9 @@ struct OdeOptions {
     double steadyStateTol = 1e-8;  // Tolerance for steady-state (|dydt| < tol)
     std::string stopIf;            // Boolean expression to evaluate at each step
     bool printCDAT = true;         // Whether to write .cdat output file
+    bool printFunctions = false;   // Whether to write .fdat output file
+    std::vector<double> sampleTimes; // Non-uniform output time points (overrides nSteps)
+    std::size_t maxSimSteps = 0;   // Max internal simulation steps (0 = unlimited)
 };
 
 struct OdeResult {
@@ -35,7 +38,7 @@ public:
     OdeIntegrator(const ast::Model& model, const GeneratedNetwork& network);
 
     OdeResult integrate(const OdeOptions& options);
-    void writeOutputFiles(const std::string& prefix, const OdeResult& result, bool printCDAT = true) const;
+    void writeOutputFiles(const std::string& prefix, const OdeResult& result, bool printCDAT = true, bool printFunctions = false) const;
     void derivs(double t, const double* y, double* dydt) const;
 
 private:
@@ -50,6 +53,7 @@ private:
         double statFactor;            // statistical factor
         bool isFunctional = false;    // true if rate depends on time/observables
         std::optional<ast::Expression> functionalRateExpr;  // for runtime evaluation
+        bool isTotalRate = false;     // true if rate is total (not multiplied by reactant conc)
     };
 
     struct CompiledGroup {

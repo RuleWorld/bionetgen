@@ -601,7 +601,7 @@ BNGcore::PatternGraph parseObsPattern(const std::string& patternText, Model& mod
     if (parser.getNumberOfSyntaxErrors() != 0) {
         return BNGcore::PatternGraph();
     }
-    return bng::parser::buildPatternGraph(species, model);
+    return bng::parser::buildPatternGraph(species, model, true);
 }
 
 // Compute per-observable constrained match counts for a specific scoped molecule.

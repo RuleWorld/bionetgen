@@ -199,7 +199,7 @@ BNGcore::PatternGraph parseObservablePattern(const std::string& patternText, ast
     if (parser.getNumberOfSyntaxErrors() != 0) {
         throw std::runtime_error("Could not parse observable pattern: " + patternText);
     }
-    return bng::parser::buildPatternGraph(species, model);
+    return bng::parser::buildPatternGraph(species, model, true);
 }
 
 std::string formatSpecies(const ast::Species& species) {

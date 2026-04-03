@@ -15,6 +15,8 @@
 #include "parser/BNGAstVisitor.hpp"
 #include "core/Ullmann.hpp"
 #include "io/NetWriter.hpp"
+#include "ast/ReactionRule.hpp"
+#include "ast/Function.hpp"
 
 // SUNDIALS/CVODE includes
 extern "C" {
@@ -123,9 +125,29 @@ void OdeIntegrator::compile() {
         crxn.productIndices = rxn.getProducts();
         crxn.statFactor = rxn.getFactor();
 
+        // Check if the origin rule has TotalRate modifier
+        const auto& originRuleName = rxn.getOriginRuleName();
+        if (!originRuleName.empty()) {
+            // Strip _reverse__ prefix to find the base rule name
+            std::string lookupName = originRuleName;
+            if (lookupName.rfind("_reverse__", 0) == 0) {
+                lookupName = lookupName.substr(std::string("_reverse__").size());
+            }
+            for (const auto& rule : model_.getReactionRules()) {
+                if (rule.getRuleName() == lookupName) {
+                    for (const auto& mod : rule.getModifiers()) {
+                        if (mod == "TotalRate") {
+                            crxn.isTotalRate = true;
+                            break;
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+
         // Build the complete rate string that NetWriter writes to .net file
         // Format: [unitConvFactor*][statFactor*]derivedParam OR [statFactor*]rawRate
-        const auto& originRuleName = rxn.getOriginRuleName();
         std::ostringstream rateStrBuilder;
         bool foundDerived = false;
 
@@ -243,7 +265,44 @@ void OdeIntegrator::compileGroups() {
             for (const auto& patternText : observable.getPatterns()) {
                 // Parse the observable pattern
                 try {
-                    antlr4::ANTLRInputStream input(patternText);
+                    // Extract optional quantifier (e.g., "> 2", "== 1", "<= 3")
+                    std::string cleanPattern = patternText;
+                    std::string quantOp;
+                    int quantThreshold = 0;
+                    bool hasQuantifier = false;
+
+                    // Look for trailing quantifier: operators >=, <=, ==, !=, >, <
+                    // Pattern: species_def WS* (OP WS* INT)
+                    static const std::vector<std::string> ops = {">=", "<=", "==", "!=", ">", "<"};
+                    for (const auto& op : ops) {
+                        auto pos = cleanPattern.rfind(op);
+                        if (pos != std::string::npos && pos > 0) {
+                            std::string after = cleanPattern.substr(pos + op.size());
+                            // Trim whitespace
+                            after.erase(0, after.find_first_not_of(" \t"));
+                            after.erase(after.find_last_not_of(" \t") + 1);
+                            // Check if remainder is an integer
+                            bool isInt = !after.empty();
+                            for (char c : after) {
+                                if (!std::isdigit(static_cast<unsigned char>(c))) { isInt = false; break; }
+                            }
+                            if (isInt) {
+                                // Verify the character before the operator is whitespace or close-paren
+                                // to avoid matching bond syntax like "!1"
+                                std::string before = cleanPattern.substr(0, pos);
+                                before.erase(before.find_last_not_of(" \t") + 1);
+                                if (!before.empty() && (before.back() == ')' || std::isalnum(static_cast<unsigned char>(before.back())) || before.back() == '_')) {
+                                    quantOp = op;
+                                    quantThreshold = std::stoi(after);
+                                    hasQuantifier = true;
+                                    cleanPattern = before;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    antlr4::ANTLRInputStream input(cleanPattern);
                     BNGLexer lexer(&input);
                     antlr4::CommonTokenStream tokens(&lexer);
                     BNGParser parser(&tokens);
@@ -253,12 +312,27 @@ void OdeIntegrator::compileGroups() {
                         throw std::runtime_error("Could not parse observable pattern: " + patternText);
                     }
 
-                    const auto pattern = bng::parser::buildPatternGraph(species, mutableModel);
+                    const auto pattern = bng::parser::buildPatternGraph(species, mutableModel, true);
 
                     // Count matches
                     BNGcore::UllmannSGIso matcher(pattern, network_.species.get(speciesIndex).getSpeciesGraph().getGraph());
                     BNGcore::List<BNGcore::Map> maps;
-                    weight += matcher.find_maps(maps);
+                    std::size_t matchCount = matcher.find_maps(maps);
+
+                    // Apply quantifier filter if present
+                    if (hasQuantifier) {
+                        bool passes = false;
+                        int mc = static_cast<int>(matchCount);
+                        if (quantOp == ">") passes = mc > quantThreshold;
+                        else if (quantOp == "<") passes = mc < quantThreshold;
+                        else if (quantOp == ">=") passes = mc >= quantThreshold;
+                        else if (quantOp == "<=") passes = mc <= quantThreshold;
+                        else if (quantOp == "==") passes = mc == quantThreshold;
+                        else if (quantOp == "!=") passes = mc != quantThreshold;
+                        matchCount = passes ? matchCount : 0;
+                    }
+
+                    weight += matchCount;
                 } catch (const std::exception& e) {
                     throw std::runtime_error("Failed to compile observable " + observable.getName() +
                                            " pattern '" + patternText + "': " + e.what());
@@ -320,9 +394,11 @@ void OdeIntegrator::derivs(double t, const double* y, double* dydt) const {
             rate = rxn.rateConstant;
         }
 
-        // Multiply by reactant concentrations (mass-action)
-        for (const auto idx : rxn.reactantIndices) {
-            rate *= y[idx];
+        // Multiply by reactant concentrations (mass-action), unless TotalRate
+        if (!rxn.isTotalRate) {
+            for (const auto idx : rxn.reactantIndices) {
+                rate *= y[idx];
+            }
         }
 
         // Subtract from reactants, add to products
@@ -598,7 +674,7 @@ OdeResult OdeIntegrator::integrateRK4(const OdeOptions& opts) {
     return result;
 }
 
-void OdeIntegrator::writeOutputFiles(const std::string& prefix, const OdeResult& result, bool printCDAT) const {
+void OdeIntegrator::writeOutputFiles(const std::string& prefix, const OdeResult& result, bool printCDAT, bool printFunctions) const {
     // Write .cdat (concentrations) - only if printCDAT is true
     if (printCDAT) {
         std::ofstream cdat(prefix + ".cdat");
@@ -811,6 +887,11 @@ double OdeIntegrator::computePropensity(const CompiledReaction& rxn, const std::
     // For now, use the cached rateConstant (functional rates in SSA need more work)
 
     double propensity = rateConstant;
+
+    // For TotalRate, the propensity IS the rate constant (no species multiplication)
+    if (rxn.isTotalRate) {
+        return propensity;
+    }
 
     // Group identical reactants and apply discrete formula
     // BNG2 assumes reactant indices are sorted, so identical species are adjacent
