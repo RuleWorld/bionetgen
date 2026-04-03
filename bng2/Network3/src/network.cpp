@@ -156,10 +156,21 @@ void free_Elt(Elt* elt) {
 	return;
 }
 
-Elt* lookup_Elt(char* name, Elt* list) {
-	// Note: In the future, we should pass the Elt_array* to this function 
-	// to make full use of the name_to_index map. 
-	// For now, we search the list as before or optimize if the list is centrally managed.
+Elt* lookup_Elt(char* name, Elt_array* earray) {
+	// Use unordered_map for O(1) lookup
+	if (earray) {
+		std::string n(name);
+		auto it = earray->name_to_index.find(n);
+		if (it != earray->name_to_index.end()) {
+			int index = it->second;
+			if (index - earray->offset >= 0 && index - earray->offset < earray->n_elt) {
+				return earray->elt[index - earray->offset];
+			}
+		}
+	}
+
+	// Fallback to O(n) search on the list
+	Elt* list = earray ? earray->list : NULL;
 	Elt* elt;
 	for (elt = list; elt != NULL; elt = elt->next) {
 		if (strcmp(name, elt->name) == 0)
@@ -319,42 +330,13 @@ map<string, int> init_observ_index_map(Group*& spec_groups) {
 // Returns true if the string matches a built in function keyword in MuParser.
 // For complete list, go to http://muparser.sourceforge.net/mup_features.html#idDef2
 bool isMuParserFunction(string in_string) {
-	if (in_string == "sin"   ||
-		in_string == "cos"   ||
-		in_string == "tan"   ||
-		in_string == "asin"  ||
-		in_string == "acos"  ||
-		in_string == "atan"  ||
-		in_string == "sinh"  ||
-		in_string == "cosh"  ||
-		in_string == "tanh"  ||
-		in_string == "asinh" ||
-		in_string == "acosh" ||
-		in_string == "atanh" ||
-		in_string == "log2"  ||
-		in_string == "log10" ||
-//		in_string == "log"   || not supported in BNG
-		in_string == "ln"    ||
-		in_string == "exp"   ||
-		in_string == "sqrt"  ||
-//		in_string == "sign"  || not supported in BNG
-		in_string == "rint"  ||
-		in_string == "abs"   ||
-		in_string == "if"    || // Now implemented as static If() in network.h
-		in_string == "min"   ||
-		in_string == "max"   ||
-		in_string == "sum"   ||
-		in_string == "avg"   ||
-		in_string == "_pi"   || // muParser.cpp 321: DefineConst(_T("_pi"), (value_type)PARSER_CONST_PI);
-		in_string == "_e"    || // muParser.cpp 322: DefineConst(_T("_e"), (value_type)PARSER_CONST_E);
-		in_string == "mratio"   // Implemented as static Mratio() in network.h
-//		in_string == "or"    || deprecated in muParser
-//		in_string == "and"   || deprecated in muParser
-//		in_string == "xor"      deprecated in muParser
-		)
-		return true;
-	else
-		return false;
+	static const std::unordered_set<std::string> functions = {
+		"sin", "cos", "tan", "asin", "acos", "atan",
+		"sinh", "cosh", "tanh", "asinh", "acosh", "atanh",
+		"log2", "log10", "ln", "exp", "sqrt", "rint", "abs",
+		"if", "min", "max", "sum", "avg", "_pi", "_e", "mratio"
+	};
+	return functions.find(in_string) != functions.end();
 }
 
 /* Ilya Korsunsky 6/7/10 
@@ -1125,7 +1107,7 @@ Elt_array* read_Elt_array(FILE* datfile, int* line_number, char* name, int* n_re
 						++error;
 						goto cleanup;
 					}
-					else if ((elt = lookup_Elt(buf, params->list))) {
+					else if ((elt = lookup_Elt(buf, params))) {
 						val = factor * elt->val;
 					}
 					else {
@@ -1360,7 +1342,7 @@ Group* read_Groups(Group* glist, FILE* datfile, Elt_array* earray, int* line_num
 				}
 
 				if (sscanf(buf, "%d", elt_index + i) != 1) {
-					if (!(elt = lookup_Elt(buf, earray->list))) {
+					if (!(elt = lookup_Elt(buf, earray))) {
 						fprintf(stderr, "Invalid element %s at line %d.\n",
 								tokens[n_tok], *line_number);
 						++error;
@@ -1904,7 +1886,7 @@ static int* read_indices_Rxn(char* string, int* n_indices, Elt_array* species,
 			}
 
 			index_list[i - null_count] = index;
-		} else if ((elt = lookup_Elt(tokens[i], species->list))) { /* Lookup species name */
+		} else if ((elt = lookup_Elt(tokens[i], species))) { /* Lookup species name */
 			/* Still need to handle this case for the null species?? --Justin */
 			index_list[i - null_count] = elt->index;
 		} else {
@@ -1956,7 +1938,7 @@ static int *read_indices_Rxn( char *string, int *n_indices, Elt_array *species, 
 			}
 			index_list[i]=index;
 		}
-		else if (elt=lookup_Elt(tokens[i], species->list)){ // Lookup species name
+		else if ((elt=lookup_Elt(tokens[i], species))){ // Lookup species name
 			index_list[i]= elt->index;
 		}
 		else {
@@ -2160,7 +2142,7 @@ Rxn_array* read_Rxn_array(FILE* datfile, int* line_number, int* n_read, Elt_arra
 			for (i = 0; i < n_rateLaw_tokens; ++i) {
 				/* Lookup rate name */
 				if (rates) {
-					if ((elt = lookup_Elt(tokens[n_tok], rates->list))) {
+					if ((elt = lookup_Elt(tokens[n_tok], rates))) {
 						rateLaw_indices[i] = elt->index;
 					}
 					else {

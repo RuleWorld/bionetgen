@@ -276,9 +276,23 @@ sub match
              
             if ($patt->Quantifier)
             {
-                my $test_string = $n_match . $patt->Quantifier;
-                my $result = eval $test_string;
-                warn $@ if $@;
+                my $result = 0;
+                my $quantifier = $patt->Quantifier;
+                if ($quantifier =~ /^\s*(>=|<=|>|<|==|!=)\s*(\d+)\s*$/) {
+                    my $op = $1;
+                    my $val = $2;
+                    if ($op eq '>=') { $result = ($n_match >= $val); }
+                    elsif ($op eq '<=') { $result = ($n_match <= $val); }
+                    elsif ($op eq '>') { $result = ($n_match > $val); }
+                    elsif ($op eq '<') { $result = ($n_match < $val); }
+                    elsif ($op eq '==') { $result = ($n_match == $val); }
+                    elsif ($op eq '!=') { $result = ($n_match != $val); }
+                } else {
+                    my $test_string = $n_match . $quantifier;
+                    $result = eval $test_string;
+                    warn $@ if $@;
+                }
+
                 $total_matches += $result ? 1 : 0;
                 last if ($mode);
             }

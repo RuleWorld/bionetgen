@@ -116,7 +116,7 @@ extern char*  chop_suffix(char* string, const char* suff);
 extern Elt* new_Elt(char* name, double val, int index);
 extern void add_Elt(Elt** list, Elt* new_elt);
 extern void free_Elt(Elt* elt);
-extern Elt* lookup_Elt(char* name, Elt* list);
+extern Elt* lookup_Elt(char* name, Elt_array* earray);
 extern void print_Elt_list(FILE* outfile, Elt* elist);
 
 /* Elt_array handling routines */
