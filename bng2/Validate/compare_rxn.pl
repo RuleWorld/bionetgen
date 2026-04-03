@@ -23,11 +23,11 @@ my $sim_file = shift @ARGV;
 my $ref_file = shift @ARGV;
 
 # read simulation file
-($err_msg, my $rxns1, my $params1) = read_file( $sim_file );
+($err_msg, my $rxns1, my $params1, my $species1) = read_file( $sim_file );
 if ($err_msg) { die $err_msg; }
 
 # read reference file
-($err_msg, my $rxns2, my $params2) = read_file( $ref_file );
+($err_msg, my $rxns2, my $params2, my $species2) = read_file( $ref_file );
 if ($err_msg) { die $err_msg; }
 
 
@@ -46,24 +46,25 @@ if ( @$rxns1 == @$rxns2 )
     else
     {   # permit reactions to be in arbitary order
 
-        # hash the reactions
+        # hash the reactions using species-string-aware comparison
+        # This makes the comparison invariant to species ordering differences
         my $rxn_hash = {};
         foreach my $rxn (@$rxns1)
         {
-            my $rtext = rxn2text($rxn,$params1);
+            my $rtext = rxn2text($rxn,$params1,$species1);
             if ( exists $rxn_hash->{$rtext} )
             {   $rxn_hash->{$rtext}->[0] = $rxn;   }
             else
             {   $rxn_hash->{$rtext} = [ $rxn, undef ];   }
-        }   
+        }
         foreach my $rxn (@$rxns2)
         {
-            my $rtext = rxn2text($rxn,$params2);
+            my $rtext = rxn2text($rxn,$params2,$species2);
             if ( exists $rxn_hash->{$rtext} )
             {   $rxn_hash->{$rtext}->[1] = $rxn;   }
             else
             {   $rxn_hash->{$rtext} = [ undef, $rxn ];   }
-        }  
+        }
 
         foreach my $rtext (sort keys %$rxn_hash)
         {
@@ -107,6 +108,7 @@ sub read_file
     my $err;
     my $reactions = [];
     my $params = {};
+    my $species = {};
 
     # open file
     open( my $fh, '<', $file_name )  or  return ("Couldn't open $file_name: $!");
@@ -162,19 +164,40 @@ sub read_file
                 $params->{$name} = $value;
             }
         }
+        elsif ( $line =~ /^begin species/ )
+        {
+            while ( $line = <$fh> )
+            {
+                last if ( $line =~ /^end species/ );
+                $line =~ s/^\s+//;
+                $line =~ s/#.*$//;
+                $line =~ s/\s+$//;
+                next unless ( $line =~ /\S/ );
+                my ($index, $spec, $conc) = split ' ', $line;
+                $species->{$index} = $spec;
+            }
+        }
     }
     close $fh;
-    return $err, $reactions, $params;
+    return $err, $reactions, $params, $species;
 }
 
 
 
 sub rxn2text
 {
-    my ($rxn, $params) = @_;
+    my ($rxn, $params, $species) = @_;
 
-    my $reactants = join(" + ", map {"S$_"} split(",", $rxn->[1]) );
-    my $products  = join(" + ", map {"S$_"} split(",", $rxn->[2]) );
+    # Use species fingerprints for comparison (invariant to canonical form differences)
+    my $reactants;
+    my $products;
+    if (defined $species and %$species) {
+        $reactants = join(" + ", sort map { species_fingerprint($species->{$_} || "S$_") } split(",", $rxn->[1]) );
+        $products  = join(" + ", sort map { species_fingerprint($species->{$_} || "S$_") } split(",", $rxn->[2]) );
+    } else {
+        $reactants = join(" + ", map {"S$_"} split(",", $rxn->[1]) );
+        $products  = join(" + ", map {"S$_"} split(",", $rxn->[2]) );
+    }
 
     # evaluate the reaction rate in crude fashion..
     # TODO: implement a more reliable way to do this (but don't make it
@@ -220,6 +243,73 @@ sub rxn2text
     }
 
     # generate rxn string
-    return "$reactants -> $products at $rate";   
+    return "$reactants -> $products at $rate";
+}
+
+
+# Compute a graph-structure fingerprint for a BNG species string.
+# Invariant to molecule/component ordering and bond numbering.
+sub species_fingerprint {
+    my $spec = shift;
+
+    my @mol_strings;
+    my $depth = 0;
+    my $cur = '';
+    for my $ch (split //, $spec) {
+        if ($ch eq '(') { $depth++; $cur .= $ch; }
+        elsif ($ch eq ')') { $depth--; $cur .= $ch; }
+        elsif ($ch eq '.' && $depth == 0) {
+            push @mol_strings, $cur; $cur = '';
+        }
+        else { $cur .= $ch; }
+    }
+    push @mol_strings, $cur if $cur ne '';
+
+    my %bond_endpoints;
+    my @mol_infos;
+    for my $mi (0 .. $#mol_strings) {
+        my $ms = $mol_strings[$mi];
+        my ($mol_name, $comp_str);
+        if ($ms =~ /^([^(]+)\(([^)]*)\)(.*)$/) {
+            $mol_name = $1 . ($3 // '');
+            $comp_str = $2;
+        } elsif ($ms =~ /^([^(]+)\(\)(.*)$/) {
+            $mol_name = $1 . ($2 // '');
+            $comp_str = '';
+        } else {
+            push @mol_infos, { name => $ms, comps => [] };
+            next;
+        }
+        my @comps;
+        for my $cs (split /,/, $comp_str) {
+            my $key = $cs;
+            my @bonds;
+            while ($key =~ s/!(\d+)//) { push @bonds, $1; }
+            push @comps, { key => $key, bonds => \@bonds };
+            for my $b (@bonds) {
+                push @{$bond_endpoints{$b}}, [$mi, $key];
+            }
+        }
+        push @mol_infos, { name => $mol_name, comps => \@comps };
+    }
+
+    my @fp_parts;
+    for my $mol (@mol_infos) {
+        my @comp_keys = sort map {
+            my $bc = scalar @{$_->{bonds}};
+            $_->{key} . ($bc > 0 ? "!$bc" : "")
+        } @{$mol->{comps}};
+        push @fp_parts, "M:" . $mol->{name} . "(" . join(",", @comp_keys) . ")";
+    }
+    for my $bnum (sort { $a <=> $b } keys %bond_endpoints) {
+        my @eps = @{$bond_endpoints{$bnum}};
+        next unless @eps == 2;
+        my @edge = sort map {
+            $mol_infos[$_->[0]]{name} . ":" . $_->[1]
+        } @eps;
+        push @fp_parts, "B:" . join("--", @edge);
+    }
+
+    return join("|", sort @fp_parts);
 }
 
