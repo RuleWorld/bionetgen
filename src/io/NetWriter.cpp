@@ -202,6 +202,22 @@ BNGcore::PatternGraph parseObservablePattern(const std::string& patternText, ast
     return bng::parser::buildPatternGraph(species, model, true);
 }
 
+// Parse an observable pattern and also extract its compartment qualifier (if any)
+std::pair<BNGcore::PatternGraph, std::string> parseObservablePatternWithCompartment(
+    const std::string& patternText, ast::Model& model) {
+    antlr4::ANTLRInputStream input(patternText);
+    BNGLexer lexer(&input);
+    antlr4::CommonTokenStream tokens(&lexer);
+    BNGParser parser(&tokens);
+    auto* species = parser.species_def();
+    if (parser.getNumberOfSyntaxErrors() != 0) {
+        throw std::runtime_error("Could not parse observable pattern: " + patternText);
+    }
+    auto graph = bng::parser::buildPatternGraph(species, model, true);
+    auto compartment = bng::parser::extractSpeciesCompartment(species);
+    return {std::move(graph), std::move(compartment)};
+}
+
 std::string formatSpecies(const ast::Species& species) {
     std::string result;
     const auto& speciesCompartment = species.getCompartment();
@@ -1450,7 +1466,16 @@ void NetWriter::write(const std::filesystem::path& outputPath, ast::Model& model
         for (std::size_t speciesIndex = 0; speciesIndex < network.species.size(); ++speciesIndex) {
             std::size_t weight = 0;
             for (const auto& patternText : observable.getPatterns()) {
-                const auto pattern = parseObservablePattern(patternText, model);
+                auto [pattern, patternCompartment] = parseObservablePatternWithCompartment(patternText, model);
+
+                // If the pattern has a compartment qualifier, skip species in different compartments
+                if (!patternCompartment.empty()) {
+                    const auto& speciesCompartment = network.species.get(speciesIndex).getCompartment();
+                    if (speciesCompartment != patternCompartment) {
+                        continue;
+                    }
+                }
+
                 BNGcore::UllmannSGIso matcher(pattern, network.species.get(speciesIndex).getSpeciesGraph().getGraph());
                 BNGcore::List<BNGcore::Map> maps;
                 weight += matcher.find_maps(maps);

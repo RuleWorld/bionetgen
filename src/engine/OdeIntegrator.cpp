@@ -188,7 +188,11 @@ void OdeIntegrator::compile() {
         }
 
         if (!foundDerived) {
-            // No derived parameter, use raw rate with stat factor
+            // No derived parameter — apply volume scaling factor (Bug 3 fix)
+            const auto unitFactor = bng::io::NetWriter::computeUnitConversionFactor(rxn, model_, network_);
+            if (unitFactor.has_value()) {
+                rateStrBuilder << *unitFactor << "*";
+            }
             if (std::abs(rxn.getFactor() - 1.0) >= 1e-9) {
                 rateStrBuilder << rxn.getFactor() << "*";
             }
@@ -196,15 +200,110 @@ void OdeIntegrator::compile() {
         }
 
         std::string rateStr = rateStrBuilder.str();
+        const std::string rawRateLaw = rxn.getRateLaw();
+
+        // --- Bug 1 fix: Detect Sat/MM/Hill rate law types ---
+        // Format in .net: "Sat kcat Km" or "MM kcat Km" or "Hill Vmax Kh n"
+        bool isSatMMHill = false;
+        {
+            std::string rlLower = rawRateLaw;
+            std::transform(rlLower.begin(), rlLower.end(), rlLower.begin(), ::tolower);
+            // Trim leading whitespace
+            auto start = rlLower.find_first_not_of(" \t");
+            if (start != std::string::npos) rlLower = rlLower.substr(start);
+
+            if (rlLower.rfind("sat(", 0) == 0 || rlLower.rfind("sat ", 0) == 0 || rlLower.rfind("sat\t", 0) == 0 ||
+                rlLower.rfind("mm(", 0) == 0 || rlLower.rfind("mm ", 0) == 0 || rlLower.rfind("mm\t", 0) == 0 ||
+                rlLower.rfind("hill(", 0) == 0 || rlLower.rfind("hill ", 0) == 0 || rlLower.rfind("hill\t", 0) == 0) {
+                isSatMMHill = true;
+            }
+        }
+
+        if (isSatMMHill && !crxn.reactantIndices.empty()) {
+            // Expand Sat/MM/Hill to functional rate with implicit substrate
+            // Sat kcat Km → rate = kcat * [S] / (Km + [S])  (TotalRate, no mass-action multiply)
+            // Hill Vmax Kh n → rate = Vmax * [S]^n / (Kh^n + [S]^n)
+            crxn.isFunctional = true;
+            crxn.isTotalRate = true;  // Don't multiply by reactant conc again
+            hasFunctionalRates_ = true;
+
+            // Parse parameters from the rate law string
+            // Handle both "Sat kcat Km" and "Sat(kcat, Km)" formats
+            std::vector<std::string> paramNames;
+            {
+                std::string cleaned = rawRateLaw;
+                // Strip function call syntax: Sat(kcat,Km) → kcat Km
+                auto paren = cleaned.find('(');
+                if (paren != std::string::npos) {
+                    cleaned = cleaned.substr(paren + 1);
+                    auto cparen = cleaned.rfind(')');
+                    if (cparen != std::string::npos) cleaned = cleaned.substr(0, cparen);
+                    // Split by comma
+                    std::istringstream css(cleaned);
+                    std::string tok;
+                    while (std::getline(css, tok, ',')) {
+                        // Trim whitespace
+                        tok.erase(0, tok.find_first_not_of(" \t"));
+                        tok.erase(tok.find_last_not_of(" \t") + 1);
+                        if (!tok.empty()) paramNames.push_back(tok);
+                    }
+                } else {
+                    // Space-separated: "Sat kcat Km"
+                    std::istringstream rlStream(cleaned);
+                    std::string typeName;
+                    rlStream >> typeName;  // skip "Sat"/"MM"/"Hill"
+                    std::string tok;
+                    while (rlStream >> tok) paramNames.push_back(tok);
+                }
+            }
+
+            // Store a lambda-like expression that will be evaluated in derivs()
+            // We build the expression text for the resolver
+            std::size_t substrateIdx = crxn.reactantIndices[0];
+
+            if (paramNames.size() >= 2) {
+                // Sat/MM(kcat, Km): rate = kcat * [S] / (Km + [S]) * [other reactants]
+                // Hill(Vmax, Kh, n): rate = Vmax * [S]^n / (Kh^n + [S]^n) * [other reactants]
+                // Substrate S = first reactant; other reactants multiplied via mass-action
+                std::string kcat = paramNames[0];
+                std::string Km = paramNames[1];
+
+                // Build base Sat/MM/Hill expression with substrate
+                ast::Expression baseExpr = (paramNames.size() >= 3)
+                    ? ast::Expression::function("Hill",
+                        {ast::Expression::identifier(kcat), ast::Expression::identifier(Km),
+                         ast::Expression::identifier(paramNames[2]),
+                         ast::Expression::identifier("__substrate_" + std::to_string(substrateIdx))})
+                    : ast::Expression::function("Sat",
+                        {ast::Expression::identifier(kcat), ast::Expression::identifier(Km),
+                         ast::Expression::identifier("__substrate_" + std::to_string(substrateIdx))});
+
+                // Multiply by non-substrate reactant concentrations (e.g., enzyme [E])
+                for (std::size_t ri = 1; ri < crxn.reactantIndices.size(); ++ri) {
+                    baseExpr = ast::Expression::binary("*", std::move(baseExpr),
+                        ast::Expression::identifier("__substrate_" + std::to_string(crxn.reactantIndices[ri])));
+                }
+
+                // Apply unit and stat factors
+                double combinedFactor = 1.0;
+                const auto uf = bng::io::NetWriter::computeUnitConversionFactor(rxn, model_, network_);
+                if (uf.has_value()) combinedFactor *= *uf;
+                if (std::abs(rxn.getFactor() - 1.0) >= 1e-9) combinedFactor *= rxn.getFactor();
+                if (std::abs(combinedFactor - 1.0) >= 1e-9) {
+                    baseExpr = ast::Expression::binary("*",
+                        ast::Expression::number(combinedFactor), std::move(baseExpr));
+                }
+
+                crxn.functionalRateExpr = std::move(baseExpr);
+            }
+        }
 
         // Check if this reaction has a functional rate (depends on time or observables)
+        bool isFunctional = crxn.isFunctional;  // May already be set by Sat/MM/Hill
         const auto& rateExpr = rxn.getRateExpression();
-        bool isFunctional = false;
 
-        if (rateExpr.has_value()) {
-            // Check for time dependency by looking at the rate string
-            // getDependencies() excludes "time" by design, so check the string directly
-            std::string rateLawLower = rxn.getRateLaw();
+        if (!isFunctional && rateExpr.has_value()) {
+            std::string rateLawLower = rawRateLaw;
             std::transform(rateLawLower.begin(), rateLawLower.end(), rateLawLower.begin(), ::tolower);
 
             if (rateLawLower.find("time") != std::string::npos) {
@@ -213,7 +312,6 @@ void OdeIntegrator::compile() {
                 // Check for observable dependencies
                 auto deps = rateExpr->getDependencies();
                 for (const auto& dep : deps) {
-                    // If it's not a parameter, assume it's an observable
                     if (!model_.getParameters().contains(dep)) {
                         isFunctional = true;
                         break;
@@ -221,20 +319,62 @@ void OdeIntegrator::compile() {
                 }
             }
 
+            // --- Bug 2 fix: Check for user-defined function references ---
+            std::string matchedFuncName;
+            if (!isFunctional) {
+                const std::string rawRL = rxn.getRateLaw();
+                for (const auto& func : model_.getFunctions()) {
+                    const auto& fname = func.getName();
+                    std::string fnameLower = fname;
+                    std::transform(fnameLower.begin(), fnameLower.end(), fnameLower.begin(), ::tolower);
+                    if (rateLawLower.find(fnameLower) != std::string::npos ||
+                        rawRL.find(fname) != std::string::npos) {
+                        isFunctional = true;
+                        matchedFuncName = fname;
+                        break;
+                    }
+                }
+            }
+
             if (isFunctional) {
                 crxn.isFunctional = true;
-                crxn.functionalRateExpr = rateExpr;
-                crxn.rateConstant = 0.0;  // Will be evaluated at runtime
+                if (!matchedFuncName.empty()) {
+                    // Use identifier so the resolver evaluates the function body
+                    crxn.functionalRateExpr = ast::Expression::identifier(matchedFuncName);
+                } else {
+                    crxn.functionalRateExpr = rateExpr;
+                }
+                crxn.rateConstant = 0.0;
                 hasFunctionalRates_ = true;
             }
         }
 
-        // Evaluate the rate string (only for non-functional rates)
-        if (!isFunctional) {
+        // Bug 2 fix: Also check for user-defined function references OUTSIDE the rateExpr block
+        // This catches cases where rateExpr is nullopt but the rate law string references a function
+        if (!crxn.isFunctional) {
+            const std::string rawRL = rxn.getRateLaw();
+            std::string rlLow = rawRL;
+            std::transform(rlLow.begin(), rlLow.end(), rlLow.begin(), ::tolower);
+            for (const auto& func : model_.getFunctions()) {
+                std::string fnameLow = func.getName();
+                std::transform(fnameLow.begin(), fnameLow.end(), fnameLow.begin(), ::tolower);
+                if (rlLow.find(fnameLow) != std::string::npos) {
+                    crxn.isFunctional = true;
+                    // Build an identifier expression — the resolver in derivs() will
+                    // find the function by name and evaluate its body
+                    crxn.functionalRateExpr = ast::Expression::identifier(func.getName());
+                    crxn.rateConstant = 0.0;
+                    hasFunctionalRates_ = true;
+                    break;
+                }
+            }
+        }
+
+        // Evaluate the rate string (only for non-functional, non-Sat/MM rates)
+        if (!crxn.isFunctional) {
             try {
                 crxn.rateConstant = evaluateRateString(rateStr, paramResolver);
             } catch (const std::exception&) {
-                // Rate couldn't be evaluated — treat as functional/deferred
                 crxn.isFunctional = true;
                 crxn.rateConstant = 0.0;
                 hasFunctionalRates_ = true;
@@ -335,6 +475,16 @@ void OdeIntegrator::compileGroups() {
 
                     const auto pattern = bng::parser::buildPatternGraph(species, mutableModel, true);
 
+                    // Check compartment qualifier: if pattern specifies a compartment,
+                    // only match species in that same compartment
+                    const auto patternCompartment = bng::parser::extractSpeciesCompartment(species);
+                    if (!patternCompartment.empty()) {
+                        const auto& speciesCompartment = network_.species.get(speciesIndex).getCompartment();
+                        if (speciesCompartment != patternCompartment) {
+                            continue;  // Skip — compartment mismatch
+                        }
+                    }
+
                     // Count matches
                     BNGcore::UllmannSGIso matcher(pattern, network_.species.get(speciesIndex).getSpeciesGraph().getGraph());
                     BNGcore::List<BNGcore::Map> maps;
@@ -401,13 +551,28 @@ void OdeIntegrator::derivs(double t, const double* y, double* dydt) const {
     // Process functional-rate reactions (require expression evaluation)
     if (hasFunctionalRates_) {
         // Build resolver with O(1) observable lookup
-        auto resolver = [&](const std::string& name) -> double {
+        // Use std::function to allow recursive self-reference for function evaluation
+        std::function<double(const std::string&)> resolver;
+        resolver = [&](const std::string& name) -> double {
             if (name == "time") return t;
+
+            // Sat/MM/Hill substrate references: __substrate_N → y[N]
+            if (name.rfind("__substrate_", 0) == 0) {
+                std::size_t idx = std::stoul(name.substr(12));
+                return (idx < nSpecies_) ? y[idx] : 0.0;
+            }
 
             // O(1) observable lookup via precomputed map
             auto it = observableIndex_.find(name);
             if (it != observableIndex_.end()) {
                 return groupValues_[it->second];
+            }
+
+            // Check user-defined functions (Bug 2 fix)
+            for (const auto& func : model_.getFunctions()) {
+                if (func.getName() == name) {
+                    return func.getExpression().evaluate(resolver, t);
+                }
             }
 
             // Otherwise try as parameter
