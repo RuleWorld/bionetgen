@@ -27,6 +27,13 @@
 #include "io/CppExportWriter.hpp"
 #include "io/PythonExportWriter.hpp"
 #include "io/ContactMapWriter.hpp"
+#include "io/MexWriter.hpp"
+#include "io/RegulatoryGraphWriter.hpp"
+#include "io/ReactionNetworkGraphWriter.hpp"
+#include "io/LatexWriter.hpp"
+#include "io/MdlWriter.hpp"
+#include "io/SscWriter.hpp"
+#include "parser/BNGAstVisitor.hpp"
 
 namespace bng::actions {
 
@@ -607,12 +614,120 @@ void ActionDispatch::execute(ast::Model& model, const std::filesystem::path& sou
                     std::cerr << "[bng_cpp]   Reactions: " << network->reactions.size() << "\n";
                 }
             } else if (path.extension() == ".bngl") {
-                // Parse .bngl file - would need to use the parser
-                throw std::runtime_error("readFile for .bngl not yet implemented - parse separately");
+                auto includedModel = bng::parser::parseModelFromFile(path.string());
+                model.merge(*includedModel);
+                model.getParameters().evaluateAll();
+                if (verbose) {
+                    std::cerr << "[bng_cpp] Read .bngl file: " << path << "\n";
+                    std::cerr << "[bng_cpp]   Parameters: " << includedModel->getParameters().size() << "\n";
+                    std::cerr << "[bng_cpp]   Molecule types: " << includedModel->getMoleculeTypes().size() << "\n";
+                    std::cerr << "[bng_cpp]   Seed species: " << includedModel->getSeedSpecies().size() << "\n";
+                    std::cerr << "[bng_cpp]   Observables: " << includedModel->getObservables().size() << "\n";
+                    std::cerr << "[bng_cpp]   Reaction rules: " << includedModel->getReactionRules().size() << "\n";
+                    std::cerr << "[bng_cpp]   Functions: " << includedModel->getFunctions().size() << "\n";
+                }
             } else {
                 throw std::runtime_error("readFile: unsupported file type: " + path.extension().string());
             }
 
+            continue;
+        }
+
+        if (actionName == "include_model") {
+            const auto filepath = stripQuotes(readArgument(action, "file",
+                stripQuotes(readArgument(action, "value", ""))));
+            if (filepath.empty()) {
+                throw std::runtime_error("include_model requires a 'file' argument");
+            }
+            std::filesystem::path incPath(filepath);
+            if (!incPath.is_absolute()) {
+                incPath = sourcePath.parent_path() / filepath;
+            }
+            auto includedModel = bng::parser::parseModelFromFile(incPath.string());
+            model.merge(*includedModel);
+            model.getParameters().evaluateAll();
+            if (verbose) {
+                std::cerr << "[bng_cpp] include_model: " << incPath << "\n";
+                std::cerr << "[bng_cpp]   Merged parameters: " << includedModel->getParameters().size()
+                          << ", molecule types: " << includedModel->getMoleculeTypes().size()
+                          << ", seed species: " << includedModel->getSeedSpecies().size()
+                          << ", observables: " << includedModel->getObservables().size()
+                          << ", rules: " << includedModel->getReactionRules().size()
+                          << ", functions: " << includedModel->getFunctions().size() << "\n";
+            }
+            continue;
+        }
+
+        if (actionName == "include_network") {
+            const auto filepath = stripQuotes(readArgument(action, "file",
+                stripQuotes(readArgument(action, "value", ""))));
+            if (filepath.empty()) {
+                throw std::runtime_error("include_network requires a 'file' argument");
+            }
+            std::filesystem::path incPath(filepath);
+            if (!incPath.is_absolute()) {
+                incPath = sourcePath.parent_path() / filepath;
+            }
+            auto parseResult = io::NetReader::parse(incPath);
+            if (!parseResult.success) {
+                throw std::runtime_error("Failed to read .net file for include_network: " + parseResult.error);
+            }
+            for (const auto& [name, value] : parseResult.parameters) {
+                model.getParameters().add(ast::Parameter(name, ast::Expression::number(value)));
+            }
+            model.getParameters().evaluateAll();
+            engine::GeneratedNetwork loadedNetwork;
+            for (const auto& [pattern, concStr] : parseResult.species) {
+                bool isConstant = false;
+                std::string cleanPattern = pattern;
+                if (!cleanPattern.empty() && cleanPattern[0] == '$') {
+                    isConstant = true;
+                    cleanPattern = cleanPattern.substr(1);
+                }
+                BNGcore::PatternGraph pg;
+                pg.set_raw_string(cleanPattern);
+                ast::SpeciesGraph sg(std::move(pg));
+                double concentration = 0.0;
+                try { concentration = std::stod(concStr); }
+                catch (...) {
+                    try { concentration = model.getParameters().evaluate(concStr); }
+                    catch (...) { concentration = 0.0; }
+                }
+                ast::Species sp(std::move(sg), concentration, isConstant);
+                loadedNetwork.species.add(std::move(sp));
+            }
+            for (const auto& rxnLine : parseResult.reactions) {
+                std::istringstream iss(rxnLine);
+                std::string idxStr, reactantsStr, productsStr, rateStr;
+                iss >> idxStr >> reactantsStr >> productsStr;
+                std::getline(iss, rateStr);
+                auto rateStart = rateStr.find_first_not_of(" \t");
+                if (rateStart != std::string::npos) rateStr = rateStr.substr(rateStart);
+                auto commentPos = rateStr.find('#');
+                if (commentPos != std::string::npos) rateStr = rateStr.substr(0, commentPos);
+                while (!rateStr.empty() && std::isspace(rateStr.back())) rateStr.pop_back();
+                std::vector<std::size_t> reactants;
+                if (reactantsStr != "0") {
+                    std::istringstream rss(reactantsStr);
+                    std::string tok;
+                    while (std::getline(rss, tok, ',')) reactants.push_back(std::stoul(tok) - 1);
+                }
+                std::vector<std::size_t> products;
+                if (productsStr != "0") {
+                    std::istringstream pss(productsStr);
+                    std::string tok;
+                    while (std::getline(pss, tok, ',')) products.push_back(std::stoul(tok) - 1);
+                }
+                loadedNetwork.reactions.add(ast::Rxn(idxStr, reactants, products, rateStr));
+            }
+            network = std::move(loadedNetwork);
+            loadedNetData = std::move(parseResult);
+            if (verbose) {
+                std::cerr << "[bng_cpp] include_network: " << incPath << "\n";
+                std::cerr << "[bng_cpp]   Parameters: " << loadedNetData->parameters.size() << "\n";
+                std::cerr << "[bng_cpp]   Species: " << network->species.size() << "\n";
+                std::cerr << "[bng_cpp]   Reactions: " << network->reactions.size() << "\n";
+            }
             continue;
         }
 
@@ -1288,29 +1403,87 @@ void ActionDispatch::execute(ast::Model& model, const std::filesystem::path& sou
             continue;
         }
 
-        if (actionName == "visualize") {
-            // Generate contact map
-            auto contactMap = io::ContactMapWriter::buildContactMap(model);
+        if (actionName == "writemexfile") {
+            ensureNetwork();
+            io::MexWriter::Options mexOpts;
+            const auto tStartText = readArgument(action, "t_start", "");
+            if (!tStartText.empty()) mexOpts.tStart = parseScalarValue(tStartText, model);
+            const auto tEndText = readArgument(action, "t_end", "");
+            if (!tEndText.empty()) mexOpts.tEnd = parseScalarValue(tEndText, model);
+            const auto nStepsText = readArgument(action, "n_steps", "");
+            if (!nStepsText.empty()) mexOpts.nSteps = static_cast<std::size_t>(parseScalarValue(nStepsText, model));
+            const auto atolText5 = readArgument(action, "atol", "");
+            if (!atolText5.empty()) mexOpts.atol = parseScalarValue(atolText5, model);
+            const auto rtolText5 = readArgument(action, "rtol", "");
+            if (!rtolText5.empty()) mexOpts.rtol = parseScalarValue(rtolText5, model);
+            const auto maxNumStepsText5 = readArgument(action, "max_num_steps", "");
+            if (!maxNumStepsText5.empty()) mexOpts.maxNumSteps = static_cast<int>(parseScalarValue(maxNumStepsText5, model));
 
-            // Default to GML format
-            const auto format = lowercase(stripQuotes(readArgument(action, "type", "contactmap")));
+            const auto suffix = stripQuotes(readArgument(action, "suffix", ""));
+            const auto mexContent = io::MexWriter::write(model, *network, mexOpts);
+            std::string outName = sourcePath.stem().string();
+            if (!suffix.empty()) outName += "_" + suffix;
+            outName += "_mex";
+            const auto outputPath = sourcePath.parent_path() / (outName + ".c");
+            std::ofstream outFile(outputPath);
+            if (!outFile) {
+                throw std::runtime_error("Failed to open " + outputPath.string() + " for writing");
+            }
+            outFile << mexContent;
+            if (verbose) {
+                std::cerr << "[bng_cpp] Wrote MEX file to " << outputPath << "\n";
+            }
+            continue;
+        }
+
+        if (actionName == "visualize") {
+            const auto vizType = lowercase(stripQuotes(readArgument(action, "type", "contactmap")));
             const auto outputFormat = lowercase(stripQuotes(readArgument(action, "format", "gml")));
 
             std::string content;
             std::string extension;
+            std::string fileSuffix;
 
-            if (outputFormat == "gml") {
-                content = io::ContactMapWriter::toGML(contactMap);
+            if (vizType == "contactmap" || vizType == "contact_map") {
+                // Contact map (does not require generated network)
+                auto contactMap = io::ContactMapWriter::buildContactMap(model);
+
+                if (outputFormat == "dot") {
+                    content = io::ContactMapWriter::toDOT(contactMap);
+                    extension = ".dot";
+                } else {
+                    content = io::ContactMapWriter::toGML(contactMap);
+                    extension = ".gml";
+                }
+                fileSuffix = "_contact";
+
+            } else if (vizType == "regulatory") {
+                // Regulatory graph (requires generated network)
+                ensureNetwork();
+                auto regGraph = io::RegulatoryGraphWriter::build(model, *network);
+                content = io::RegulatoryGraphWriter::toGML(regGraph);
                 extension = ".gml";
-            } else if (outputFormat == "dot") {
-                content = io::ContactMapWriter::toDOT(contactMap);
-                extension = ".dot";
+                fileSuffix = "_regulatory";
+
+            } else if (vizType == "reaction_network") {
+                // Reaction network graph (requires generated network)
+                ensureNetwork();
+                auto rxnGraph = io::ReactionNetworkGraphWriter::build(model, *network);
+                content = io::ReactionNetworkGraphWriter::toGML(rxnGraph);
+                extension = ".gml";
+                fileSuffix = "_reaction_network";
+
             } else {
+                // Unsupported type - fall back to contact map
+                std::cerr << "WARNING: visualize type '" << vizType
+                          << "' not yet supported, falling back to contactmap.\n";
+                auto contactMap = io::ContactMapWriter::buildContactMap(model);
                 content = io::ContactMapWriter::toGML(contactMap);
                 extension = ".gml";
+                fileSuffix = "_contact";
             }
 
-            const auto outputPath = sourcePath.parent_path() / (sourcePath.stem().string() + "_contact" + extension);
+            const auto outputPath = sourcePath.parent_path() / (sourcePath.stem().string() + fileSuffix + extension);
             std::ofstream outFile(outputPath);
             if (!outFile) {
                 throw std::runtime_error("Failed to open " + outputPath.string() + " for writing");
@@ -1318,7 +1491,61 @@ void ActionDispatch::execute(ast::Model& model, const std::filesystem::path& sou
             outFile << content;
 
             if (verbose) {
-                std::cerr << "[bng_cpp] Wrote contact map to " << outputPath << "\n";
+                std::cerr << "[bng_cpp] Wrote " << vizType << " visualization to " << outputPath << "\n";
+            }
+            continue;
+        }
+
+        if (actionName == "writelatex") {
+            ensureNetwork();
+            const auto suffix = stripQuotes(readArgument(action, "suffix", ""));
+            const auto latexContent = io::LatexWriter::write(model, *network);
+            std::string outName = sourcePath.stem().string();
+            if (!suffix.empty()) outName += "_" + suffix;
+            const auto outputPath = sourcePath.parent_path() / (outName + ".tex");
+            std::ofstream outFile(outputPath);
+            if (!outFile) {
+                throw std::runtime_error("Failed to open " + outputPath.string() + " for writing");
+            }
+            outFile << latexContent;
+            if (verbose) {
+                std::cerr << "[bng_cpp] Wrote LaTeX to " << outputPath << "\n";
+            }
+            continue;
+        }
+
+        if (actionName == "writemdl") {
+            ensureNetwork();
+            const auto suffix = stripQuotes(readArgument(action, "suffix", ""));
+            const auto mdlContent = io::MdlWriter::write(model, *network);
+            std::string outName = sourcePath.stem().string();
+            if (!suffix.empty()) outName += "_" + suffix;
+            const auto outputPath = sourcePath.parent_path() / (outName + ".mdl");
+            std::ofstream outFile(outputPath);
+            if (!outFile) {
+                throw std::runtime_error("Failed to open " + outputPath.string() + " for writing");
+            }
+            outFile << mdlContent;
+            if (verbose) {
+                std::cerr << "[bng_cpp] Wrote MDL to " << outputPath << "\n";
+            }
+            continue;
+        }
+
+        if (actionName == "writessc" || actionName == "writessccfg") {
+            ensureNetwork();
+            const auto suffix = stripQuotes(readArgument(action, "suffix", ""));
+            const auto sscContent = io::SscWriter::write(model, *network);
+            std::string outName = sourcePath.stem().string();
+            if (!suffix.empty()) outName += "_" + suffix;
+            const auto outputPath = sourcePath.parent_path() / (outName + ".rxn");
+            std::ofstream outFile(outputPath);
+            if (!outFile) {
+                throw std::runtime_error("Failed to open " + outputPath.string() + " for writing");
+            }
+            outFile << sscContent;
+            if (verbose) {
+                std::cerr << "[bng_cpp] Wrote SSC to " << outputPath << "\n";
             }
             continue;
         }

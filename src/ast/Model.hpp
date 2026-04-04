@@ -40,7 +40,13 @@ public:
     void setSubstanceUnits(std::string units);
     void setModelName(std::string modelName);
     void setOption(std::string key, std::string value);
-    
+
+    /// Merge all model elements from another model into this one.
+    /// Takes a non-const reference because it moves reaction rules and
+    /// transfers GraphTypeRegistry ownership to keep PatternGraph pointers valid.
+    /// Actions from the other model are NOT merged.
+    void merge(Model& other);
+
     const std::vector<Compartment>& getCompartments() const;
     std::vector<Compartment>& getCompartments();
     const std::vector<Molecule>& getMolecules() const;

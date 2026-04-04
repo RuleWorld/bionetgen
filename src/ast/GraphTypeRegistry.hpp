@@ -14,6 +14,12 @@ public:
     const BNGcore::EntityType& ensureMoleculeType(const MoleculeType& moleculeType);
     const BNGcore::EntityType& ensureComponentType(const MoleculeType& moleculeType, const ComponentType& componentType);
 
+    /// Move all type entries from another registry into this one.
+    /// Entries already present in this registry are skipped (the other's pointer
+    /// is kept alive but our existing pointer wins).
+    /// This keeps PatternGraph node pointers valid when the source Model is destroyed.
+    void mergeFrom(GraphTypeRegistry& other);
+
 private:
     struct ComponentRuntimeType {
         std::unique_ptr<BNGcore::StateType> stateType;

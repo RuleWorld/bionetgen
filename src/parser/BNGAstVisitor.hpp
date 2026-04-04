@@ -40,6 +40,9 @@ private:
 
 std::unique_ptr<ast::Model> parseModel(const std::string& sourceText);
 
+/// Parse a BNGL model from a file path.
+std::unique_ptr<ast::Model> parseModelFromFile(const std::string& filePath);
+
 /// Parse a standalone expression string (e.g., for stop_if conditions).
 /// Uses the ANTLR grammar's expression rule.
 ast::Expression parseExpression(const std::string& exprText);

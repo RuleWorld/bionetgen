@@ -64,6 +64,62 @@ void Model::setOption(std::string key, std::string value) {
     options_[std::move(key)] = std::move(value);
 }
 
+void Model::merge(Model& other) {
+    // Transfer GraphTypeRegistry entries first so PatternGraph node pointers
+    // remain valid after the source model is destroyed.
+    graphTypeRegistry_.mergeFrom(other.getGraphTypeRegistry());
+
+    // Merge parameters
+    for (const auto& param : other.getParameters().all()) {
+        parameters_.add(param);
+    }
+
+    // Merge compartments
+    for (const auto& comp : other.getCompartments()) {
+        compartments.push_back(comp);
+    }
+
+    // Merge molecule types
+    for (const auto& mt : other.getMoleculeTypes()) {
+        moleculeTypes_.push_back(mt);
+    }
+
+    // Merge seed species
+    for (const auto& ss : other.getSeedSpecies()) {
+        seedSpecies_.push_back(ss);
+    }
+
+    // Merge observables
+    for (const auto& obs : other.getObservables()) {
+        observables_.push_back(obs);
+    }
+
+    // Merge reaction rules (move since ReactionRule has unique_ptr member)
+    for (auto& rule : other.getReactionRules()) {
+        reactionRules_.push_back(std::move(rule));
+    }
+
+    // Merge functions
+    for (const auto& func : other.getFunctions()) {
+        functions_.push_back(func);
+    }
+
+    // Merge energy patterns
+    for (const auto& ep : other.getEnergyPatterns()) {
+        energyPatterns_.push_back(ep);
+    }
+
+    // Merge molecules
+    for (const auto& mol : other.getMolecules()) {
+        molecules.push_back(mol);
+    }
+
+    // Merge options (other's options override if keys conflict)
+    for (const auto& [key, value] : other.getOptions()) {
+        options_[key] = value;
+    }
+}
+
 const std::vector<Compartment>& Model::getCompartments() const {
     return compartments;
 }

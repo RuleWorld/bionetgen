@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cctype>
 #include <cmath>
+#include <fstream>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -546,6 +547,16 @@ std::unique_ptr<ast::Model> parseModel(const std::string& sourceText) {
     BNGAstVisitor visitor;
     visitor.visit(tree);
     return visitor.takeModel();
+}
+
+std::unique_ptr<ast::Model> parseModelFromFile(const std::string& filePath) {
+    std::ifstream inputStream(filePath);
+    if (!inputStream) {
+        throw std::runtime_error("Could not open BNGL file: " + filePath);
+    }
+    std::string content((std::istreambuf_iterator<char>(inputStream)),
+                         std::istreambuf_iterator<char>());
+    return parseModel(content);
 }
 
 ast::Expression parseExpression(const std::string& exprText) {

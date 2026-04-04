@@ -68,4 +68,19 @@ const BNGcore::EntityType& GraphTypeRegistry::ensureComponentType(const Molecule
     return *rawNodeType;
 }
 
+void GraphTypeRegistry::mergeFrom(GraphTypeRegistry& other) {
+    // Transfer molecule types (skip duplicates — keep ours)
+    for (auto& [name, ptr] : other.moleculeTypes_) {
+        if (moleculeTypes_.find(name) == moleculeTypes_.end()) {
+            moleculeTypes_[name] = std::move(ptr);
+        }
+    }
+    // Transfer component types
+    for (auto& [key, rt] : other.componentTypes_) {
+        if (componentTypes_.find(key) == componentTypes_.end()) {
+            componentTypes_[key] = std::move(rt);
+        }
+    }
+}
+
 } // namespace bng::ast

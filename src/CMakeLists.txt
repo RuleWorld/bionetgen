@@ -75,6 +75,12 @@ add_library(bng_engine STATIC
     io/CppExportWriter.cpp
     io/PythonExportWriter.cpp
     io/ContactMapWriter.cpp
+    io/MexWriter.cpp
+    io/RegulatoryGraphWriter.cpp
+    io/ReactionNetworkGraphWriter.cpp
+    io/LatexWriter.cpp
+    io/MdlWriter.cpp
+    io/SscWriter.cpp
     actions/ActionDispatch.cpp
 )
 
