@@ -59,9 +59,10 @@ SUBSTANCEUNITS: 'substanceUnits';
 PREFIX: 'prefix';
 SUFFIX: 'suffix';
 
-GENERATENETWORK: 'generate_network';
+// Support both underscore and space variants for Perl BNG2 compatibility
+GENERATENETWORK: 'generate_network' | 'generate network';
 OVERWRITE: 'overwrite';
-MAX_AGG: 'max_agg';
+MAX_AGG: 'max_agg' | 'max agg';
 MAX_ITER: 'max_iter';
 MAX_STOICH: 'max_stoich';
 PRINT_ITER: 'print_iter';
@@ -151,6 +152,7 @@ WRITEMODEL: 'writeModel';
 WRITEXML: 'writeXML';
 WRITENETWORK: 'writeNetwork';
 WRITESBML: 'writeSBML';
+WRITESBMLMULTI: 'writeSBMLMulti';
 WRITEMDL: 'writeMDL';
 WRITELATEX: 'writeLatex';
 INCLUDE_MODEL: 'include_model';
@@ -182,6 +184,9 @@ SAVEPARAMETERS: 'saveParameters';
 RESETPARAMETERS: 'resetParameters';
 SETVOLUME: 'setVolume';
 SIMULATE_PSA: 'simulate_psa';
+POPLEVEL: 'poplevel';
+MOL_THRESHOLD: 'mol_threshold';
+NFSIM_EXEC: 'nfsim_exec';
 QUIT: 'quit';
 
 // Boolean literals (text form only - 0/1 handled as INT in expressions)
@@ -277,6 +282,9 @@ TIMES: '*';
 MINUS: '-';
 PLUS: '+';
 POWER: '^' | '**';
+// Molecule tag: %N or %name — lexer-level token to prevent ambiguity with modulo
+// Must appear BEFORE MOD in grammar to take priority (ANTLR uses first-match)
+MOLECULE_TAG_TOKEN: '%' (DIGIT+ | LETTER (LETTER | DIGIT | '_')*);
 MOD: '%';
 PIPE: '|';
 QMARK: '?';

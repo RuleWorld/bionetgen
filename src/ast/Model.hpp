@@ -10,6 +10,7 @@
 #include "MoleculeType.hpp"
 #include "Observable.hpp"
 #include "ParameterList.hpp"
+#include "PopulationMap.hpp"
 #include "ReactionRule.hpp"
 #include "SeedSpecies.hpp"
 
@@ -36,6 +37,7 @@ public:
     void addMoleculeType(MoleculeType moleculeType);
     void addSeedSpecies(SeedSpecies seedSpecies);
     void addReactionRule(ReactionRule reactionRule);
+    void addPopulationMap(PopulationMap populationMap);
     void setVersion(std::string version);
     void setSubstanceUnits(std::string units);
     void setModelName(std::string modelName);
@@ -61,6 +63,7 @@ public:
     const std::vector<SeedSpecies>& getSeedSpecies() const;
     const std::vector<ReactionRule>& getReactionRules() const;
     std::vector<ReactionRule>& getReactionRules();
+    const std::vector<PopulationMap>& getPopulationMaps() const;
     const std::string& getVersion() const;
     const std::string& getSubstanceUnits() const;
     const std::string& getModelName() const;
@@ -78,6 +81,7 @@ private:
     std::vector<MoleculeType> moleculeTypes_;
     std::vector<SeedSpecies> seedSpecies_;
     std::vector<ReactionRule> reactionRules_;
+    std::vector<PopulationMap> populationMaps_;
     GraphTypeRegistry graphTypeRegistry_;
     std::string version_;
     std::string substanceUnits_;

@@ -31,6 +31,7 @@ public:
     std::any visitWrite_cmd(BNGParser::Write_cmdContext* ctx) override;
     std::any visitSet_cmd(BNGParser::Set_cmdContext* ctx) override;
     std::any visitOther_action_cmd(BNGParser::Other_action_cmdContext* ctx) override;
+    std::any visitPopulation_map_def(BNGParser::Population_map_defContext* ctx) override;
 
 private:
     void addAction(const std::string& name, BNGParser::Action_argsContext* args);

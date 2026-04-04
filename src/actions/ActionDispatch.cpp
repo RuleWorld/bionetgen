@@ -18,11 +18,14 @@
 #include "engine/NetworkGenerator.hpp"
 #include "engine/OdeIntegrator.hpp"
 #include "engine/PlaSimulator.hpp"
+#include "engine/PsaSimulator.hpp"
+#include "engine/HybridModelGenerator.hpp"
 #include "io/NetWriter.hpp"
 #include "io/XmlWriter.hpp"
 #include "io/BnglWriter.hpp"
 #include "io/NetReader.hpp"
 #include "io/SbmlWriter.hpp"
+#include "io/SbmlMultiWriter.hpp"
 #include "io/MatlabWriter.hpp"
 #include "io/CppExportWriter.hpp"
 #include "io/PythonExportWriter.hpp"
@@ -33,6 +36,10 @@
 #include "io/LatexWriter.hpp"
 #include "io/MdlWriter.hpp"
 #include "io/SscWriter.hpp"
+#include "io/RulevizPatternWriter.hpp"
+#include "io/RulevizOperationWriter.hpp"
+#include "io/ProcessGraphWriter.hpp"
+#include "io/RuleInfluenceGraphWriter.hpp"
 #include "parser/BNGAstVisitor.hpp"
 
 namespace bng::actions {
@@ -146,6 +153,7 @@ std::string resolveSimulationMethod(const ast::Action& action) {
 
 std::optional<std::size_t> findSpeciesIndex(const engine::GeneratedNetwork& network, const std::string& target) {
     const std::string needle = stripQuotes(trim(target));
+    // Pass 1: exact match on canonical string or full string (with compartment/constant prefix)
     for (std::size_t i = 0; i < network.species.size(); ++i) {
         const auto& species = network.species.get(i);
         const auto canonical = species.getSpeciesGraph().toString();
@@ -160,6 +168,20 @@ std::optional<std::size_t> findSpeciesIndex(const engine::GeneratedNetwork& netw
 
         if (needle == canonical || needle == full) {
             return i;
+        }
+    }
+    // Pass 2: Perl BNG2 compatibility — match by molecule name prefix
+    // e.g., "EGF" matches "EGF(R)" or "EGF(R,Y~U)"
+    for (std::size_t i = 0; i < network.species.size(); ++i) {
+        const auto& species = network.species.get(i);
+        const auto canonical = species.getSpeciesGraph().toString();
+        // Check if canonical starts with needle followed by '(' or is exactly needle
+        if (canonical.rfind(needle, 0) == 0) {
+            if (canonical.size() == needle.size() ||
+                canonical[needle.size()] == '(' ||
+                canonical[needle.size()] == '.') {
+                return i;
+            }
         }
     }
     return std::nullopt;
@@ -732,6 +754,98 @@ void ActionDispatch::execute(ast::Model& model, const std::filesystem::path& sou
         }
 
         if (actionName == "generate_network") {
+            // Parse overwrite option (default: true = always regenerate)
+            const auto overwriteText = readArgument(action, "overwrite", "1");
+            bool overwrite = true;
+            {
+                std::string ov = lowercase(trim(stripQuotes(overwriteText)));
+                overwrite = (ov == "1" || ov == "true" || ov == "yes" || ov == "on");
+            }
+
+            if (!overwrite) {
+                // Check if .net file already exists; if so, read it instead of regenerating
+                auto netPath = sourcePath.parent_path() / (sourcePath.stem().string() + ".net");
+                if (std::filesystem::exists(netPath)) {
+                    auto parseResult = io::NetReader::parse(netPath);
+                    if (parseResult.success) {
+                        // Merge parsed parameters into current model
+                        for (const auto& [name, value] : parseResult.parameters) {
+                            model.getParameters().add(ast::Parameter(name, ast::Expression::number(value)));
+                        }
+                        model.getParameters().evaluateAll();
+
+                        // Reconstruct network from parsed species and reactions
+                        engine::GeneratedNetwork loadedNetwork;
+                        for (const auto& [pattern, concStr] : parseResult.species) {
+                            bool isConstant = false;
+                            std::string cleanPattern = pattern;
+                            if (!cleanPattern.empty() && cleanPattern[0] == '$') {
+                                isConstant = true;
+                                cleanPattern = cleanPattern.substr(1);
+                            }
+                            BNGcore::PatternGraph pg;
+                            pg.set_raw_string(cleanPattern);
+                            ast::SpeciesGraph sg(std::move(pg));
+                            double concentration = 0.0;
+                            try {
+                                concentration = std::stod(concStr);
+                            } catch (...) {
+                                try {
+                                    concentration = model.getParameters().evaluate(concStr);
+                                } catch (...) {
+                                    concentration = 0.0;
+                                }
+                            }
+                            ast::Species sp(std::move(sg), concentration, isConstant);
+                            loadedNetwork.species.add(std::move(sp));
+                        }
+
+                        for (const auto& rxnLine : parseResult.reactions) {
+                            std::istringstream iss(rxnLine);
+                            std::string idxStr, reactantsStr, productsStr, rateStr;
+                            iss >> idxStr >> reactantsStr >> productsStr;
+                            std::getline(iss, rateStr);
+                            auto rateStart = rateStr.find_first_not_of(" \t");
+                            if (rateStart != std::string::npos) rateStr = rateStr.substr(rateStart);
+                            auto commentPos = rateStr.find('#');
+                            if (commentPos != std::string::npos) rateStr = rateStr.substr(0, commentPos);
+                            while (!rateStr.empty() && std::isspace(rateStr.back())) rateStr.pop_back();
+
+                            std::vector<std::size_t> reactants;
+                            if (reactantsStr != "0") {
+                                std::istringstream rss(reactantsStr);
+                                std::string tok;
+                                while (std::getline(rss, tok, ',')) {
+                                    reactants.push_back(std::stoul(tok) - 1);
+                                }
+                            }
+                            std::vector<std::size_t> products;
+                            if (productsStr != "0") {
+                                std::istringstream pss(productsStr);
+                                std::string tok;
+                                while (std::getline(pss, tok, ',')) {
+                                    products.push_back(std::stoul(tok) - 1);
+                                }
+                            }
+
+                            loadedNetwork.reactions.add(ast::Rxn(
+                                idxStr, reactants, products, rateStr));
+                        }
+
+                        network = std::move(loadedNetwork);
+                        loadedNetData = std::move(parseResult);
+
+                        if (verbose) {
+                            std::cerr << "[bng_cpp] Loaded existing .net file (overwrite=0): " << netPath << "\n";
+                            std::cerr << "[bng_cpp]   Species: " << network->species.size() << "\n";
+                            std::cerr << "[bng_cpp]   Reactions: " << network->reactions.size() << "\n";
+                        }
+                        continue;
+                    }
+                    // If parse failed, fall through to regeneration
+                }
+            }
+
             network = generator.generate(sourcePath);
             continue;
         }
@@ -926,6 +1040,53 @@ void ActionDispatch::execute(ast::Model& model, const std::filesystem::path& sou
 
             if (verbose) {
                 std::cerr << "[bng_cpp] Wrote PLA output: " << outputPrefix.string() << ".cdat, .gdat\n";
+            }
+            continue;
+        }
+
+        if (actionName == "simulate_psa") {
+            ensureNetwork();
+            const auto tEnd = stripQuotes(readArgument(action, "t_end", ""));
+            const auto nSteps = stripQuotes(readArgument(action, "n_steps", stripQuotes(readArgument(action, "n_output_steps", ""))));
+            if (tEnd.empty() || nSteps.empty()) {
+                throw std::runtime_error("simulate_psa requires t_end and n_steps");
+            }
+
+            engine::OdeOptions opts;
+            opts.tEnd = parseScalarValue(tEnd, model);
+            opts.nSteps = static_cast<std::size_t>(parseScalarValue(nSteps, model));
+
+            const auto seedText = readArgument(action, "seed", "");
+            if (!seedText.empty()) {
+                opts.seed = static_cast<unsigned int>(parseScalarValue(seedText, model));
+            }
+
+            // Parse poplevel: threshold for population (ODE) vs particle (SSA)
+            // Default 0 means pure SSA
+            double poplevel = 0.0;
+            const auto poplevelText = readArgument(action, "poplevel", "");
+            if (!poplevelText.empty()) {
+                poplevel = parseScalarValue(poplevelText, model);
+            }
+
+            if (verbose) {
+                std::cerr << "[bng_cpp] Simulating PSA (hybrid particle/population) with"
+                          << " poplevel=" << poplevel
+                          << " t_end=" << opts.tEnd << " n_steps=" << opts.nSteps << "\n";
+            }
+
+            // Run PSA simulation
+            engine::PsaSimulator simulator(model, *network);
+            auto result = simulator.simulate(opts, poplevel);
+
+            // Write output files
+            const auto prefix = simulationPrefix(action, sourcePath);
+            const auto outputPrefix = sourcePath.parent_path() / prefix;
+            engine::OdeIntegrator integrator(model, *network);
+            integrator.writeOutputFiles(outputPrefix.string(), result);
+
+            if (verbose) {
+                std::cerr << "[bng_cpp] Wrote PSA output: " << outputPrefix.string() << ".cdat, .gdat\n";
             }
             continue;
         }
@@ -1236,6 +1397,76 @@ void ActionDispatch::execute(ast::Model& model, const std::filesystem::path& sou
             continue;
         }
 
+        if (actionName == "generate_hybrid_model") {
+            ensureNetwork();
+
+            engine::HybridModelGenerator::Options hppOpts;
+
+            const auto safeText = lowercase(stripQuotes(readArgument(action, "safe", "0")));
+            hppOpts.safe = (safeText == "1" || safeText == "true");
+
+            const auto executeText = lowercase(stripQuotes(readArgument(action, "execute", "0")));
+            hppOpts.execute = (executeText == "1" || executeText == "true");
+
+            const auto overwriteText = lowercase(stripQuotes(readArgument(action, "overwrite", "0")));
+            hppOpts.overwrite = (overwriteText == "1" || overwriteText == "true");
+
+            const auto verboseText = lowercase(stripQuotes(readArgument(action, "verbose", "0")));
+            hppOpts.verbose = (verboseText == "1" || verboseText == "true");
+
+            const auto prefixText = stripQuotes(readArgument(action, "prefix", ""));
+            if (!prefixText.empty()) {
+                hppOpts.prefix = prefixText;
+            }
+
+            const auto suffixText = stripQuotes(readArgument(action, "suffix", ""));
+            if (!suffixText.empty()) {
+                hppOpts.suffix = suffixText;
+            }
+
+            const auto tEndText = readArgument(action, "t_end", "");
+            if (!tEndText.empty()) {
+                hppOpts.tEnd = parseScalarValue(tEndText, model);
+            }
+            const auto nStepsText = readArgument(action, "n_steps", "");
+            if (!nStepsText.empty()) {
+                hppOpts.nSteps = static_cast<std::size_t>(parseScalarValue(nStepsText, model));
+            }
+
+            engine::HybridModelGenerator gen(model, *network);
+            auto genResult = gen.generate(sourcePath, hppOpts);
+
+            if (verbose) {
+                std::cerr << "[bng_cpp] generate_hybrid_model: "
+                          << genResult.nMoleculeTypes << " molecule types, "
+                          << genResult.nPopulationTypes << " population types, "
+                          << genResult.nSeedSpecies << " seed species, "
+                          << genResult.nRules << " rules\n";
+                std::cerr << "[bng_cpp] Wrote hybrid model: " << genResult.hybridBnglPath << "\n";
+            }
+
+            // Optionally execute the hybrid model
+            if (hppOpts.execute) {
+                if (verbose) {
+                    std::cerr << "[bng_cpp] generate_hybrid_model: execute=1, running ODE on full network\n";
+                }
+                engine::OdeOptions odeOpts;
+                odeOpts.tEnd = hppOpts.tEnd;
+                odeOpts.nSteps = hppOpts.nSteps;
+                odeOpts.method = "cvode";
+                engine::OdeIntegrator integrator(model, *network);
+                auto odeResult = integrator.integrate(odeOpts);
+                const auto prefix = sourcePath.stem().string();
+                const auto outputPrefix = sourcePath.parent_path() / (prefix + "_" + hppOpts.suffix);
+                integrator.writeOutputFiles(outputPrefix.string(), odeResult);
+                if (verbose) {
+                    std::cerr << "[bng_cpp] Wrote hybrid simulation output: "
+                              << outputPrefix.string() << ".cdat, .gdat\n";
+                }
+            }
+            continue;
+        }
+
         if (actionName == "writexml") {
             // Write XML without network (NFsim XML format doesn't require generated network)
             const auto xmlContent = io::XmlWriter::write(model, network.has_value() ? &(*network) : nullptr);
@@ -1286,6 +1517,22 @@ void ActionDispatch::execute(ast::Model& model, const std::filesystem::path& sou
             outFile << sbmlContent;
             if (verbose) {
                 std::cerr << "[bng_cpp] Wrote SBML to " << outputPath << "\n";
+            }
+            continue;
+        }
+
+        if (actionName == "writesbmlmulti") {
+            const auto suffix = stripQuotes(readArgument(action, "suffix", "sbml_multi"));
+            io::SbmlMultiWriter::Options multiOpts;
+            const auto multiContent = io::SbmlMultiWriter::write(model, multiOpts);
+            const auto outputPath = sourcePath.parent_path() / (sourcePath.stem().string() + "_" + suffix + ".xml");
+            std::ofstream outFile(outputPath);
+            if (!outFile) {
+                throw std::runtime_error("Failed to open " + outputPath.string() + " for writing");
+            }
+            outFile << multiContent;
+            if (verbose) {
+                std::cerr << "[bng_cpp] Wrote SBML Multi to " << outputPath << "\n";
             }
             continue;
         }
@@ -1472,6 +1719,36 @@ void ActionDispatch::execute(ast::Model& model, const std::filesystem::path& sou
                 content = io::ReactionNetworkGraphWriter::toGML(rxnGraph);
                 extension = ".gml";
                 fileSuffix = "_reaction_network";
+
+            } else if (vizType == "ruleviz_pattern") {
+                // Rule pattern visualization (does not require generated network)
+                auto patGraph = io::RulevizPatternWriter::build(model);
+                content = io::RulevizPatternWriter::toGML(patGraph);
+                extension = ".gml";
+                fileSuffix = "_ruleviz_pattern";
+
+            } else if (vizType == "ruleviz_operation") {
+                // Rule operation visualization (does not require generated network)
+                auto opGraph = io::RulevizOperationWriter::build(model);
+                content = io::RulevizOperationWriter::toGML(opGraph);
+                extension = ".gml";
+                fileSuffix = "_ruleviz_operation";
+
+            } else if (vizType == "process") {
+                // Bipartite process graph (requires generated network)
+                ensureNetwork();
+                auto procGraph = io::ProcessGraphWriter::build(model, *network);
+                content = io::ProcessGraphWriter::toGML(procGraph);
+                extension = ".gml";
+                fileSuffix = "_process";
+
+            } else if (vizType == "rinf" || vizType == "rule_influence") {
+                // Rule influence graph (requires generated network)
+                ensureNetwork();
+                auto rinfGraph = io::RuleInfluenceGraphWriter::build(model, *network);
+                content = io::RuleInfluenceGraphWriter::toGML(rinfGraph);
+                extension = ".gml";
+                fileSuffix = "_rinf";
 
             } else {
                 // Unsupported type - fall back to contact map

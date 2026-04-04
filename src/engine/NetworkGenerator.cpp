@@ -117,6 +117,35 @@ bool parsePrintIter(const ast::Model& model) {
     return false;
 }
 
+bool parseOverwrite(const ast::Model& model) {
+    for (const auto& action : model.getActions()) {
+        if (action.name != "generate_network") {
+            continue;
+        }
+        const auto found = action.arguments.find("overwrite");
+        if (found == action.arguments.end()) {
+            continue;
+        }
+        return parseBooleanLike(found->second);
+    }
+    return true;  // default: always regenerate (overwrite=1)
+}
+
+bool parseCheckIso(const ast::Model& model) {
+    for (const auto& action : model.getActions()) {
+        if (action.name != "generate_network") {
+            continue;
+        }
+        const auto found = action.arguments.find("check_iso");
+        if (found == action.arguments.end()) {
+            continue;
+        }
+        // Default is true (enabled). Only disable if explicitly set to 0/false.
+        return parseBooleanLike(found->second);
+    }
+    return true;  // default: isomorphism checking enabled
+}
+
 bool parsePrintRules(const ast::Model& model) {
     const char* envFlag = std::getenv("BNG_CPP_PROGRESS_RULES");
     if (envFlag != nullptr && *envFlag != '\0') {
@@ -207,6 +236,7 @@ GeneratedNetwork NetworkGenerator::generateNative(std::size_t maxIter) {
     const auto maxAgg = parseMaxAgg(model_);
     const bool logProgress = parsePrintIter(model_);
     const bool logRules = parsePrintRules(model_);
+    const bool checkIso = parseCheckIso(model_);
 
     // Set compartment dimension and parent maps for cross-compartment species assignment
     // and compartment transport (endocytosis/exocytosis)
@@ -229,6 +259,7 @@ GeneratedNetwork NetworkGenerator::generateNative(std::size_t maxIter) {
     }
 
     GeneratedNetwork network;
+    network.species.setCheckIso(checkIso);
     for (const auto& seed : model_.getSeedSpecies()) {
         network.species.add(ast::Species(
             ast::SpeciesGraph(seed.getGraph()),

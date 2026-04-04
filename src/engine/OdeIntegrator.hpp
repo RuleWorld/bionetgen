@@ -2,6 +2,7 @@
 
 #include <functional>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "ast/Model.hpp"
@@ -69,6 +70,12 @@ private:
     std::vector<bool> fixedSpecies_;    // true for $ (constant) species
     std::size_t nSpecies_ = 0;
     bool hasFunctionalRates_ = false;
+
+    // Performance optimizations
+    mutable std::vector<double> groupValues_;                  // Pre-allocated for derivs()
+    std::unordered_map<std::string, std::size_t> observableIndex_; // O(1) observable lookup
+    std::vector<std::size_t> constantRxnIndices_;              // Indices of constant-rate reactions
+    std::vector<std::size_t> functionalRxnIndices_;            // Indices of functional-rate reactions
 
     void compile();
     void compileGroups();

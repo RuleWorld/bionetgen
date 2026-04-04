@@ -48,6 +48,10 @@ void Model::addReactionRule(ReactionRule reactionRule) {
     reactionRules_.push_back(std::move(reactionRule));
 }
 
+void Model::addPopulationMap(PopulationMap populationMap) {
+    populationMaps_.push_back(std::move(populationMap));
+}
+
 void Model::setVersion(std::string version) {
     version_ = std::move(version);
 }
@@ -174,6 +178,10 @@ const std::vector<ReactionRule>& Model::getReactionRules() const {
 
 std::vector<ReactionRule>& Model::getReactionRules() {
     return reactionRules_;
+}
+
+const std::vector<PopulationMap>& Model::getPopulationMaps() const {
+    return populationMaps_;
 }
 
 const std::string& Model::getVersion() const {

@@ -1,5 +1,5 @@
 
-// Generated from BNGParser.g4 by ANTLR 4.13.2
+// Generated from src/parser/BNGParser.g4 by ANTLR 4.13.1
 
 #pragma once
 
@@ -153,6 +153,33 @@ public:
 
   virtual void enterRate_law(BNGParser::Rate_lawContext * /*ctx*/) override { }
   virtual void exitRate_law(BNGParser::Rate_lawContext * /*ctx*/) override { }
+
+  virtual void enterRate_law_expr(BNGParser::Rate_law_exprContext * /*ctx*/) override { }
+  virtual void exitRate_law_expr(BNGParser::Rate_law_exprContext * /*ctx*/) override { }
+
+  virtual void enterRate_law_or_expr(BNGParser::Rate_law_or_exprContext * /*ctx*/) override { }
+  virtual void exitRate_law_or_expr(BNGParser::Rate_law_or_exprContext * /*ctx*/) override { }
+
+  virtual void enterRate_law_and_expr(BNGParser::Rate_law_and_exprContext * /*ctx*/) override { }
+  virtual void exitRate_law_and_expr(BNGParser::Rate_law_and_exprContext * /*ctx*/) override { }
+
+  virtual void enterRate_law_eq_expr(BNGParser::Rate_law_eq_exprContext * /*ctx*/) override { }
+  virtual void exitRate_law_eq_expr(BNGParser::Rate_law_eq_exprContext * /*ctx*/) override { }
+
+  virtual void enterRate_law_add_expr(BNGParser::Rate_law_add_exprContext * /*ctx*/) override { }
+  virtual void exitRate_law_add_expr(BNGParser::Rate_law_add_exprContext * /*ctx*/) override { }
+
+  virtual void enterRate_law_mul_expr(BNGParser::Rate_law_mul_exprContext * /*ctx*/) override { }
+  virtual void exitRate_law_mul_expr(BNGParser::Rate_law_mul_exprContext * /*ctx*/) override { }
+
+  virtual void enterRate_law_pow_expr(BNGParser::Rate_law_pow_exprContext * /*ctx*/) override { }
+  virtual void exitRate_law_pow_expr(BNGParser::Rate_law_pow_exprContext * /*ctx*/) override { }
+
+  virtual void enterRate_law_unary_expr(BNGParser::Rate_law_unary_exprContext * /*ctx*/) override { }
+  virtual void exitRate_law_unary_expr(BNGParser::Rate_law_unary_exprContext * /*ctx*/) override { }
+
+  virtual void enterRate_law_primary_expr(BNGParser::Rate_law_primary_exprContext * /*ctx*/) override { }
+  virtual void exitRate_law_primary_expr(BNGParser::Rate_law_primary_exprContext * /*ctx*/) override { }
 
   virtual void enterRule_modifiers(BNGParser::Rule_modifiersContext * /*ctx*/) override { }
   virtual void exitRule_modifiers(BNGParser::Rule_modifiersContext * /*ctx*/) override { }

@@ -158,7 +158,7 @@ molecule_pattern
     ;
 
 scope_prefix
-    : MOD STRING COLON COLON
+    : MOLECULE_TAG_TOKEN COLON COLON
     ;
 
 // Bond wildcards that apply to entire molecule patterns
@@ -169,7 +169,7 @@ pattern_bond_wildcard
     ;
 
 molecule_tag
-    : MOD (INT | STRING)
+    : MOLECULE_TAG_TOKEN
     ;
 
 // Allow empty entries in component pattern lists to handle double commas (,,)
@@ -195,7 +195,7 @@ bond_spec
     ;
 
 component_label
-    : MOD (INT | STRING)     // Component label (e.g., %1, %reaction_1)
+    : MOLECULE_TAG_TOKEN     // Component label (e.g., %1, %reaction_1)
     ;
 
 bond_id
@@ -264,8 +264,53 @@ reaction_sign
     | BI_REACTION_SIGN
     ;
 
+// Rate law: primary rate expression, optionally followed by comma and reverse rate.
+// Note: rate_law_expr avoids MOD (%) as a binary operator since %N is always a molecule tag
+// in BNGL (modulo is never used in rate laws in practice).
 rate_law
-    : expression (COMMA expression)?
+    : rate_law_expr (COMMA rate_law_expr)?
+    ;
+
+// Rate law expression: same as expression but without MOD to avoid ambiguity with molecule tags
+rate_law_expr
+    : rate_law_or_expr
+    ;
+
+rate_law_or_expr
+    : rate_law_and_expr (LOGICAL_OR rate_law_and_expr)*
+    ;
+
+rate_law_and_expr
+    : rate_law_eq_expr (LOGICAL_AND rate_law_eq_expr)*
+    ;
+
+rate_law_eq_expr
+    : rate_law_add_expr ((EQUALS | NOT_EQUALS | GTE | GT | LTE | LT) rate_law_add_expr)*
+    ;
+
+rate_law_add_expr
+    : rate_law_mul_expr ((PLUS | MINUS) rate_law_mul_expr)*
+    ;
+
+// NOTE: No MOD here — % is always a molecule tag in BNGL, never modulo in rate laws
+rate_law_mul_expr
+    : rate_law_pow_expr ((TIMES | DIV) rate_law_pow_expr)*
+    ;
+
+rate_law_pow_expr
+    : rate_law_unary_expr (POWER rate_law_unary_expr)*
+    ;
+
+rate_law_unary_expr
+    : (PLUS | MINUS | EMARK | TILDE)? rate_law_primary_expr
+    ;
+
+rate_law_primary_expr
+    : LPAREN rate_law_expr RPAREN
+    | function_call
+    | observable_ref
+    | literal
+    | arg_name
     ;
 
 rule_modifiers
@@ -360,7 +405,7 @@ simulate_cmd
     ;
 
 write_cmd
-    : (WRITEFILE | WRITEXML | WRITESBML | WRITENETWORK | WRITEMODEL | WRITEMFILE | WRITEMEXFILE | WRITECPPFILE | WRITECPYFILE | WRITELATEX | WRITEMDL | WRITESSC | WRITESSCCFG)
+    : (WRITEFILE | WRITEXML | WRITESBML | WRITESBMLMULTI | WRITENETWORK | WRITEMODEL | WRITEMFILE | WRITEMEXFILE | WRITECPPFILE | WRITECPYFILE | WRITELATEX | WRITEMDL | WRITESSC | WRITESSCCFG)
       LPAREN action_args? RPAREN SEMI? LB*
     ;
 
@@ -436,8 +481,12 @@ arg_name
     | SAVE_PROGRESS | MAX_SIM_STEPS | OUTPUT_STEP_INTERVAL | SAMPLE_TIMES
     // SSA/PLA options
     | PLA_CONFIG | PLA_OUTPUT
+    // SSA/PSA options
+    | SEED | POPLEVEL | ARGFILE
     // NFsim options
-    | PARAM | COMPLEX | GET_FINAL_STATE | GML | NOCSLF | NOTF | BINARY_OUTPUT | UTL | EQUIL
+    | PARAM | COMPLEX | GET_FINAL_STATE | GML | NOCSLF | NOTF | BINARY_OUTPUT | UTL | EQUIL | NFSIM_EXEC
+    // Hybrid model options
+    | MOL_THRESHOLD
     // Parameter scan options
     | PARAMETER | PAR_MIN | PAR_MAX | N_SCAN_PTS | LOG_SCALE | RESET_CONC
     // Mfile options

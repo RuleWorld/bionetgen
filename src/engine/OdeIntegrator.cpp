@@ -246,6 +246,27 @@ void OdeIntegrator::compile() {
 
     // Compile observable groups
     compileGroups();
+
+    // Build performance optimization structures
+    // 1. Observable name→index map for O(1) lookup in derivs()
+    observableIndex_.clear();
+    for (std::size_t i = 0; i < compiledGroups_.size(); ++i) {
+        observableIndex_[compiledGroups_[i].name] = i;
+    }
+
+    // 2. Pre-allocate groupValues for reuse in derivs()
+    groupValues_.resize(compiledGroups_.size(), 0.0);
+
+    // 3. Separate constant-rate vs functional-rate reaction indices
+    constantRxnIndices_.clear();
+    functionalRxnIndices_.clear();
+    for (std::size_t i = 0; i < compiledRxns_.size(); ++i) {
+        if (compiledRxns_[i].isFunctional) {
+            functionalRxnIndices_.push_back(i);
+        } else {
+            constantRxnIndices_.push_back(i);
+        }
+    }
 }
 
 void OdeIntegrator::compileGroups() {
@@ -357,56 +378,64 @@ void OdeIntegrator::derivs(double t, const double* y, double* dydt) const {
     // Zero derivatives
     std::fill(dydt, dydt + nSpecies_, 0.0);
 
-    // Update observables for functional rates
-    std::vector<double> groupValues;
+    // Update observables for functional rates (using pre-allocated buffer)
     if (hasFunctionalRates_) {
-        updateGroups(y, groupValues);
+        updateGroups(y, groupValues_);
     }
 
-    // Accumulate derivatives from each reaction
-    for (const auto& rxn : compiledRxns_) {
-        double rate;
+    // Process constant-rate reactions first (no expression evaluation needed)
+    for (const auto idx : constantRxnIndices_) {
+        const auto& rxn = compiledRxns_[idx];
+        double rate = rxn.rateConstant;
 
-        // Evaluate rate (functional or constant)
-        if (rxn.isFunctional && rxn.functionalRateExpr.has_value()) {
-            // Evaluate the expression with current time and observable values
-            auto resolver = [&](const std::string& name) -> double {
-                if (name == "time") return t;
+        if (!rxn.isTotalRate) {
+            for (const auto ri : rxn.reactantIndices) {
+                rate *= y[ri];
+            }
+        }
 
-                // Check if it's an observable
-                for (std::size_t g = 0; g < compiledGroups_.size(); ++g) {
-                    if (compiledGroups_[g].name == name) {
-                        return groupValues[g];
-                    }
+        for (const auto ri : rxn.reactantIndices) { dydt[ri] -= rate; }
+        for (const auto pi : rxn.productIndices) { dydt[pi] += rate; }
+    }
+
+    // Process functional-rate reactions (require expression evaluation)
+    if (hasFunctionalRates_) {
+        // Build resolver with O(1) observable lookup
+        auto resolver = [&](const std::string& name) -> double {
+            if (name == "time") return t;
+
+            // O(1) observable lookup via precomputed map
+            auto it = observableIndex_.find(name);
+            if (it != observableIndex_.end()) {
+                return groupValues_[it->second];
+            }
+
+            // Otherwise try as parameter
+            return model_.getParameters().evaluate(name);
+        };
+
+        for (const auto idx : functionalRxnIndices_) {
+            const auto& rxn = compiledRxns_[idx];
+            double rate;
+
+            if (rxn.functionalRateExpr.has_value()) {
+                try {
+                    rate = rxn.functionalRateExpr->evaluate(resolver, t);
+                } catch (const std::exception&) {
+                    rate = rxn.rateConstant;
                 }
-
-                // Otherwise try as parameter
-                return model_.getParameters().evaluate(name);
-            };
-
-            try {
-                rate = rxn.functionalRateExpr->evaluate(resolver, t);
-            } catch (const std::exception& e) {
-                // If evaluation fails, use the cached constant
+            } else {
                 rate = rxn.rateConstant;
             }
-        } else {
-            rate = rxn.rateConstant;
-        }
 
-        // Multiply by reactant concentrations (mass-action), unless TotalRate
-        if (!rxn.isTotalRate) {
-            for (const auto idx : rxn.reactantIndices) {
-                rate *= y[idx];
+            if (!rxn.isTotalRate) {
+                for (const auto ri : rxn.reactantIndices) {
+                    rate *= y[ri];
+                }
             }
-        }
 
-        // Subtract from reactants, add to products
-        for (const auto idx : rxn.reactantIndices) {
-            dydt[idx] -= rate;
-        }
-        for (const auto idx : rxn.productIndices) {
-            dydt[idx] += rate;
+            for (const auto ri : rxn.reactantIndices) { dydt[ri] -= rate; }
+            for (const auto pi : rxn.productIndices) { dydt[pi] += rate; }
         }
     }
 
@@ -772,6 +801,9 @@ OdeResult OdeIntegrator::integrateCvode(const OdeOptions& opts) {
 
     // Set max number of steps (BNG2 default: 2000, auto-increases if needed)
     CVodeSetMaxNumSteps(cvode_mem, 2000);
+
+    // Enable stability limit detection for stiff systems (reduces unnecessary small steps)
+    CVodeSetStabLimDet(cvode_mem, 1);
 
     // Choose solver based on network size (matches BNG2 behavior)
     // Dense for small networks (<200 species), GMRES for large networks

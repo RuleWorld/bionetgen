@@ -1,5 +1,5 @@
 
-// Generated from BNGParser.g4 by ANTLR 4.13.2
+// Generated from src/parser/BNGParser.g4 by ANTLR 4.13.1
 
 #pragma once
 
@@ -110,6 +110,24 @@ public:
     virtual std::any visitReaction_sign(BNGParser::Reaction_signContext *context) = 0;
 
     virtual std::any visitRate_law(BNGParser::Rate_lawContext *context) = 0;
+
+    virtual std::any visitRate_law_expr(BNGParser::Rate_law_exprContext *context) = 0;
+
+    virtual std::any visitRate_law_or_expr(BNGParser::Rate_law_or_exprContext *context) = 0;
+
+    virtual std::any visitRate_law_and_expr(BNGParser::Rate_law_and_exprContext *context) = 0;
+
+    virtual std::any visitRate_law_eq_expr(BNGParser::Rate_law_eq_exprContext *context) = 0;
+
+    virtual std::any visitRate_law_add_expr(BNGParser::Rate_law_add_exprContext *context) = 0;
+
+    virtual std::any visitRate_law_mul_expr(BNGParser::Rate_law_mul_exprContext *context) = 0;
+
+    virtual std::any visitRate_law_pow_expr(BNGParser::Rate_law_pow_exprContext *context) = 0;
+
+    virtual std::any visitRate_law_unary_expr(BNGParser::Rate_law_unary_exprContext *context) = 0;
+
+    virtual std::any visitRate_law_primary_expr(BNGParser::Rate_law_primary_exprContext *context) = 0;
 
     virtual std::any visitRule_modifiers(BNGParser::Rule_modifiersContext *context) = 0;
 

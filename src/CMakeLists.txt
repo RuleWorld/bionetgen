@@ -32,8 +32,10 @@ add_library(bng_ast
     ast/SpeciesGraph.cpp
     ast/Species.cpp
     ast/SpeciesList.cpp
+    ast/RefineRule.cpp
     ast/Rxn.cpp
     ast/RxnList.cpp
+    ast/MacroBNGModel.cpp
 )
 target_include_directories(bng_ast PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -66,11 +68,14 @@ add_library(bng_engine STATIC
     engine/NetworkGenerator.cpp
     engine/OdeIntegrator.cpp
     engine/PlaSimulator.cpp
+    engine/PsaSimulator.cpp
+    engine/HybridModelGenerator.cpp
     io/NetWriter.cpp
     io/NetReader.cpp
     io/XmlWriter.cpp
     io/BnglWriter.cpp
     io/SbmlWriter.cpp
+    io/SbmlMultiWriter.cpp
     io/MatlabWriter.cpp
     io/CppExportWriter.cpp
     io/PythonExportWriter.cpp
@@ -78,10 +83,15 @@ add_library(bng_engine STATIC
     io/MexWriter.cpp
     io/RegulatoryGraphWriter.cpp
     io/ReactionNetworkGraphWriter.cpp
+    io/RulevizPatternWriter.cpp
+    io/RulevizOperationWriter.cpp
+    io/ProcessGraphWriter.cpp
+    io/RuleInfluenceGraphWriter.cpp
     io/LatexWriter.cpp
     io/MdlWriter.cpp
     io/SscWriter.cpp
     actions/ActionDispatch.cpp
+    console/Console.cpp
 )
 
 # Link SUNDIALS/CVODE from FetchContent
