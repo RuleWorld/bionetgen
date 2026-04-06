@@ -6,6 +6,7 @@ package BNGModel;
 # pragmas
 use strict;
 use warnings;
+use Safe;
 
 ###
 ###
@@ -48,7 +49,11 @@ sub simulate_protocol
 
         if(index($action,"simulate") != -1)
         {
-            my $hash_opts_ref = eval($options);
+            # SECURITY: Use Safe->reval instead of eval to prevent arbitrary code execution
+            my $cpt = Safe->new;
+            $cpt->permit(qw(:base_core :base_math :base_mem entereval));
+            my $hash_opts_ref = $cpt->reval($options);
+            if ($@) { die "Error parsing simulate options: $@"; }
             #modifying hash with local prefix
             $hash_opts_ref->{prefix} = $params->{prefix};
             #deleting suffix
@@ -184,7 +189,10 @@ sub simulate
                 {   # Special handling for sample_times array
                     print "$args[0] => $args[1]\n";
                     # evaluate sample_times string to get array ref (hopefully)
-                    my $sample_times = eval $args[1];
+                    # SECURITY: Use Safe->reval instead of eval to prevent arbitrary code execution
+                    my $cpt = Safe->new;
+                    $cpt->permit(qw(:base_core :base_math :base_mem entereval));
+                    my $sample_times = $cpt->reval($args[1]);
                     if ($@)
                     {    return "Problem parsing 'sample_times': Sample times must be comma-separated (no spaces) ints or floats "
                              . "(exponential format ok) enclosed in square brackets, e.g., [5e-1,1,5.0,1E1].";

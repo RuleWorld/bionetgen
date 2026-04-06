@@ -99,8 +99,7 @@ class Species:
     def copy(self):
         species = Species()
         species.identifier = randint(0,1000000)
-        for molecule in self.molecules:
-            species.molecules.append(molecule.copy())
+        species.molecules = [molecule.copy() for molecule in self.molecules]
         return species
         
     def getMoleculeById(self,idx):
@@ -226,9 +225,14 @@ class Species:
                     
     
     def updateBonds(self,bondNumbers):
-        newBondNumbers = deepcopy(bondNumbers)
+        current_bonds = set(self.getBondNumbers())
+        intersection = {int(x) for x in bondNumbers if x in current_bonds}
+        if not intersection:
+            return
+
+        max_intersection = max(intersection)
         correspondence = {}
-        intersection = [int(x) for x in newBondNumbers if x in self.getBondNumbers()]
+
         for element in self.molecules:
             for component in element.components:
                 for index in range(0,len(component.bonds)):
@@ -237,16 +241,15 @@ class Species:
                         if component.bonds[index] in correspondence:
                             component.bonds[index] = correspondence[component.bonds[index]]
                         else:
-                            correspondence[component.bonds[index]] = max(intersection) + 1
-                            component.bonds[index] = max(intersection) + 1
-                        #intersection = [int(x) for x in newBondNumbers if x in self.getBondNumbers()]
+                            correspondence[component.bonds[index]] = max_intersection + 1
+                            component.bonds[index] = max_intersection + 1
     
     def append(self,species):
-        newSpecies = (deepcopy(species))
+        newSpecies = species.copy()
         newSpecies.updateBonds(self.getBondNumbers())
         
         for element in newSpecies.molecules:
-            self.molecules.append(deepcopy(element))              
+            self.molecules.append(element.copy())
         
     def __str__(self):
         self.molecules.sort(key= lambda molecule: molecule.name)
@@ -405,8 +408,7 @@ class Molecule:
         
     def copy(self):
         molecule = Molecule(self.name,self.idx)
-        for element in self.components:
-            molecule.components.append(element.copy())
+        molecule.components = [element.copy() for element in self.components]
         return molecule 
         
     def addChunk(self,chunk):
@@ -434,10 +436,7 @@ class Molecule:
                 return component
              
     def getBondNumbers(self):
-        bondNumbers = []
-        for element in self.components:
-                bondNumbers.extend([int(x) for x in element.bonds if x != '+'])
-        return bondNumbers
+        return [int(x) for element in self.components for x in element.bonds if x != '+']
         
     def getComponent(self,componentName):
         for component in self.components:
@@ -585,8 +584,8 @@ class Component:
         self.idx = idx
         
     def copy(self):
-        component = Component(self.name,self.idx,deepcopy(self.bonds),deepcopy(self.states))
-        component.activeState = deepcopy(self.activeState)     
+        component = Component(self.name,self.idx,list(self.bonds),list(self.states))
+        component.activeState = self.activeState
         return component
         
     def addState(self,state,update=True):
