@@ -245,11 +245,6 @@ sub simulate
 	}
 	my $seed        = $params->{seed};
 
-    # Default to PSA method if poplevel is defined
-    if(defined $params->{poplevel}){
-      $method="psa"
-    }
-
     # check method
     unless ( $method )
     {  return "simulate() requires 'method' parameter (ode, ssa, pla, psa, nf).";  }
@@ -366,15 +361,7 @@ sub simulate
             push @command, "--check_product_scale", $params->{check_product_scale};
         }
     }
-    if ($method eq 'ssa')
-    {
-        if ( exists $params->{poplevel} ) {
-            push @command, "--poplevel", $params->{poplevel};
-            if (exists $params->{check_product_scale}) {
-                push @command, "--check_product_scale", $params->{check_product_scale};
-            }
-        }
-    }
+    # SSA has no special arguments
 
     # add method options
     {
