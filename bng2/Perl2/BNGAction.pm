@@ -912,6 +912,11 @@ sub simulate_nf
         return "NFsim does not support 'continue' option.";
     }
 
+    if ( defined $params->{n_steps} && defined $params->{sample_times} )
+    {
+        send_warning("n_steps and sample_times both defined. n_steps takes precedence.");
+    }
+
     my $t_end;
     if ( defined $params->{n_steps} )
     {
@@ -932,7 +937,41 @@ sub simulate_nf
     }
     elsif ( defined $params->{sample_times} )
     {
-        return "sample_times not supported in this version of NFsim";
+        my @sample_times = sort { $a <=> $b } @{$params->{sample_times}};
+
+        if ( scalar(@sample_times) < 1 )
+        {
+            return "No simulation output requested: sample_times array is empty.";
+        }
+
+        if ( defined $params->{t_end} )
+        {
+            $t_end = $params->{t_end};
+            push @sample_times, $t_end;
+        }
+        else
+        {
+            $t_end = $sample_times[$#sample_times];
+        }
+
+        unless ( $t_end > $t_start )
+        {
+            return "t_end must be greater than t_start.";
+        }
+
+        if ( $sample_times[$#sample_times] < $t_start )
+        {
+            return "All sample_times occur before t_start.";
+        }
+
+        my @relative_sample_times = map { $_ - $t_start } grep { $_ >= $t_start } @sample_times;
+        if ( scalar(@relative_sample_times) < 1 )
+        {
+            return "No sample_times remain at or after t_start.";
+        }
+
+        my $otimes = join(',', @relative_sample_times);
+        push @command, "-sim", ($t_end-$t_start), "-oTimes", $otimes;
     }
     else
     {
