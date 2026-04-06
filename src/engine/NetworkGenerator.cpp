@@ -261,8 +261,22 @@ GeneratedNetwork NetworkGenerator::generateNative(std::size_t maxIter) {
     GeneratedNetwork network;
     network.species.setCheckIso(checkIso);
     for (const auto& seed : model_.getSeedSpecies()) {
+        // Perl's assignCompartment: propagate the species-level compartment to
+        // molecule nodes that lack a per-molecule compartment.  Without this,
+        // rule expansion cannot infer compartments for products because the
+        // molecule nodes in the aggregate graph would have empty compartments.
+        auto seedGraph = seed.getGraph();  // mutable copy
+        const auto& seedComp = seed.getCompartment();
+        if (!seedComp.empty()) {
+            for (auto it = seedGraph.begin(); it != seedGraph.end(); ++it) {
+                // Molecule nodes have in_degree == 0 in species graphs
+                if ((*it)->in_degree() == 0 && (*it)->get_compartment().empty()) {
+                    (*it)->set_compartment(seedComp);
+                }
+            }
+        }
         network.species.add(ast::Species(
-            ast::SpeciesGraph(seed.getGraph()),
+            ast::SpeciesGraph(seedGraph),
             evaluateAmount(seed.getAmount(), model_),
             seed.isConstant(),
             seed.getCompartment()));

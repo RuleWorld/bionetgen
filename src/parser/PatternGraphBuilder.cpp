@@ -91,6 +91,10 @@ BNGcore::PatternGraph buildPatternGraph(
         // Extract per-molecule compartment from two sources:
         // 1. Inside molecule_pattern: A@CYT(x) — compartment before parentheses
         // 2. After molecule_pattern at species_def level: A(x)@CYT — suffix compartment
+        // NOTE: Species-level prefix compartment (@COMP:pattern) is NOT propagated
+        // to molecule nodes here. It is handled at the species level via
+        // extractSpeciesCompartment() and species-level compartment filtering
+        // in the group/observable matching code.
         std::string molComp;
         if (moleculePattern->molecule_compartment() != nullptr) {
             // Compartment inside molecule_pattern (e.g., A@CYT(...))

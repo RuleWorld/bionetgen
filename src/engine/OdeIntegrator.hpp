@@ -11,6 +11,7 @@
 namespace bng::engine {
 
 struct OdeOptions {
+    double tStart = 0.0;
     double tEnd = 1.0;
     std::size_t nSteps = 100;
     double rtol = 1e-8;
@@ -28,7 +29,9 @@ struct OdeOptions {
     std::size_t maxSimSteps = 0;   // Max internal simulation steps (0 = unlimited)
     bool saveProgress = false;     // Write .net checkpoint at each output step
     bool printNet = false;         // Write .net file after simulation with final concentrations
+    bool printEnd = false;         // Output final state when simulation stops (stop_if or steady_state)
     std::size_t outputStepInterval = 0; // Output every N internal steps (0 = disabled, use n_steps timing)
+    std::string netfile;           // Custom .net file to read instead of auto-generating
 };
 
 struct OdeResult {
@@ -42,7 +45,7 @@ public:
     OdeIntegrator(const ast::Model& model, const GeneratedNetwork& network);
 
     OdeResult integrate(const OdeOptions& options);
-    void writeOutputFiles(const std::string& prefix, const OdeResult& result, bool printCDAT = true, bool printFunctions = false) const;
+    void writeOutputFiles(const std::string& prefix, const OdeResult& result, bool printCDAT = true, bool printFunctions = false, bool append = false) const;
     void derivs(double t, const double* y, double* dydt) const;
 
 private:

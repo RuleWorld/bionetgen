@@ -118,6 +118,14 @@ double parseScalarValue(const std::string& text, ast::Model& model) {
         if (allResolved) return result;
     } catch (...) {}
 
+    // Fallback: parse as a full expression (handles nested parentheses, division, etc.)
+    try {
+        auto expr = bng::parser::parseExpression(value);
+        return expr.evaluate([&](const std::string& name) {
+            return model.getParameters().evaluate(name);
+        });
+    } catch (...) {}
+
     throw std::runtime_error("Unsupported scalar action value: '" + text + "'");
 }
 
@@ -157,16 +165,22 @@ std::optional<std::size_t> findSpeciesIndex(const engine::GeneratedNetwork& netw
     for (std::size_t i = 0; i < network.species.size(); ++i) {
         const auto& species = network.species.get(i);
         const auto canonical = species.getSpeciesGraph().toString();
-        std::string full;
+        // Build two full-string variants:
+        //   @comp::pattern  (internal .net format, double colon)
+        //   @comp:pattern   (BNGL action format, single colon used by Perl)
+        std::string fullDouble, fullSingle;
         if (!species.getCompartment().empty()) {
-            full += "@" + species.getCompartment() + "::";
+            fullDouble += "@" + species.getCompartment() + "::";
+            fullSingle += "@" + species.getCompartment() + ":";
         }
         if (species.isConstant()) {
-            full += "$";
+            fullDouble += "$";
+            fullSingle += "$";
         }
-        full += canonical;
+        fullDouble += canonical;
+        fullSingle += canonical;
 
-        if (needle == canonical || needle == full) {
+        if (needle == canonical || needle == fullDouble || needle == fullSingle) {
             return i;
         }
     }
@@ -221,7 +235,8 @@ void runSimulation(
     const std::filesystem::path& sourcePath,
     engine::GeneratedNetwork& network,
     bool verbose,
-    std::vector<double>& lastSimulationState) {
+    std::vector<double>& lastSimulationState,
+    double& lastSimulationEndTime) {
 
     // Handle argfile: read arguments from file (file args have lower priority than inline args)
     ast::Action action = actionOrig;
@@ -275,6 +290,12 @@ void runSimulation(
     opts.tEnd = parseScalarValue(tEnd, model);
     opts.nSteps = static_cast<std::size_t>(parseScalarValue(nSteps, model));
 
+    // Parse t_start (BNG2 parity)
+    const auto tStartText = readArgument(action, "t_start", "");
+    if (!tStartText.empty()) {
+        opts.tStart = parseScalarValue(tStartText, model);
+    }
+
     // Parse method (match BNG2 defaults)
     if (method == "cvode" || method == "ode") {
         opts.method = "cvode";
@@ -322,9 +343,18 @@ void runSimulation(
     const auto printCDATText = lowercase(stripQuotes(readArgument(action, "print_CDAT", readArgument(action, "print_cdat", "1"))));
     opts.printCDAT = (printCDATText != "0" && printCDATText != "false");
 
+    // Parse print_functions flag (BNG2 parity: include function values in .gdat)
+    const auto printFunctionsText = lowercase(stripQuotes(readArgument(action, "print_functions", "0")));
+    opts.printFunctions = (printFunctionsText == "1" || printFunctionsText == "true");
+
     // Parse continue flag (BNG2 parity)
     const auto continueText = lowercase(stripQuotes(readArgument(action, "continue", "0")));
     bool continueSimulation = (continueText == "1" || continueText == "true");
+
+    // When continue=1 and no explicit t_start, use the previous simulation's end time
+    if (continueSimulation && tStartText.empty() && lastSimulationEndTime > 0.0) {
+        opts.tStart = lastSimulationEndTime;
+    }
 
     // Parse save_progress flag (BNG2 parity: write .net checkpoint at each output step)
     const auto saveProgressText = lowercase(stripQuotes(readArgument(action, "save_progress", "0")));
@@ -333,6 +363,13 @@ void runSimulation(
     // Parse print_net flag (BNG2 parity: write .net file after simulation with final concentrations)
     const auto printNetText = lowercase(stripQuotes(readArgument(action, "print_net", "0")));
     opts.printNet = (printNetText == "1" || printNetText == "true");
+
+    // Parse print_end flag (BNG2 parity: output final state when simulation stops early)
+    const auto printEndText = lowercase(stripQuotes(readArgument(action, "print_end", "0")));
+    opts.printEnd = (printEndText == "1" || printEndText == "true");
+
+    // Parse netfile option (BNG2 parity: use custom .net file instead of auto-generating)
+    opts.netfile = stripQuotes(readArgument(action, "netfile", ""));
 
     // Parse output_step_interval (BNG2 parity: output every N internal steps, mainly for SSA/PLA)
     const auto outputStepIntervalText = readArgument(action, "output_step_interval", "");
@@ -367,15 +404,14 @@ void runSimulation(
         std::cerr << "\n";
     }
 
-    // If continuing from previous simulation, restore state
+    // If continuing from previous simulation, use current network species amounts.
+    // The network already has the correct state from the previous simulate (which updated
+    // species amounts) plus any inter-phase modifications via setConcentration/addConcentration.
+    // We intentionally do NOT restore from lastSimulationState, as that would overwrite
+    // inter-phase concentration changes.
     if (continueSimulation && !lastSimulationState.empty()) {
-        if (lastSimulationState.size() == network.species.size()) {
-            for (std::size_t i = 0; i < network.species.size(); ++i) {
-                network.species.get(i).setAmount(lastSimulationState[i]);
-            }
-            if (verbose) {
-                std::cerr << "[bng_cpp] Continuing from previous simulation state\n";
-            }
+        if (verbose) {
+            std::cerr << "[bng_cpp] Continuing from current network state (continue=1)\n";
         }
     }
 
@@ -396,13 +432,21 @@ void runSimulation(
     // Save final state for potential continue
     if (!result.concentrations.empty()) {
         lastSimulationState = result.concentrations.back();
+        // Update network species amounts to reflect final simulation state.
+        // This ensures that continue=1 and setConcentration/addConcentration
+        // between phases work correctly without needing to restore from lastSimulationState.
+        for (std::size_t i = 0; i < network.species.size() && i < lastSimulationState.size(); ++i) {
+            network.species.get(i).setAmount(lastSimulationState[i]);
+        }
     }
+    // Save end time for potential continue (used as tStart for next phase)
+    lastSimulationEndTime = opts.tEnd;
 
     // Write output files
     const auto prefix = simulationPrefix(action, sourcePath);
     const auto outputPrefix = sourcePath.parent_path() / prefix;
     engine::OdeIntegrator integrator(model, network);
-    integrator.writeOutputFiles(outputPrefix.string(), result, opts.printCDAT);
+    integrator.writeOutputFiles(outputPrefix.string(), result, opts.printCDAT, opts.printFunctions, continueSimulation);
 
     if (verbose) {
         if (opts.printCDAT) {
@@ -460,6 +504,7 @@ void ActionDispatch::execute(ast::Model& model, const std::filesystem::path& sou
 
     // For continue simulation: track last simulation state
     std::vector<double> lastSimulationState;
+    double lastSimulationEndTime = 0.0;
 
     // Store loaded .net data for passthrough writing (readFile)
     std::optional<io::NetReader::ParseResult> loadedNetData;
@@ -847,6 +892,7 @@ void ActionDispatch::execute(ast::Model& model, const std::filesystem::path& sou
             }
 
             network = generator.generate(sourcePath);
+            writeCurrentNetwork();  // Triggers NetWriter::buildDerivedRateParams
             continue;
         }
 
@@ -862,7 +908,24 @@ void ActionDispatch::execute(ast::Model& model, const std::filesystem::path& sou
             model.getParameters().evaluateAll();
 
             if (network.has_value()) {
+                // Preserve species amounts before regeneration so that
+                // a subsequent continue=>1 simulation starts from the
+                // correct state rather than the initial seed species amounts.
+                std::vector<double> savedAmounts;
+                if (!lastSimulationState.empty()) {
+                    savedAmounts = lastSimulationState;
+                }
+
                 network = generator.generate(sourcePath);
+
+                // Restore species amounts from the previous simulation state.
+                // Parameter changes affect rate constants but should not reset
+                // species concentrations that evolved during prior simulation.
+                if (!savedAmounts.empty()) {
+                    for (std::size_t i = 0; i < network->species.size() && i < savedAmounts.size(); ++i) {
+                        network->species.get(i).setAmount(savedAmounts[i]);
+                    }
+                }
             }
             continue;
         }
@@ -877,6 +940,45 @@ void ActionDispatch::execute(ast::Model& model, const std::filesystem::path& sou
                 std::cerr << "[bng_cpp] Set model name to '" << value << "'\n";
             }
             continue;
+        }
+
+        if (actionName == "setoption") {
+            // setOption("option_name","value") — sets model-level options
+            // Arguments can come as positional (target/value) or from the
+            // parser's key=>value map.  The parser stores the first quoted
+            // string argument under "target" and the second under "value".
+            const auto optionName = stripQuotes(readArgument(action, "target",
+                stripQuotes(readArgument(action, "option", ""))));
+            const auto optionValue = stripQuotes(readArgument(action, "value", ""));
+            if (optionName.empty()) {
+                throw std::runtime_error("setOption requires an option name");
+            }
+            model.setOption(optionName, optionValue);
+            if (verbose) {
+                std::cerr << "[bng_cpp] setOption(\"" << optionName << "\",\"" << optionValue << "\")\n";
+            }
+            continue;
+        }
+
+        if (actionName == "substanceunits") {
+            // substanceUnits("Concentration") or substanceUnits("Number")
+            const auto value = stripQuotes(readArgument(action, "value",
+                stripQuotes(readArgument(action, "target", ""))));
+            if (!value.empty()) {
+                model.setOption("substanceUnits", value);
+                if (verbose) {
+                    std::cerr << "[bng_cpp] substanceUnits set to '" << value << "'\n";
+                }
+            }
+            continue;
+        }
+
+        if (actionName == "quit") {
+            // quit() — stop processing further actions (BNG2 interpreter exit)
+            if (verbose) {
+                std::cerr << "[bng_cpp] quit() — stopping action processing\n";
+            }
+            return;
         }
 
         if (actionName == "setvolume") {
@@ -899,7 +1001,16 @@ void ActionDispatch::execute(ast::Model& model, const std::filesystem::path& sou
             }
             // Regenerate network if one exists, since volume affects rate constants
             if (network.has_value()) {
+                std::vector<double> savedAmounts;
+                if (!lastSimulationState.empty()) {
+                    savedAmounts = lastSimulationState;
+                }
                 network = generator.generate(sourcePath);
+                if (!savedAmounts.empty()) {
+                    for (std::size_t i = 0; i < network->species.size() && i < savedAmounts.size(); ++i) {
+                        network->species.get(i).setAmount(savedAmounts[i]);
+                    }
+                }
             }
             if (verbose) {
                 std::cerr << "[bng_cpp] Set volume of compartment '" << target << "' to " << value << "\n";
@@ -931,7 +1042,16 @@ void ActionDispatch::execute(ast::Model& model, const std::filesystem::path& sou
             }
             model.getParameters().evaluateAll();
             if (network.has_value()) {
+                std::vector<double> savedAmounts;
+                if (!lastSimulationState.empty()) {
+                    savedAmounts = lastSimulationState;
+                }
                 network = generator.generate(sourcePath);
+                if (!savedAmounts.empty()) {
+                    for (std::size_t i = 0; i < network->species.size() && i < savedAmounts.size(); ++i) {
+                        network->species.get(i).setAmount(savedAmounts[i]);
+                    }
+                }
             }
             if (verbose) {
                 std::cerr << "[bng_cpp] Reset parameters from label '" << label << "'\n";
@@ -1188,7 +1308,7 @@ void ActionDispatch::execute(ast::Model& model, const std::filesystem::path& sou
             ensureNetwork();
             // Don't re-write .net file - already written by generate_network
             // Re-writing would cause duplicate parameters and corrupt stat factors
-            runSimulation(model, action, sourcePath, *network, verbose, lastSimulationState);
+            runSimulation(model, action, sourcePath, *network, verbose, lastSimulationState, lastSimulationEndTime);
             continue;
         }
 
@@ -1226,7 +1346,129 @@ void ActionDispatch::execute(ast::Model& model, const std::filesystem::path& sou
                 writeCurrentNetwork();  // Still write .net file for compatibility
 
                 simulateAction.arguments["prefix"] = simulationPrefix(action, sourcePath, i);
-                runSimulation(model, simulateAction, sourcePath, *network, verbose, lastSimulationState);
+                runSimulation(model, simulateAction, sourcePath, *network, verbose, lastSimulationState, lastSimulationEndTime);
+            }
+            continue;
+        }
+
+        if (actionName == "linearparametersensitivity") {
+            ensureNetwork();
+
+            // Required parameter: t_end
+            const auto tEndText = readArgument(action, "t_end", "");
+            if (tEndText.empty()) {
+                throw std::runtime_error("LinearParameterSensitivity requires t_end");
+            }
+
+            // Optional parameters (Perl BNG2 defaults)
+            const double bump = parseScalarValue(readArgument(action, "bump", "5"), model);
+            const double atol = parseScalarValue(readArgument(action, "atol", "1e-8"), model);
+            const double rtol = parseScalarValue(readArgument(action, "rtol", "1e-8"), model);
+            const auto nSteps = static_cast<std::size_t>(parseScalarValue(readArgument(action, "n_steps", "50"), model));
+            const auto suffix = stripQuotes(readArgument(action, "suffix", ""));
+            const auto initEquilText = lowercase(stripQuotes(readArgument(action, "init_equil", "1")));
+            const bool initEquil = (initEquilText == "1" || initEquilText == "true");
+            const auto reEquilText = lowercase(stripQuotes(readArgument(action, "re_equil", "1")));
+            const bool reEquil = (reEquilText == "1" || reEquilText == "true");
+            const double tEquil = parseScalarValue(readArgument(action, "t_equil", "1e6"), model);
+
+            const auto prefix = stripQuotes(readArgument(action, "prefix", sourcePath.stem().string()));
+            const auto outputDir = sourcePath.parent_path();
+
+            // Save original parameter values
+            std::vector<std::pair<std::string, double>> originalParamValues;
+            for (const auto& param : model.getParameters().all()) {
+                originalParamValues.emplace_back(param.getName(), param.getValue());
+            }
+
+            // Save initial species concentrations
+            const auto initialConc = snapshotConcentrations(*network);
+
+            // Helper to build a simulate action with given prefix
+            auto makeSimulateAction = [&](const std::string& simPrefix, double tEnd, bool steadyState) -> ast::Action {
+                ast::Action simAction;
+                simAction.name = "simulate";
+                simAction.arguments["method"] = "ode";
+                simAction.arguments["t_end"] = std::to_string(tEnd);
+                simAction.arguments["n_steps"] = std::to_string(nSteps);
+                simAction.arguments["atol"] = std::to_string(atol);
+                simAction.arguments["rtol"] = std::to_string(rtol);
+                simAction.arguments["prefix"] = simPrefix;
+                if (steadyState) {
+                    simAction.arguments["steady_state"] = "1";
+                }
+                return simAction;
+            };
+
+            // Initial equilibration of the base model if requested
+            if (initEquil) {
+                std::string equilPrefix = prefix + "_baseequil_" + suffix;
+                auto equilAction = makeSimulateAction(equilPrefix, tEquil, true);
+                runSimulation(model, equilAction, sourcePath, *network, verbose, lastSimulationState, lastSimulationEndTime);
+            }
+
+            // Run base case simulation
+            {
+                std::string basePrefix = prefix + "_basecase_" + suffix;
+                auto baseAction = makeSimulateAction(basePrefix, parseScalarValue(tEndText, model), false);
+                runSimulation(model, baseAction, sourcePath, *network, verbose, lastSimulationState, lastSimulationEndTime);
+            }
+
+            if (verbose) {
+                std::cerr << "[bng_cpp] LinearParameterSensitivity: base case complete\n";
+            }
+
+            // For each parameter, bump and re-simulate
+            for (const auto& [paramName, paramValue] : originalParamValues) {
+                if (paramValue == 0.0) {
+                    if (verbose) {
+                        std::cerr << "[bng_cpp] LinearParameterSensitivity: skipping zero-valued parameter '" << paramName << "'\n";
+                    }
+                    continue;
+                }
+
+                const double newValue = paramValue * (1.0 + bump / 100.0);
+
+                // Restore initial concentrations
+                restoreConcentrations(*network, initialConc);
+
+                // Bump the parameter
+                model.getParameters().add(ast::Parameter(paramName, ast::Expression::number(newValue)));
+                model.getParameters().evaluateAll();
+                network = generator.generate(sourcePath);
+
+                // Re-equilibrate if requested
+                if (reEquil) {
+                    std::string equilPrefix = prefix + "_equil_" + paramName + "_" + suffix;
+                    auto equilAction = makeSimulateAction(equilPrefix, tEquil, true);
+                    runSimulation(model, equilAction, sourcePath, *network, verbose, lastSimulationState, lastSimulationEndTime);
+                }
+
+                // Run bumped simulation
+                std::string bumpPrefix = prefix + "_" + paramName + "_" + suffix;
+                auto bumpAction = makeSimulateAction(bumpPrefix, parseScalarValue(tEndText, model), false);
+                runSimulation(model, bumpAction, sourcePath, *network, verbose, lastSimulationState, lastSimulationEndTime);
+
+                if (verbose) {
+                    std::cerr << "[bng_cpp] LinearParameterSensitivity: completed bump for '" << paramName
+                              << "' (" << paramValue << " -> " << newValue << ")\n";
+                }
+
+                // Restore the parameter
+                model.getParameters().add(ast::Parameter(paramName, ast::Expression::number(paramValue)));
+            }
+
+            // Restore all parameters and regenerate network
+            for (const auto& [paramName, paramValue] : originalParamValues) {
+                model.getParameters().add(ast::Parameter(paramName, ast::Expression::number(paramValue)));
+            }
+            model.getParameters().evaluateAll();
+            network = generator.generate(sourcePath);
+            restoreConcentrations(*network, initialConc);
+
+            if (verbose) {
+                std::cerr << "[bng_cpp] LinearParameterSensitivity: complete ("
+                          << originalParamValues.size() << " parameters)\n";
             }
             continue;
         }
@@ -1284,7 +1526,7 @@ void ActionDispatch::execute(ast::Model& model, const std::filesystem::path& sou
 
                 std::string scanPrefix = prefix + "_forward_scan" + std::to_string(i + 1);
                 simulateAction.arguments["prefix"] = scanPrefix;
-                runSimulation(model, simulateAction, sourcePath, *network, verbose, lastSimulationState);
+                runSimulation(model, simulateAction, sourcePath, *network, verbose, lastSimulationState, lastSimulationEndTime);
                 forwardGdatFiles.push_back((outputDir / (scanPrefix + ".gdat")).string());
             }
 
@@ -1308,7 +1550,7 @@ void ActionDispatch::execute(ast::Model& model, const std::filesystem::path& sou
 
                 std::string scanPrefix = prefix + "_backward_scan" + std::to_string(i + 1);
                 simulateAction.arguments["prefix"] = scanPrefix;
-                runSimulation(model, simulateAction, sourcePath, *network, verbose, lastSimulationState);
+                runSimulation(model, simulateAction, sourcePath, *network, verbose, lastSimulationState, lastSimulationEndTime);
                 backwardGdatFiles.push_back((outputDir / (scanPrefix + ".gdat")).string());
             }
 
@@ -1749,6 +1991,29 @@ void ActionDispatch::execute(ast::Model& model, const std::filesystem::path& sou
                 content = io::RuleInfluenceGraphWriter::toGML(rinfGraph);
                 extension = ".gml";
                 fileSuffix = "_rinf";
+
+            } else if (vizType == "opts") {
+                // Generate visualization options template
+                std::ostringstream opts;
+                opts << "# BNG2 Visualization Options Template\n";
+                opts << "# Generated by bng_cpp\n\n";
+                opts << "# Available visualization types:\n";
+                opts << "#   contactmap        - Molecule contact map (GML/DOT)\n";
+                opts << "#   regulatory         - Regulatory graph (GML)\n";
+                opts << "#   reaction_network   - Reaction network graph (GML)\n";
+                opts << "#   ruleviz_pattern    - Rule pattern visualization (GML)\n";
+                opts << "#   ruleviz_operation  - Rule operation visualization (GML)\n";
+                opts << "#   process            - Bipartite process graph (GML)\n";
+                opts << "#   rinf               - Rule influence graph (GML)\n";
+                opts << "#\n";
+                opts << "# Options:\n";
+                opts << "#   type => \"contactmap\"    # visualization type\n";
+                opts << "#   format => \"gml\"         # output format: gml or dot\n";
+                opts << "#   background => \"white\"   # background color\n";
+                opts << "#   opts => \"\"              # additional options\n";
+                content = opts.str();
+                extension = ".txt";
+                fileSuffix = "_viz_opts";
 
             } else {
                 // Unsupported type - fall back to contact map

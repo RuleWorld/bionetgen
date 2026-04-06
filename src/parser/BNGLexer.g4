@@ -123,6 +123,7 @@ EQUIL: 'equil';
 
 PARAMETER_SCAN: 'parameter_scan';
 BIFURCATE: 'bifurcate';
+LINEAR_PARAMETER_SENSITIVITY: 'LinearParameterSensitivity';
 PARAMETER: 'parameter';
 PAR_MIN: 'par_min';
 PAR_MAX: 'par_max';
@@ -276,6 +277,7 @@ NOT_EQUALS: '!=' | '~=';
 BECOMES: '=';
 LOGICAL_AND: '&&';
 LOGICAL_OR: '||';
+LOGICAL_XOR: '^^';
 // Note: '!' is EMARK (used for bonds and logical NOT - context dependent)
 DIV: '/';
 TIMES: '*';

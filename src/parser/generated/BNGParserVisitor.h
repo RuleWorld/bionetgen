@@ -1,5 +1,5 @@
 
-// Generated from src/parser/BNGParser.g4 by ANTLR 4.13.1
+// Generated from BNGParser.g4 by ANTLR 4.13.2
 
 #pragma once
 
@@ -115,6 +115,8 @@ public:
 
     virtual std::any visitRate_law_or_expr(BNGParser::Rate_law_or_exprContext *context) = 0;
 
+    virtual std::any visitRate_law_xor_expr(BNGParser::Rate_law_xor_exprContext *context) = 0;
+
     virtual std::any visitRate_law_and_expr(BNGParser::Rate_law_and_exprContext *context) = 0;
 
     virtual std::any visitRate_law_eq_expr(BNGParser::Rate_law_eq_exprContext *context) = 0;
@@ -194,6 +196,8 @@ public:
     virtual std::any visitConditional_expr(BNGParser::Conditional_exprContext *context) = 0;
 
     virtual std::any visitOr_expr(BNGParser::Or_exprContext *context) = 0;
+
+    virtual std::any visitXor_expr(BNGParser::Xor_exprContext *context) = 0;
 
     virtual std::any visitAnd_expr(BNGParser::And_exprContext *context) = 0;
 

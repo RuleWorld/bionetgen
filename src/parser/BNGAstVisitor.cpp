@@ -223,9 +223,14 @@ ast::Expression buildAnd(BNGParser::And_exprContext* ctx) {
         ctx, [](auto* child) { return buildEquality(child); });
 }
 
-ast::Expression buildOr(BNGParser::Or_exprContext* ctx) {
-    return buildLeftAssociativeExpression<BNGParser::Or_exprContext, BNGParser::And_exprContext>(
+ast::Expression buildXor(BNGParser::Xor_exprContext* ctx) {
+    return buildLeftAssociativeExpression<BNGParser::Xor_exprContext, BNGParser::And_exprContext>(
         ctx, [](auto* child) { return buildAnd(child); });
+}
+
+ast::Expression buildOr(BNGParser::Or_exprContext* ctx) {
+    return buildLeftAssociativeExpression<BNGParser::Or_exprContext, BNGParser::Xor_exprContext>(
+        ctx, [](auto* child) { return buildXor(child); });
 }
 
 ast::Expression buildExpression(BNGParser::ExpressionContext* ctx) {
@@ -288,9 +293,14 @@ ast::Expression buildRateLawAnd(BNGParser::Rate_law_and_exprContext* ctx) {
         ctx, [](auto* child) { return buildRateLawEq(child); });
 }
 
-ast::Expression buildRateLawOr(BNGParser::Rate_law_or_exprContext* ctx) {
-    return buildLeftAssociativeExpression<BNGParser::Rate_law_or_exprContext, BNGParser::Rate_law_and_exprContext>(
+ast::Expression buildRateLawXor(BNGParser::Rate_law_xor_exprContext* ctx) {
+    return buildLeftAssociativeExpression<BNGParser::Rate_law_xor_exprContext, BNGParser::Rate_law_and_exprContext>(
         ctx, [](auto* child) { return buildRateLawAnd(child); });
+}
+
+ast::Expression buildRateLawOr(BNGParser::Rate_law_or_exprContext* ctx) {
+    return buildLeftAssociativeExpression<BNGParser::Rate_law_or_exprContext, BNGParser::Rate_law_xor_exprContext>(
+        ctx, [](auto* child) { return buildRateLawXor(child); });
 }
 
 ast::Expression buildRateLawExpression(BNGParser::Rate_law_exprContext* ctx) {

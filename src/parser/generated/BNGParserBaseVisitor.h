@@ -1,5 +1,5 @@
 
-// Generated from src/parser/BNGParser.g4 by ANTLR 4.13.1
+// Generated from BNGParser.g4 by ANTLR 4.13.2
 
 #pragma once
 
@@ -207,6 +207,10 @@ public:
     return visitChildren(ctx);
   }
 
+  virtual std::any visitRate_law_xor_expr(BNGParser::Rate_law_xor_exprContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
   virtual std::any visitRate_law_and_expr(BNGParser::Rate_law_and_exprContext *ctx) override {
     return visitChildren(ctx);
   }
@@ -364,6 +368,10 @@ public:
   }
 
   virtual std::any visitOr_expr(BNGParser::Or_exprContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitXor_expr(BNGParser::Xor_exprContext *ctx) override {
     return visitChildren(ctx);
   }
 

@@ -1,8 +1,0 @@
-begin model
-begin molecule types
-  A(x)
-end molecule types
-begin seed species
-  A(x) 2
-end seed species
-end model

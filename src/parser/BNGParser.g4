@@ -277,7 +277,11 @@ rate_law_expr
     ;
 
 rate_law_or_expr
-    : rate_law_and_expr (LOGICAL_OR rate_law_and_expr)*
+    : rate_law_xor_expr (LOGICAL_OR rate_law_xor_expr)*
+    ;
+
+rate_law_xor_expr
+    : rate_law_and_expr (LOGICAL_XOR rate_law_and_expr)*
     ;
 
 rate_law_and_expr
@@ -417,7 +421,7 @@ set_cmd
 
 other_action_cmd
     : (SAVECONCENTRATIONS | RESETCONCENTRATIONS | SAVEPARAMETERS | RESETPARAMETERS | QUIT
-       | PARAMETER_SCAN | BIFURCATE | VISUALIZE | GENERATEHYBRIDMODEL | READFILE | SETVOLUME
+       | PARAMETER_SCAN | BIFURCATE | LINEAR_PARAMETER_SENSITIVITY | VISUALIZE | GENERATEHYBRIDMODEL | READFILE | SETVOLUME
        | INCLUDE_MODEL | INCLUDE_NETWORK)
       LPAREN (action_args | action_arg_value)? RPAREN SEMI? LB*
     ;
@@ -515,7 +519,11 @@ conditional_expr
     ;
 
 or_expr
-    : and_expr (LOGICAL_OR and_expr)*
+    : xor_expr (LOGICAL_OR xor_expr)*
+    ;
+
+xor_expr
+    : and_expr (LOGICAL_XOR and_expr)*
     ;
 
 and_expr

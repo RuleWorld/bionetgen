@@ -32,6 +32,12 @@ std::string reactionSignature(const Rxn& reaction) {
         out << sortedProducts[i];
     }
     out << "@" << reaction.getRateLaw();
+    // Include rule name in signature: BNG2 (Perl) never merges reactions from
+    // different rules, even if they have the same stoichiometry and rate.
+    // Each rule represents a distinct biological process.
+    if (!reaction.getOriginRuleName().empty()) {
+        out << "#" << reaction.getOriginRuleName();
+    }
     return out.str();
 }
 

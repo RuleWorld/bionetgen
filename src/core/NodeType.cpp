@@ -51,7 +51,13 @@ NodeType::get_label ( ) const
 bool
 NodeType::operator== ( const NodeType & type2 ) const
 {
-    return ( type_name == type2.type_name );
+    if ( type_name != type2.type_name )  return false;
+    // Also compare parent type to distinguish molecule nodes from component
+    // nodes.  Without this check, a component named "X" on one molecule can
+    // incorrectly match a molecule named "X" during subgraph isomorphism.
+    if ( parent_type == 0 && type2.parent_type == 0 )  return true;
+    if ( parent_type == 0 || type2.parent_type == 0 )  return false;
+    return ( parent_type->type_name == type2.parent_type->type_name );
 }
 
 
@@ -138,12 +144,15 @@ NodeType::add_edges_out ( NodeType & node_type, NodeFunction & nodefcn )
 }
 
      
-// write NodeType to a string            
+// write NodeType to a string
 std::string
 NodeType::get_BNG2_string ( bool instance ) const
 {
     std::stringstream s;
-    // TODO: implement non-instance version    
+    // For both instance and non-instance (pattern) modes, the BNG2 string
+    // representation of a base NodeType is simply the type name label.
+    // No additional distinction is needed at this level; subclasses
+    // (EntityType, BondType) override for type-specific formatting.
     s << get_label();
     return s.str();
 }
@@ -166,12 +175,15 @@ EntityType::EntityType ( const std::string & type_name,
 }
 
 
-// write EntityType to a BNG2 string            
+// write EntityType to a BNG2 string
 std::string
 EntityType::get_BNG2_string ( bool instance ) const
 {
     std::stringstream s;
-    // TODO: implement non-instance version
+    // For both instance and non-instance (pattern) modes, the BNG2 string
+    // representation of an EntityType is the type name label. In BNG2 syntax,
+    // entity types (molecules, components) are written the same way regardless
+    // of whether they appear in a pattern or a fully-specified species.
     s << get_label();
     return s.str();
 } 

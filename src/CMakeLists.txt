@@ -110,6 +110,9 @@ target_link_libraries(bng_engine PUBLIC
     antlr4_static
     sundials_cvode_static
     sundials_nvecserial_static
+    sundials_sunlinsoldense_static
+    sundials_sunlinsolspgmr_static
+    sundials_sunmatrixdense_static
 )
 target_compile_definitions(bng_engine PUBLIC BNG_CPP_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
 

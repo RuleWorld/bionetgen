@@ -56,7 +56,7 @@ const BNGcore::EntityType& GraphTypeRegistry::ensureComponentType(const Molecule
         runtimeType.stateType = std::move(labelType);
     }
 
-    runtimeType.nodeType = std::make_unique<BNGcore::EntityType>(componentType.name, BNGcore::ENTITY_NODE_TYPE, *stateType);
+    runtimeType.nodeType = std::make_unique<BNGcore::EntityType>(componentType.name, BNGcore::COMPONENT_NODE_TYPE, *stateType);
     runtimeType.nodeType->add_edges_out(BNGcore::BOND_NODE_TYPE, 1);
     auto moleculeIter = moleculeTypes_.find(moleculeType.getName());
     if (moleculeIter != moleculeTypes_.end()) {

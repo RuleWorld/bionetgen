@@ -387,7 +387,7 @@ BNGcore::Node* findSharedBondNode(BNGcore::Node* lhsComponent, BNGcore::Node* rh
     return nullptr;
 }
 
-void cloneProductMolecule(
+std::unordered_map<BNGcore::Node*, BNGcore::Node*> cloneProductMolecule(
     const PatternInfo& sourceInfo,
     std::size_t moleculeIndex,
     BNGcore::PatternGraph& target) {
@@ -417,6 +417,7 @@ void cloneProductMolecule(
             target.add_edge(componentClone, bondClone);
         }
     }
+    return clones;
 }
 
 std::unordered_map<BNGcore::Node*, BNGcore::Node*> cloneGraphIntoTarget(
@@ -695,13 +696,20 @@ std::string canonicalNodeId(const BNGcore::Node* node) {
 }
 
 std::string embeddingSignature(const BNGcore::PatternGraph& pattern, const BNGcore::Map& map,
-                               const BNGcore::PatternGraph& targetGraph) {
+                               const BNGcore::PatternGraph& targetGraph,
+                               bool distinguishMolecules = false) {
     // Build a signature that identifies distinct embeddings.
-    // For molecule nodes in the pattern, use the target molecule's canonical index
-    // (not canonicalNodeId) to preserve distinct reactions at symmetric positions.
-    // For component/bond nodes, use canonicalNodeId to collapse equivalent components.
-    // This matches Perl's behavior: each distinct reactant molecule generates a separate
-    // reaction, even if the molecules are automorphic in the species graph.
+    //
+    // When distinguishMolecules is false (default — used for context-only
+    // patterns that are not modified), canonicalNodeId collapses automorphic
+    // target molecules so all automorphic embeddings collapse into one
+    // EmbeddingResult.  This is the correct Perl behavior.
+    //
+    // When distinguishMolecules is true (used for -> 0 DeleteMolecules where
+    // every pattern is reactive), use the target node's pointer address so
+    // embeddings mapping to DIFFERENT molecules produce distinct signatures.
+    // Embeddings mapping to the SAME set of molecules (symmetric pattern on
+    // a complex) still collapse because the sorted pointer set is identical.
     std::vector<std::string> parts;
     for (auto nodeIter = pattern.begin(); nodeIter != pattern.end(); ++nodeIter) {
         auto* target = map.mapf(*nodeIter);
@@ -712,7 +720,11 @@ std::string embeddingSignature(const BNGcore::PatternGraph& pattern, const BNGco
         out << (*nodeIter)->get_type().get_type_name()
             << "|" << (*nodeIter)->get_state().get_BNG2_string()
             << "->";
-        out << canonicalNodeId(target);
+        if (distinguishMolecules && isMoleculeNode(**nodeIter)) {
+            out << reinterpret_cast<std::uintptr_t>(target);
+        } else {
+            out << canonicalNodeId(target);
+        }
         parts.push_back(out.str());
     }
     std::sort(parts.begin(), parts.end());
@@ -884,6 +896,8 @@ const std::vector<ReactionRule::TransformOp>& ReactionRule::getOperations() cons
 
 void ReactionRule::initialize() {
     operations_.clear();
+    productOnlyStateChanges_.clear();
+    hasMoleculeTypeMismatch_ = false;
     reactionCenter_.assign(reactantPatterns_.size(), {});
     patternMatches_.assign(reactantPatterns_.size(), {});
     matchesInitialized_ = true;
@@ -904,6 +918,7 @@ void ReactionRule::initialize() {
     std::vector<std::optional<std::size_t>> productToReactant(productMolecules.size());
     std::vector<bool> reactantMatched(reactantMolecules.size(), false);
 
+    // First pass: match by exact key (molecule name + sorted component names)
     for (std::size_t i = 0; i < productMolecules.size(); ++i) {
         auto& bucket = unmatchedReactantsByKey[moleculeKey(productMolecules[i])];
         if (!bucket.empty()) {
@@ -911,6 +926,66 @@ void ReactionRule::initialize() {
             bucket.erase(bucket.begin());
             productToReactant[i] = matchedIndex;
             reactantMatched[matchedIndex] = true;
+        }
+    }
+
+    // NOTE: Perl BNG's findMaps uses labels that include all component names.
+    // If reactant and product molecules of the same type have different component
+    // sets, they do NOT match. The reactant is deleted and the product is added
+    // fresh. We do NOT do a second pass matching by type name alone, as that
+    // would incorrectly map molecules with differing component sets.
+
+    // Detect molecule replacement: when there are BOTH unmatched reactant molecules
+    // (deleted) AND unmatched product molecules (added), the rule effectively
+    // replaces one molecule type with another.  Bonded partners of the deleted
+    // molecule become orphan fragments that should NOT survive as products (the
+    // new molecule does not inherit the old one's bonds).  This covers:
+    //  - Same type name but different component sets (e.g., GPCR(b,loc) -> GPCR(l,b,loc,s))
+    //  - Different type names entirely (e.g., FGFR(s~P) -> Internalized_Rec())
+    //
+    // When there are only unmatched reactant molecules and no unmatched products
+    // (e.g., RevErb(b) + Bmal1() -> RevErb(b) + 0), the deletion is explicit
+    // and orphan fragments should be KEPT as products (Perl behavior).
+    hasMoleculeTypeMismatch_ = false;
+    if (!hasModifier(modifiers_, "deletemolecules")) {
+        bool hasUnmatchedReactant = false;
+        bool hasUnmatchedProduct = false;
+        for (std::size_t i = 0; i < reactantMolecules.size(); ++i) {
+            if (!reactantMatched[i]) {
+                hasUnmatchedReactant = true;
+                break;
+            }
+        }
+        for (std::size_t i = 0; i < productMolecules.size(); ++i) {
+            if (!productToReactant[i].has_value()) {
+                hasUnmatchedProduct = true;
+                break;
+            }
+        }
+        hasMoleculeTypeMismatch_ = hasUnmatchedReactant && hasUnmatchedProduct;
+    }
+
+    // Build per-molecule compartment transport table: for each product molecule that
+    // has an explicit compartment annotation AND maps to a reactant molecule, record
+    // the mapping so buildReaction can apply it.  This handles bond-forming rules like
+    // R(l)@PM + L(r)@EC <-> R(l!1)@PM.L(r!1)@PM where L moves from EC to PM.
+    moleculeCompartmentTransports_.clear();
+    for (std::size_t i = 0; i < productMolecules.size(); ++i) {
+        if (!productToReactant[i].has_value()) continue;
+        const auto& pRef = productMolecules[i].base;
+        const auto& pMol = productInfo[pRef.patternIndex].molecules[pRef.moleculeIndex];
+        const std::string pComp = pMol.node->get_compartment();
+        if (pComp.empty()) continue;
+        const auto& rRef = reactantMolecules[*productToReactant[i]].base;
+        const auto& rMol = reactantInfo[rRef.patternIndex].molecules[rRef.moleculeIndex];
+        const std::string rComp = rMol.node->get_compartment();
+        // Only record if compartments differ (actual transport) or if the reactant
+        // molecule has no compartment but the product does (assignment).
+        if (rComp != pComp) {
+            moleculeCompartmentTransports_.push_back(MoleculeCompartmentTransport{
+                pRef.patternIndex, pRef.moleculeIndex,
+                pComp,
+                rRef.patternIndex, rRef.moleculeIndex});
         }
     }
 
@@ -984,6 +1059,28 @@ void ReactionRule::initialize() {
             if (!matchedByTag) {
                 auto& bucket = reactantComponentsByName[productComponent.name];
                 if (bucket.empty()) {
+                    // Product introduces a component not in the reactant pattern.
+                    // Record a product-only state change to apply during buildReaction.
+                    // Check if the product component has an actual bound bond (not just
+                    // an unbound "!-" marker).  An unbound marker means "free" — any
+                    // existing bond on the species component should be broken.
+                    bool hasRealBound = false;
+                    for (auto* bn : productComponent.bondNodes) {
+                        const std::string bst = bn->get_state().get_BNG2_string();
+                        if (bst != "!-") {
+                            hasRealBound = true;
+                            break;
+                        }
+                    }
+                    if (!productComponent.state.empty() || !hasRealBound) {
+                        ProductOnlyStateChange posc;
+                        posc.reactantPatternIndex = reactantMolRef.base.patternIndex;
+                        posc.reactantMoleculeIndex = reactantMolRef.base.moleculeIndex;
+                        posc.componentName = productComponent.name;
+                        posc.newState = productComponent.state;  // may be empty
+                        posc.breakBond = !hasRealBound;  // product has no real bond → break existing
+                        productOnlyStateChanges_.push_back(posc);
+                    }
                     continue;
                 }
                 const std::size_t reactantComponentIndex = bucket.front();
@@ -1014,13 +1111,28 @@ void ReactionRule::initialize() {
 
     const auto reactantBonds = collectBonds(reactantInfo);
     std::set<BondPair> remappedProductBonds;
+    crossBonds_.clear();
+    newMoleculeBonds_.clear();
     for (const auto& productBond : collectBonds(productInfo)) {
         const auto lhs = productToReactantComponent.find(productBond.first);
         const auto rhs = productToReactantComponent.find(productBond.second);
-        if (lhs == productToReactantComponent.end() || rhs == productToReactantComponent.end()) {
-            continue;
+        if (lhs != productToReactantComponent.end() && rhs != productToReactantComponent.end()) {
+            remappedProductBonds.insert(canonicalBondPair(lhs->second, rhs->second));
+        } else if (lhs != productToReactantComponent.end() && rhs == productToReactantComponent.end()) {
+            // Bond from matched reactant component to new product molecule component
+            crossBonds_.push_back(CrossBondRef{lhs->second, productBond.second});
+        } else if (lhs == productToReactantComponent.end() && rhs != productToReactantComponent.end()) {
+            // Bond from new product molecule component to matched reactant component
+            crossBonds_.push_back(CrossBondRef{rhs->second, productBond.first});
+        } else {
+            // Both sides unmapped: bond between two newly-added molecules.
+            // Only record inter-molecule bonds (different molecules); intra-molecule
+            // bonds within the same new molecule are handled by cloneProductMolecule.
+            if (productBond.first.patternIndex != productBond.second.patternIndex ||
+                productBond.first.moleculeIndex != productBond.second.moleculeIndex) {
+                newMoleculeBonds_.push_back(NewMoleculeBondRef{productBond.first, productBond.second});
+            }
         }
-        remappedProductBonds.insert(canonicalBondPair(lhs->second, rhs->second));
     }
 
     for (const auto& productBond : remappedProductBonds) {
@@ -1181,26 +1293,49 @@ std::vector<ReactionRule::EmbeddingResult> ReactionRule::findEmbeddingsForSpecie
         BNGcore::List<BNGcore::Map> maps;
         matcher.find_maps(maps);
         std::size_t mapsBeforeDedup = 0;
-        for (auto mapIter = maps.begin(); mapIter != maps.end(); ++mapIter) {
-            ++mapsBeforeDedup;
+        {
+            auto countIter = maps.begin();
+            while (countIter != maps.end()) {
+                ++mapsBeforeDedup;
+                ++countIter;
+            }
         }
 
         // For species-level transport rules (prefix compartment like @EM:R → @PM:R),
         // Perl treats the rule as applying to the entire species, not individual molecules.
         // Only keep one embedding per species (first valid one).
+        // For pure degradation rules (-> 0 without DeleteMolecules), all embeddings of
+        // a pattern into the same species produce the same reaction (species → trash),
+        // so only one embedding per species is needed. Perl generates one reaction.
         const bool speciesLevelTransport = reactantPatterns_.at(patternIndex).isCompartmentPrefix();
+        const bool pureDegradation = operations_.empty() && productPatterns_.empty()
+            && !reactantPatterns_.empty() && !hasModifier(modifiers_, "deletemolecules");
         bool foundEmbeddingForSpecies = false;
 
         // Track signature → index in results for multiplicity counting
         std::unordered_map<std::string, std::size_t> signatureToResultIndex;
         for (auto mapIter = maps.begin(); mapIter != maps.end(); ++mapIter) {
-            if (speciesLevelTransport && foundEmbeddingForSpecies) break;
+            if ((speciesLevelTransport || pureDegradation) && foundEmbeddingForSpecies) break;
             if (!embeddingRespectsNodeStates(pattern, *mapIter)) {
                 continue;
             }
+            // When the reaction center for this pattern is empty (no transformations
+            // on the matched molecule), all embeddings into the same species produce
+            // the same reaction — use only the species index as signature.
+            // Exception: -> 0 DeleteMolecules rules have empty reaction centers
+            // (initialize() returned early) but different embeddings may delete
+            // different molecules, producing distinct reactions. Use pointer-based
+            // embeddingSignature to distinguish them.
+            // When the reaction center is non-empty, use the reaction center signature
+            // to distinguish embeddings with different reactive sites.
+            const bool isDeleteMoleculesDegradation = operations_.empty()
+                && productPatterns_.empty() && !reactantPatterns_.empty()
+                && hasModifier(modifiers_, "deletemolecules");
             auto sigBase = std::to_string(speciesIndex) + "|" +
                 (reactionCenter_.at(patternIndex).empty()
-                    ? embeddingSignature(pattern, *mapIter, targetGraph)
+                    ? (isDeleteMoleculesDegradation
+                        ? embeddingSignature(pattern, *mapIter, targetGraph, /*distinguishMolecules=*/true)
+                        : std::string())
                     : reactionCenterSignature(reactantInfo, reactionCenter_.at(patternIndex), *mapIter, targetGraph));
             // For rules with local function rates (scope-prefix %x:: or tag-label %x
             // with energy patterns), distinguish embeddings by observable counts for
@@ -1238,7 +1373,7 @@ std::vector<ReactionRule::EmbeddingResult> ReactionRule::findEmbeddingsForSpecie
             }
             signatureToResultIndex[signature] = results.size();
             results.push_back(EmbeddingResult {speciesIndex, *mapIter, 1});
-            if (speciesLevelTransport) foundEmbeddingForSpecies = true;
+            if (speciesLevelTransport || pureDegradation) foundEmbeddingForSpecies = true;
         }
         if (debug && mapsBeforeDedup > 0) {
             std::cerr << "[DEBUG] Rule " << ruleName_ << " pattern " << patternIndex
@@ -1259,6 +1394,11 @@ void ReactionRule::clearPatternMatchCache() const {
     lastProcessedInIteration_.clear();
     // Reset synthesis flag so zero-order rules fire again on re-generation
     synthesisApplied_ = false;
+    // Recursively clear the reverse rule's cache so that bidirectional rules
+    // re-discover embeddings on the next generate_network call.
+    if (reverseRule_) {
+        reverseRule_->clearPatternMatchCache();
+    }
 }
 
 std::size_t ReactionRule::expandRule(
@@ -1665,6 +1805,9 @@ bool ReactionRule::buildReaction(
         }
     }
 
+    // Map from product pattern nodes to aggregate graph clones (populated by AddMolecule)
+    std::unordered_map<BNGcore::Node*, BNGcore::Node*> productCloneMaps;
+
     for (const auto& operation : operations_) {
         switch (operation.type) {
         case TransformOp::Type::AddBond: {
@@ -1725,9 +1868,14 @@ bool ReactionRule::buildReaction(
             graph->set_node_state(componentNode, state);
             break;
         }
-        case TransformOp::Type::AddMolecule:
-            cloneProductMolecule(productInfo[operation.patternIndex], operation.moleculeIndex, aggregateGraph);
+        case TransformOp::Type::AddMolecule: {
+            auto addMolClones = cloneProductMolecule(productInfo[operation.patternIndex], operation.moleculeIndex, aggregateGraph);
+            // Merge into a global product→aggregate map for cross-bond application later
+            for (auto& [src, dst] : addMolClones) {
+                productCloneMaps[src] = dst;
+            }
             break;
+        }
         case TransformOp::Type::DeleteMolecule:
             {
                 ComponentRef moleculeRef {operation.patternIndex, operation.moleculeIndex, 0};
@@ -1754,6 +1902,156 @@ bool ReactionRule::buildReaction(
                 safeDeleteNode(*graph, mappedMolecule);
             }
             break;
+        }
+    }
+
+    // Apply product-only state changes: when the product pattern specifies a
+    // component with an explicit state (e.g. s~U) or no bond that was NOT
+    // mentioned in the reactant pattern, we must find that component on the
+    // matched species molecule and apply the state change / break its bond.
+    // Example: BetaR(l,g,loc~cyt) -> BetaR(l,g,loc~mem,s~U) — the 's' component
+    // is absent from the reactant pattern but the product requires s~U and no bond.
+    if (!productOnlyStateChanges_.empty()) {
+        for (const auto& posc : productOnlyStateChanges_) {
+            // Find the molecule node in the aggregate graph
+            auto* moleculePatternNode = getMoleculeNode(reactantInfo, posc.reactantPatternIndex, posc.reactantMoleculeIndex);
+            ComponentRef molRef{posc.reactantPatternIndex, posc.reactantMoleculeIndex, 0};
+            auto* moleculeAggNode = mapMatchedNodeToAggregate(molRef, moleculePatternNode);
+            if (moleculeAggNode == nullptr) continue;
+
+            // Walk the component children of this molecule to find the named component
+            for (auto edge = moleculeAggNode->edges_out_begin(); edge != moleculeAggNode->edges_out_end(); ++edge) {
+                if (!isComponentNode(**edge)) continue;
+                if ((*edge)->get_type().get_type_name() != posc.componentName) continue;
+
+                // Apply state change if requested
+                if (!posc.newState.empty()) {
+                    const auto& stateType = (*edge)->get_type().get_state_type();
+                    if (const auto* labelType = dynamic_cast<const BNGcore::LabelStateType*>(&stateType)) {
+                        BNGcore::LabelState state(*labelType, posc.newState);
+                        graph->set_node_state(*edge, state);
+                    }
+                }
+
+                // Break bond if requested (product has no bond on this component)
+                if (posc.breakBond) {
+                    std::vector<BNGcore::Node*> boundBondNodes;
+                    for (auto be = (*edge)->edges_out_begin(); be != (*edge)->edges_out_end(); ++be) {
+                        if (isBondNode(**be)) {
+                            // Only break actual bound bonds, not unbound "!-" markers
+                            if ((*be)->get_state().get_BNG2_string() != "!-") {
+                                boundBondNodes.push_back(*be);
+                            }
+                        }
+                    }
+                    for (auto* bn : boundBondNodes) {
+                        for (auto pe = bn->edges_in_begin(); pe != bn->edges_in_end(); ++pe) {
+                            if (*pe != *edge) {
+                                auto* unbondNode = new BNGcore::Node(BNGcore::BOND_NODE_TYPE);
+                                unbondNode->set_state(BNGcore::UNBOUND_STATE);
+                                graph->add_node(unbondNode);
+                                graph->add_edge(*pe, unbondNode);
+                            }
+                        }
+                        safeDeleteNode(*graph, bn);
+                    }
+                }
+                break; // Only apply to the first matching component
+            }
+        }
+    }
+
+    // Apply cross-boundary bonds: connect existing (reactant-matched) components
+    // to newly-added product molecule components. This handles rules like
+    // A(x) -> A(x!1).B(y!1) where B is new and the bond between A.x and B.y
+    // must be established after AddMolecule clones B into the aggregate graph.
+    if (!crossBonds_.empty() && !productCloneMaps.empty()) {
+        for (const auto& crossBond : crossBonds_) {
+            // Find the reactant-side component in the aggregate graph
+            const auto& reactantCompInfo = getComponentInfo(reactantInfo, crossBond.reactantComponent);
+            auto* existingComp = mapMatchedNodeToAggregate(crossBond.reactantComponent, reactantCompInfo.node);
+            if (existingComp == nullptr) continue;
+
+            // Find the product-side component in the aggregate graph (cloned by AddMolecule)
+            const auto& productCompInfo = getComponentInfo(productInfo, crossBond.productComponent);
+            auto productCloneIt = productCloneMaps.find(productCompInfo.node);
+            if (productCloneIt == productCloneMaps.end()) continue;
+            auto* newComp = productCloneIt->second;
+
+            // Remove any dangling unbound bond nodes on the existing component
+            auto* existingBond = findAttachedUnboundBondNode(existingComp);
+            if (existingBond) safeDeleteNode(*graph, existingBond);
+
+            // Remove any dangling bond nodes on the new component (cloned from product pattern)
+            // These are bond nodes that were cloned but not connected to the other side.
+            {
+                std::vector<BNGcore::Node*> danglingBonds;
+                for (auto edge = newComp->edges_out_begin(); edge != newComp->edges_out_end(); ++edge) {
+                    if (isBondNode(**edge)) {
+                        danglingBonds.push_back(*edge);
+                    }
+                }
+                for (auto* bn : danglingBonds) {
+                    safeDeleteNode(*graph, bn);
+                }
+            }
+
+            // Create a new bond connecting the two components
+            auto* bondNode = new BNGcore::Node(BNGcore::BOND_NODE_TYPE);
+            bondNode->set_state(BNGcore::BOUND_STATE);
+            graph->add_node(bondNode);
+            graph->add_edge(existingComp, bondNode);
+            graph->add_edge(newComp, bondNode);
+        }
+    }
+
+    // Apply bonds between two newly-added product molecules.
+    // Both sides were cloned by separate AddMolecule operations.
+    if (debug) {
+        std::cerr << "[BUILD_RXN] newMoleculeBonds=" << newMoleculeBonds_.size()
+                  << " productCloneMaps=" << productCloneMaps.size() << "\n";
+    }
+    if (!newMoleculeBonds_.empty() && !productCloneMaps.empty()) {
+        for (const auto& nmBond : newMoleculeBonds_) {
+            if (debug) {
+                const auto& comp1Info = getComponentInfo(productInfo, nmBond.productComponent1);
+                const auto& comp2Info = getComponentInfo(productInfo, nmBond.productComponent2);
+                auto it1 = productCloneMaps.find(comp1Info.node);
+                auto it2 = productCloneMaps.find(comp2Info.node);
+                std::cerr << "[BUILD_RXN] nmBond: comp1.found=" << (it1 != productCloneMaps.end())
+                          << " comp2.found=" << (it2 != productCloneMaps.end())
+                          << " p1=" << nmBond.productComponent1.patternIndex << "." << nmBond.productComponent1.moleculeIndex << "." << nmBond.productComponent1.componentIndex
+                          << " p2=" << nmBond.productComponent2.patternIndex << "." << nmBond.productComponent2.moleculeIndex << "." << nmBond.productComponent2.componentIndex << "\n";
+            }
+            const auto& comp1Info = getComponentInfo(productInfo, nmBond.productComponent1);
+            const auto& comp2Info = getComponentInfo(productInfo, nmBond.productComponent2);
+            auto it1 = productCloneMaps.find(comp1Info.node);
+            auto it2 = productCloneMaps.find(comp2Info.node);
+            if (it1 == productCloneMaps.end() || it2 == productCloneMaps.end()) continue;
+            auto* comp1 = it1->second;
+            auto* comp2 = it2->second;
+
+            // Remove dangling bond nodes on both sides
+            {
+                std::vector<BNGcore::Node*> dangling;
+                for (auto edge = comp1->edges_out_begin(); edge != comp1->edges_out_end(); ++edge) {
+                    if (isBondNode(**edge)) dangling.push_back(*edge);
+                }
+                for (auto* bn : dangling) safeDeleteNode(*graph, bn);
+            }
+            {
+                std::vector<BNGcore::Node*> dangling;
+                for (auto edge = comp2->edges_out_begin(); edge != comp2->edges_out_end(); ++edge) {
+                    if (isBondNode(**edge)) dangling.push_back(*edge);
+                }
+                for (auto* bn : dangling) safeDeleteNode(*graph, bn);
+            }
+
+            auto* bondNode = new BNGcore::Node(BNGcore::BOND_NODE_TYPE);
+            bondNode->set_state(BNGcore::BOUND_STATE);
+            graph->add_node(bondNode);
+            graph->add_edge(comp1, bondNode);
+            graph->add_edge(comp2, bondNode);
         }
     }
 
@@ -1821,7 +2119,8 @@ bool ReactionRule::buildReaction(
     // When reactant and product patterns have different species-level compartments
     // (e.g., @PM:R.R -> @EM:R.R), update per-molecule compartments in the aggregate
     // graph before splitting. Uses Perl's separated_by_volume logic for surface transport.
-    if (!g_compartmentParents.empty()) {
+    // Also handles peer-level transport (e.g., @Cell1 <-> @Cell2 with no parent/child).
+    if (!g_compartmentDimensions.empty()) {
         for (std::size_t pi = 0; pi < reactantPatterns_.size() && pi < productPatterns_.size(); ++pi) {
             const auto& compR = reactantPatterns_[pi].getCompartment();
             const auto& compP = (pi < productPatterns_.size()) ? productPatterns_[pi].getCompartment() : std::string();
@@ -1873,33 +2172,22 @@ bool ReactionRule::buildReaction(
         }
 
         // --- Per-molecule compartment transport ---
-        // Detect when individual molecules change compartment between reactant and product
-        // patterns (e.g., Im(fg!1)@CP → Im(fg!1)@NU). Apply the change to the aggregate graph.
+        // Apply compartment changes from the pre-computed moleculeCompartmentTransports_
+        // table.  This handles both same-pattern and cross-pattern molecule mappings
+        // (e.g., R(l)@PM + L(r)@EC <-> R(l!1)@PM.L(r!1)@PM where L moves EC→PM).
         std::unordered_map<BNGcore::Node*, std::string> moleculeTransported; // clone → new compartment
-        for (std::size_t pi = 0; pi < reactantPatterns_.size() && pi < productPatterns_.size(); ++pi) {
-            const auto& rInfo = reactantInfo[pi];
-            const auto& pInfo = productInfo[pi];
-            for (std::size_t mi = 0; mi < rInfo.molecules.size() && mi < pInfo.molecules.size(); ++mi) {
-                const auto& rMol = rInfo.molecules[mi];
-                const auto& pMol = pInfo.molecules[mi];
-                const std::string rComp = rMol.node->get_compartment();
-                const std::string pComp = pMol.node->get_compartment();
-                if (rComp.empty() || pComp.empty() || rComp == pComp) continue;
-                // This molecule changes compartment: rComp → pComp
-                // Find the clone of the matched target molecule in the aggregate graph
-                if (pi < cloneMaps.size()) {
-                    // The matched target molecule for pattern molecule mi
-                    auto* patternMolNode = rMol.node;
-                    auto* targetMolNode = matchSet[pi].map.mapf(patternMolNode);
-                    if (targetMolNode) {
-                        auto cloneIt = cloneMaps[pi].find(targetMolNode);
-                        if (cloneIt != cloneMaps[pi].end()) {
-                            cloneIt->second->set_compartment(pComp);
-                            moleculeTransported[cloneIt->second] = pComp;
-                        }
-                    }
-                }
-            }
+        for (const auto& mct : moleculeCompartmentTransports_) {
+            const std::size_t rpi = mct.reactantPatternIndex;
+            const std::size_t rmi = mct.reactantMoleculeIndex;
+            if (rpi >= cloneMaps.size() || rpi >= reactantInfo.size()) continue;
+            if (rmi >= reactantInfo[rpi].molecules.size()) continue;
+            auto* patternMolNode = reactantInfo[rpi].molecules[rmi].node;
+            auto* targetMolNode = matchSet[rpi].map.mapf(patternMolNode);
+            if (!targetMolNode) continue;
+            auto cloneIt = cloneMaps[rpi].find(targetMolNode);
+            if (cloneIt == cloneMaps[rpi].end()) continue;
+            cloneIt->second->set_compartment(mct.productCompartment);
+            moleculeTransported[cloneIt->second] = mct.productCompartment;
         }
 
         // --- MoveConnected: transport connected cargo molecules ---
@@ -1963,8 +2251,86 @@ bool ReactionRule::buildReaction(
         }
     }
 
+    const bool deleteMoleculesModifier = hasModifier(modifiers_, "deletemolecules");
     if (productPatterns_.empty() && !reactantPatterns_.empty()) {
-        // Degradation rule (e.g., A() -> 0): no products
+        if (deleteMoleculesModifier) {
+            // DeleteMolecules rule applied to a complex: delete the matched
+            // molecules from the aggregate graph, then any remaining connected
+            // components become product species.
+            // E.g., VEGF(r!1).VEGFR2(l!1) -> 0 DeleteMolecules applied to a dimer
+            // should leave the other half of the complex as a product.
+
+            // Delete matched molecules from aggregate graph
+            const auto reactantInfoLocal = describePatterns(reactantPatterns_);
+            for (std::size_t pi = 0; pi < reactantPatterns_.size(); ++pi) {
+                for (const auto& molInfo : reactantInfoLocal[pi].molecules) {
+                    auto* targetMol = matchSet[pi].map.mapf(molInfo.node);
+                    if (!targetMol) continue;
+                    // Find cloned node in aggregate graph
+                    auto cloneIt = cloneMaps[pi].find(targetMol);
+                    if (cloneIt == cloneMaps[pi].end()) continue;
+                    auto* clonedMol = cloneIt->second;
+                    // Delete molecule and all its components/bonds
+                    std::vector<BNGcore::Node*> components;
+                    for (auto edge = clonedMol->edges_out_begin(); edge != clonedMol->edges_out_end(); ++edge) {
+                        components.push_back(*edge);
+                    }
+                    for (auto* component : components) {
+                        std::vector<BNGcore::Node*> bondNodes;
+                        for (auto edge = component->edges_out_begin(); edge != component->edges_out_end(); ++edge) {
+                            bondNodes.push_back(*edge);
+                        }
+                        for (auto* bondNode : bondNodes) {
+                            safeDeleteNode(aggregateGraph, bondNode);
+                        }
+                        safeDeleteNode(aggregateGraph, component);
+                    }
+                    safeDeleteNode(aggregateGraph, clonedMol);
+                }
+            }
+
+            auto remainingGraphs = splitIntoSpeciesGraphs(aggregateGraph);
+            for (auto& productGraph : remainingGraphs) {
+                if (productFilter && !productFilter(productGraph)) {
+                    return false;
+                }
+                productLabels.push_back(productGraph.canonicalLabel());
+                std::string compartmentToUse;
+                if (!g_compartmentDimensions.empty()) {
+                    std::set<std::string> surfaces, volumes;
+                    for (auto nodeIter = productGraph.getGraph().begin(); nodeIter != productGraph.getGraph().end(); ++nodeIter) {
+                        if (!isMoleculeNode(**nodeIter)) continue;
+                        auto mc = (*nodeIter)->get_compartment();
+                        if (mc.empty()) continue;
+                        auto dimIt = g_compartmentDimensions.find(mc);
+                        if (dimIt != g_compartmentDimensions.end()) {
+                            if (dimIt->second == 2) surfaces.insert(mc);
+                            else if (dimIt->second == 3) volumes.insert(mc);
+                        }
+                    }
+                    if (surfaces.empty() && volumes.size() == 1) {
+                        compartmentToUse = *volumes.begin();
+                    } else if (surfaces.size() == 1) {
+                        compartmentToUse = *surfaces.begin();
+                    }
+                }
+                if (compartmentToUse.empty() && sameCompartment) {
+                    compartmentToUse = inferredCompartment;
+                }
+                if (!compartmentToUse.empty()) {
+                    for (auto nodeIter = productGraph.getGraph().begin();
+                         nodeIter != productGraph.getGraph().end(); ++nodeIter) {
+                        if (isMoleculeNode(**nodeIter) && (*nodeIter)->get_compartment().empty()) {
+                            (*nodeIter)->set_compartment(compartmentToUse);
+                        }
+                    }
+                }
+                auto prodSp = Species(productGraph, 0.0, false, compartmentToUse);
+                const auto [index, wasNew] = speciesList.add(std::move(prodSp));
+                productIndices.push_back(index);
+            }
+        }
+        // else: Pure degradation rule (e.g., A() -> 0): no products
         // productIndices and productLabels remain empty
     } else {
         auto productGraphs = splitIntoSpeciesGraphs(aggregateGraph);
@@ -2031,24 +2397,56 @@ bool ReactionRule::buildReaction(
             }
         }
 
-        if (productGraphs.size() > productPatterns_.size() && !deleteMolecules && !isPureBondRule) {
-            // More product components than product patterns: this happens when a rule
-            // transforms part of a complex (e.g., D() -> Trash() matching in a dimer).
-            // In BNG2, orphaned components (not corresponding to any product pattern) are
-            // destroyed. Match product patterns to product graphs and keep only matched ones.
-            std::vector<SpeciesGraph> matchedProducts;
+        if (productGraphs.size() > productPatterns_.size()) {
+            // More product components than product patterns.  Match each product
+            // pattern to a product graph; unmatched graphs are orphan fragments.
+            //
+            // Three sub-cases determine what happens to orphans:
+            //  (a) deleteMolecules modifier is set:
+            //      The user explicitly requested DeleteMolecules — only the matched
+            //      molecule is deleted, orphans are valid released molecules.
+            //  (b) hasMoleculeTypeMismatch_ (and !deleteMolecules):
+            //      The rule replaces one molecule with a different type (e.g.,
+            //      FGFR(s~P)->Internalized_Rec()) or the product has extra
+            //      components (e.g., BetaR(l,g,loc~cyt)->BetaR(l,g,loc~mem,s~U)).
+            //      Bonded partners of the replaced/transformed molecule become
+            //      orphans that should be DISCARDED (Perl behavior: they do not
+            //      appear as products).
+            //  (c) Rule has DeleteMolecule operations (unmatched reactant molecules
+            //      mapped to null/0 product, e.g., RevErb(b)+Bmal1()->RevErb(b)+0)
+            //      WITHOUT the DeleteMolecules modifier.  In Perl BNG2, -> 0 means
+            //      the entire connected component containing the deleted molecule is
+            //      destroyed.  Orphans should be DISCARDED (not kept as products).
+            //      Only bond-breaking (no molecule deletion) should keep orphans.
+            bool hasDeleteMoleculeOps = false;
+            for (const auto& op : operations_) {
+                if (op.type == TransformOp::Type::DeleteMolecule) {
+                    hasDeleteMoleculeOps = true;
+                    break;
+                }
+            }
+            // MoveConnected rules: when a compartment-transport rule with
+            // MoveConnected produces orphan fragments (from product-only bond
+            // breaking), Perl BNG2 does NOT generate the reaction.  The rule
+            // simply doesn't match species where applying it would disconnect
+            // connected molecules.  Reject such reactions here.
+            if (hasModifier(modifiers_, "MoveConnected") && !deleteMolecules) {
+                return false;
+            }
+            const bool keepOrphans = deleteMolecules
+                || (!hasMoleculeTypeMismatch_ && !hasDeleteMoleculeOps);
+            std::vector<SpeciesGraph> orderedProducts;
             std::vector<bool> used(productGraphs.size(), false);
             for (std::size_t pi = 0; pi < productPatterns_.size(); ++pi) {
                 const auto& prodPat = productPatterns_[pi];
                 bool found = false;
-                // Try to match each product pattern to a product graph by subgraph isomorphism
                 for (std::size_t gi = 0; gi < productGraphs.size(); ++gi) {
                     if (used[gi]) continue;
                     BNGcore::UllmannSGIso matcher(prodPat.getGraph(), productGraphs[gi].getGraph());
                     BNGcore::List<BNGcore::Map> maps;
                     matcher.find_maps(maps);
                     if (maps.begin() != maps.end()) {
-                        matchedProducts.push_back(std::move(productGraphs[gi]));
+                        orderedProducts.push_back(std::move(productGraphs[gi]));
                         productPatternIndices.push_back(pi);
                         used[gi] = true;
                         found = true;
@@ -2056,14 +2454,30 @@ bool ReactionRule::buildReaction(
                     }
                 }
                 if (!found) {
-                    return false;  // Product pattern has no matching graph
+                    return false;
                 }
             }
-            productGraphs = std::move(matchedProducts);
-        } else if (productGraphs.size() != productPatterns_.size() && !deleteMolecules) {
+            if (keepOrphans) {
+                // Append orphan fragments (released molecules) after the matched products
+                for (std::size_t gi = 0; gi < productGraphs.size(); ++gi) {
+                    if (!used[gi]) {
+                        orderedProducts.push_back(std::move(productGraphs[gi]));
+                        // Orphans don't correspond to any product pattern; use
+                        // productPatterns_.size() as sentinel so compartment
+                        // inference below falls through to molecule-level logic.
+                        productPatternIndices.push_back(productPatterns_.size());
+                    }
+                }
+            }
+            // else: hasMoleculeTypeMismatch_ — orphans are silently discarded
+            productGraphs = std::move(orderedProducts);
+        } else if (productGraphs.size() < productPatterns_.size() && !deleteMolecules) {
+            // Reject: fewer products than patterns (unexpected).
             if (debug) {
-                std::cerr << "[BUILD_RXN] FAIL: productGraphs.size()=" << productGraphs.size()
-                          << " != productPatterns_.size()=" << productPatterns_.size() << "\n";
+                std::cerr << "[BUILD_RXN] FAIL: rule=" << ruleName_
+                          << " productGraphs.size()=" << productGraphs.size()
+                          << " < productPatterns_.size()=" << productPatterns_.size()
+                          << " hasMoleculeTypeMismatch=" << hasMoleculeTypeMismatch_ << "\n";
             }
             return false;
         } else {
@@ -2160,6 +2574,17 @@ bool ReactionRule::buildReaction(
             if (!verifyBondTopology(productGraph.getGraph())) {
                 return false;
             }
+            // Product pattern bond constraint check (Perl parity):
+            // When a product pattern mentions a component as explicitly UNBOUND
+            // and that component is NOT a target of any operation (AddBond,
+            // DeleteBond, ChangeState), it acts as a constraint: the corresponding
+            // component in the actual product species must also be unbound.
+            // If the reactant species has that component bonded and no operation
+            // breaks it, the product will still be bonded, violating the constraint.
+            // This prevents rules like GPCR(b!1,loc~mem).Arrestin(b!1) ->
+            // GPCR(l,b!1,loc~cyt,s~P).Arrestin(b!1) from applying to species where
+            // GPCR has 'l' bonded: the product pattern says 'l' should be unbound.
+            // (Product pattern bond constraint check would go here in a future version)
             auto prodSp = Species(productGraph, 0.0, false, compartmentToUse);
             const auto [index, wasNew] = speciesList.add(std::move(prodSp));
             productIndices.push_back(index);
@@ -2179,12 +2604,34 @@ bool ReactionRule::buildReaction(
     // are merged by rxnList dedup (stat factors sum), which combined with the
     // 1/n! correction produces the correct combinatorial rate.
     //
-    // Note: we do NOT multiply by per-pattern multiplicity (automorphic Ullmann
-    // map count).  Embeddings that represent distinct reaction pathways already
-    // have distinct reaction-center signatures and are kept as separate
-    // embeddings.  Collapsed automorphisms (multiplicity > 1) are redundant
-    // mappings that should not inflate the rate.
+    // For degradation rules with DeleteMolecules modifier (-> 0 DeleteMolecules),
+    // the initialize() function returns early, leaving operations_ and reactionCenter_
+    // empty.  In this case, automorphic Ullmann maps that collapse to the same
+    // embedding signature genuinely represent distinct reaction pathways (e.g.,
+    // DeleteMolecules on a symmetric dimer can remove either half).  Perl
+    // generates a separate reaction for each, which get merged with additive
+    // factors.  We replicate this by using the embedding multiplicity.
+    //
+    // For pure degradation (-> 0 without DeleteMolecules), the entire species is
+    // consumed regardless of how many embeddings exist.  All embeddings collapse
+    // to the same reaction (species → trash), so multiplicity must NOT be applied.
+    //
+    // For all other rules, the reaction center signature and/or the normal
+    // RxnList dedup already handle symmetry correctly.
     double factor = 1.0;
+    // NOTE: For -> 0 DeleteMolecules rules (operations_ empty, productPatterns_
+    // empty), we intentionally do NOT apply the embedding multiplicity as a stat
+    // factor.  The multiplicity counts automorphic embeddings that map the pattern
+    // to the same set of species molecules in different orientations.  When
+    // embeddings map to DIFFERENT molecules (e.g., A() on a symmetric dimer picks
+    // one A or the other), they produce separate EmbeddingResults (distinct
+    // signatures), each calling buildReaction independently; the reactions get
+    // merged by RxnList dedup with additive factors.  When embeddings map to the
+    // SAME set of molecules (e.g., EGFR symmetric dimer pattern on a non-symmetric
+    // complex), they collapse into one EmbeddingResult with multiplicity>1.  These
+    // represent the same physical reaction and should have factor 1, not
+    // multiplicity.  In Perl each automorphic embedding carries a 1/auto_pattern
+    // correction that exactly cancels the multiplicity, yielding factor 1.
     if (reactantPatterns_.size() > 1) {
         // Group reactant patterns by canonical label, compute 1/n! per group
         std::unordered_map<std::string, int> patternGroupCounts;
