@@ -141,8 +141,21 @@ Node::operator== ( const Node & node2 ) const
     if ( get_type()  != node2.get_type()  )  return false;
     // check state (wildcards allowed)
     if ( get_state() != node2.get_state() )  return false;
+    // check compartment: if this node (the pattern) specifies a compartment,
+    // node2 (the target species node) must be in the same compartment.
+    // An empty compartment on the pattern acts as a wildcard.
+    if ( !compartment_.empty() && compartment_ != node2.compartment_ )  return false;
     // at this point the nodes are locally equivalent
     return  true;
+}
+
+
+// Less-than operator for canonical sorting.
+// Delegates to the static less() method, comparing type, state, then index.
+bool
+Node::operator< ( const Node & node2 ) const
+{
+    return Node::less( this, &node2 );
 }
 
 

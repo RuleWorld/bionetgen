@@ -1,5 +1,5 @@
 
-// Generated from src/parser/BNGParser.g4 by ANTLR 4.13.1
+// Generated from BNGParser.g4 by ANTLR 4.13.2
 
 #pragma once
 
@@ -199,6 +199,46 @@ public:
     return visitChildren(ctx);
   }
 
+  virtual std::any visitRate_law_expr(BNGParser::Rate_law_exprContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitRate_law_or_expr(BNGParser::Rate_law_or_exprContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitRate_law_xor_expr(BNGParser::Rate_law_xor_exprContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitRate_law_and_expr(BNGParser::Rate_law_and_exprContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitRate_law_eq_expr(BNGParser::Rate_law_eq_exprContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitRate_law_add_expr(BNGParser::Rate_law_add_exprContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitRate_law_mul_expr(BNGParser::Rate_law_mul_exprContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitRate_law_pow_expr(BNGParser::Rate_law_pow_exprContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitRate_law_unary_expr(BNGParser::Rate_law_unary_exprContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitRate_law_primary_expr(BNGParser::Rate_law_primary_exprContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
   virtual std::any visitRule_modifiers(BNGParser::Rule_modifiersContext *ctx) override {
     return visitChildren(ctx);
   }
@@ -328,6 +368,10 @@ public:
   }
 
   virtual std::any visitOr_expr(BNGParser::Or_exprContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitXor_expr(BNGParser::Xor_exprContext *ctx) override {
     return visitChildren(ctx);
   }
 

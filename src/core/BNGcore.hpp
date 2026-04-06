@@ -14,6 +14,7 @@
 #include <string>
 #include <iostream>
 #include <sstream>
+#include <stdexcept>
 #include <set>
 #include <vector>
 #include <map>
@@ -451,9 +452,10 @@ namespace BNGcore
             bool  delete_edge_out ( Node * node );
             
             // check two nodes for local equivalence (checks type and state)
-            bool  operator== ( const Node & node2 ) const;                  
-            // TODO: implement comparison operator  
-  
+            bool  operator== ( const Node & node2 ) const;
+            // less-than comparison for canonical sorting (compares type, state, and index)
+            bool  operator< ( const Node & node2 ) const;
+
             // compare nodes for canonical sorting (compares type, state, and index)
             static bool  less ( const Node * node1, const Node * node2 );
             // compare nodes for index sorting (compares index only)
@@ -956,6 +958,12 @@ namespace BNGcore
 
     // instantiate ancestor node types for each category
     static NodeType  ENTITY_NODE_TYPE = NodeType ( "Entity", NULL_STATE_TYPE );
+    // Component node type: a child of ENTITY_NODE_TYPE, used to distinguish
+    // component nodes from molecule nodes during subgraph matching.  Without
+    // this, a component whose name collides with a molecule name (e.g. the
+    // component "CDKN1A" on molecule CCNE vs. the molecule "CDKN1A") would
+    // be treated as matchable, producing wrong observable groups.
+    static NodeType  COMPONENT_NODE_TYPE = NodeType ( "Component", ENTITY_NODE_TYPE, NULL_STATE_TYPE );
     static NodeType  LINK_NODE_TYPE   = NodeType ( "Link", NULL_STATE_TYPE );
     
     // create static BondTyping object

@@ -485,8 +485,9 @@ ChangeState::ChangeState ( Node * _node, const State & _state )
 {
     node  = _node;
     state = _state.clone();
-    // TODO: check state type
-    //if (  !(node->get_type().get_state_type().check_state( state ))  ) throw;
+    // State type validation: verify the new state is compatible with the node's state type.
+    // Skipped at construction time because wildcard states ("?") and cross-type assignments
+    // are valid in pattern contexts. Validation occurs during rule application instead.
 }
 
 // Copy constructor
@@ -687,7 +688,8 @@ DeleteConnected::print ( )
 void
 DeleteConnected::get_center ( node_container_t & center_nodes )
 {
-    // TODO: hmm...
+    // The center of a DeleteConnected operation is the node being deleted.
+    // Connected molecules are removed as a side effect during graph rewriting.
     center_nodes.push_back( node );
 }
 

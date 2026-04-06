@@ -119,6 +119,7 @@ double Expression::evaluate(const std::function<double(const std::string&)>& res
         if (text_ == "<=") return lhs <= rhs ? 1.0 : 0.0;
         if (text_ == "&&") return (lhs != 0.0 && rhs != 0.0) ? 1.0 : 0.0;
         if (text_ == "||") return (lhs != 0.0 || rhs != 0.0) ? 1.0 : 0.0;
+        if (text_ == "^^") return (lhs != 0.0) != (rhs != 0.0) ? 1.0 : 0.0;
         throw std::runtime_error("Unsupported binary operator '" + text_ + "'");
     }
     case ExpressionKind::Function: {
@@ -147,6 +148,8 @@ double Expression::evaluate(const std::function<double(const std::string&)>& res
         if (text_ == "acosh") { requireArity(text_, children_, 1); return std::acosh(evalArg(0)); }
         if (text_ == "atanh") { requireArity(text_, children_, 1); return std::atanh(evalArg(0)); }
         if (text_ == "rint") { requireArity(text_, children_, 1); return std::rint(evalArg(0)); }
+        if (text_ == "floor") { requireArity(text_, children_, 1); return std::floor(evalArg(0)); }
+        if (text_ == "ceil") { requireArity(text_, children_, 1); return std::ceil(evalArg(0)); }
         if (text_ == "min") {
             if (children_.empty()) throw std::runtime_error("Function 'min' expects at least one argument");
             double value = evalArg(0);
@@ -193,13 +196,82 @@ double Expression::evaluate(const std::function<double(const std::string&)>& res
             const double M_a1b1 = hypergeom1F1(a + 1, b + 1, z);
             return (std::abs(M_ab) < 1e-300) ? 0.0 : M_a1b1 / M_ab;
         }
+        // Rate law functions: Sat/MM/Hill/Arrhenius/FunctionProduct
+        // Sat(Vmax, Km, S) -> Vmax * S / (Km + S)
+        if (text_ == "Sat" || text_ == "sat") {
+            requireArity(text_, children_, 3);
+            const double Vmax = evalArg(0);
+            const double Km = evalArg(1);
+            const double S = evalArg(2);
+            return Vmax * S / (Km + S);
+        }
+        // MM(kcat, Km, St, Et) -> self-consistent Michaelis-Menten (BNG2 parity)
+        // Computes free substrate via quadratic: S = 0.5*(b + sqrt(b^2 + 4*St*Km))
+        // where b = St - Km - Et, then rate = kcat * Et * S / (Km + S)
+        if (text_ == "MM" || text_ == "mm") {
+            if (children_.size() == 4) {
+                const double kcat = evalArg(0);
+                const double Km   = evalArg(1);
+                const double St   = evalArg(2);  // total substrate
+                const double Et   = evalArg(3);  // total enzyme
+                const double b = St - Km - Et;
+                const double S = 0.5 * (b + std::sqrt(b * b + 4.0 * St * Km));
+                return kcat * Et * S / (Km + S);
+            }
+            // Fallback for 3-arg form (legacy): Vmax * S / (Km + S)
+            requireArity(text_, children_, 3);
+            const double Vmax = evalArg(0);
+            const double Km = evalArg(1);
+            const double S = evalArg(2);
+            return Vmax * S / (Km + S);
+        }
+        // Hill(Vmax, Kh, n, S) -> Vmax * S^n / (Kh^n + S^n)
+        if (text_ == "Hill" || text_ == "hill") {
+            requireArity(text_, children_, 4);
+            const double Vmax = evalArg(0);
+            const double Kh = evalArg(1);
+            const double n = evalArg(2);
+            const double S = evalArg(3);
+            const double Sn = std::pow(S, n);
+            return Vmax * Sn / (std::pow(Kh, n) + Sn);
+        }
+        // Arrhenius(A, Ea) -> A * exp(-Ea / (kB * T))
+        // kB = 1.3806488e-23 J/K, T = 298.15 K  =>  kB*T = 4.11577e-21 J
+        // Perl BNG2 uses kB*T ~ 2478.956 J/mol (i.e. R*T with R=8.31446 J/(mol*K))
+        // but at single-molecule level: kB*T = 1.3806488e-23 * 298.15 = 4.11577e-21
+        if (text_ == "Arrhenius" || text_ == "arrhenius") {
+            requireArity(text_, children_, 2);
+            const double A = evalArg(0);
+            const double Ea = evalArg(1);
+            constexpr double kBT = 1.3806488e-23 * 298.15; // kB * T at 298.15 K
+            return A * std::exp(-Ea / kBT);
+        }
+        // FunctionProduct(v1, v2) -> v1 * v2
+        if (text_ == "FunctionProduct" || text_ == "functionproduct") {
+            requireArity(text_, children_, 2);
+            return evalArg(0) * evalArg(1);
+        }
+        // TFUN(obsValue, ...) -> returns first argument (stub for ODE mode)
+        if (text_ == "TFUN" || text_ == "tfun") {
+            if (children_.empty()) throw std::runtime_error("Function 'TFUN' expects at least 1 argument");
+            return evalArg(0);
+        }
         // Constants
         if (text_ == "_pi") { requireArity(text_, children_, 0); return M_PI; }
         if (text_ == "_e") { requireArity(text_, children_, 0); return M_E; }
+
+        // Try resolving as user-defined function (zero-arg call like myFunc())
+        if (children_.empty()) {
+            return resolveIdentifier(text_);
+        }
         throw std::runtime_error("Unsupported function '" + text_ + "'");
     }
     case ExpressionKind::ObservableRef:
-        throw std::runtime_error("Observable references are not evaluable yet: " + text_);
+        // Resolve observable references via the resolver (which knows about
+        // observable values at the current simulation state).  If children
+        // are present they are ignored — BNG2 observable refs are always
+        // resolved by name alone.
+        return resolveIdentifier(text_);
     }
 
     throw std::runtime_error("Unsupported expression kind");

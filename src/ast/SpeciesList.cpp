@@ -41,7 +41,23 @@ bool isIsomorphic(const SpeciesGraph& lhs, const SpeciesGraph& rhs) {
 
 } // namespace
 
+void SpeciesList::setCheckIso(bool enabled) {
+    checkIso_ = enabled;
+}
+
+bool SpeciesList::getCheckIso() const {
+    return checkIso_;
+}
+
 std::pair<std::size_t, bool> SpeciesList::add(Species species) {
+    // When check_iso is disabled, skip all dedup and add unconditionally
+    if (!checkIso_) {
+        const std::size_t index = species_.size();
+        species.setIndex(index);
+        species_.push_back(std::move(species));
+        return {index, true};
+    }
+
     const std::string label = species.getSpeciesGraph().canonicalLabel();
     // Use compartment-aware string for dedup to distinguish species that differ
     // only by per-molecule compartments (e.g., Im@CP.NP vs Im@NU.NP).

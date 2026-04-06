@@ -19,11 +19,17 @@ public:
     std::size_t capacity() const;
     const std::vector<Species>& all() const;
 
+    /// When false, skip isomorphism/dedup checks during add().
+    /// Species are added unconditionally (useful for debugging/speed).
+    void setCheckIso(bool enabled);
+    bool getCheckIso() const;
+
 private:
     std::vector<Species> species_;
     std::unordered_map<std::string, std::vector<std::size_t>> indicesByLabel_;
     std::unordered_map<std::string, std::vector<std::size_t>> indicesByExactString_;
     std::unordered_map<std::string, std::vector<std::size_t>> indicesByFingerprint_;
+    bool checkIso_ = true;
 };
 
 } // namespace bng::ast

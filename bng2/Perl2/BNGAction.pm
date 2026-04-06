@@ -245,13 +245,6 @@ sub simulate
 	}
 	my $seed        = $params->{seed};
 
-    # Default to HAS method if scalelevel is defined
-    # note, this needs to be changed once the name changes
-    # to PLA/poplevel/popscale occur
-    if(defined $params->{poplevel}){
-      $method="psa"
-    }
-
     # check method
     unless ( $method )
     {  return "simulate() requires 'method' parameter (ode, ssa, pla, psa, nf).";  }
@@ -356,7 +349,7 @@ sub simulate
         }
     }
 
-    # heterogeneous adaptive scaling method - specific arguments
+    # partial scaling algorithm (PSA) - specific arguments
     if ($method eq 'psa')
     {
         if (!exists $params->{poplevel}) {
@@ -368,15 +361,7 @@ sub simulate
             push @command, "--check_product_scale", $params->{check_product_scale};
         }
     }
-    if ($method eq 'ssa')
-    {
-        if ( exists $params->{poplevel} ) {
-            push @command, "--poplevel", $params->{poplevel};
-            if (exists $params->{check_product_scale}) {
-                push @command, "--check_product_scale", $params->{check_product_scale};
-            }
-        }
-    }
+    # SSA has no special arguments
 
     # add method options
     {

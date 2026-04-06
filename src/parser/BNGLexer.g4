@@ -59,9 +59,10 @@ SUBSTANCEUNITS: 'substanceUnits';
 PREFIX: 'prefix';
 SUFFIX: 'suffix';
 
-GENERATENETWORK: 'generate_network';
+// Support both underscore and space variants for Perl BNG2 compatibility
+GENERATENETWORK: 'generate_network' | 'generate network';
 OVERWRITE: 'overwrite';
-MAX_AGG: 'max_agg';
+MAX_AGG: 'max_agg' | 'max agg';
 MAX_ITER: 'max_iter';
 MAX_STOICH: 'max_stoich';
 PRINT_ITER: 'print_iter';
@@ -122,6 +123,7 @@ EQUIL: 'equil';
 
 PARAMETER_SCAN: 'parameter_scan';
 BIFURCATE: 'bifurcate';
+LINEAR_PARAMETER_SENSITIVITY: 'LinearParameterSensitivity';
 PARAMETER: 'parameter';
 PAR_MIN: 'par_min';
 PAR_MAX: 'par_max';
@@ -151,6 +153,7 @@ WRITEMODEL: 'writeModel';
 WRITEXML: 'writeXML';
 WRITENETWORK: 'writeNetwork';
 WRITESBML: 'writeSBML';
+WRITESBMLMULTI: 'writeSBMLMulti';
 WRITEMDL: 'writeMDL';
 WRITELATEX: 'writeLatex';
 INCLUDE_MODEL: 'include_model';
@@ -162,6 +165,8 @@ TEXTSPECIES: 'TextSpecies';
 
 WRITEMFILE: 'writeMfile';
 WRITEMEXFILE: 'writeMexfile';
+WRITECPPFILE: 'writeCPPfile';
+WRITECPYFILE: 'writeCPYfile';
 BDF: 'bdf';
 MAX_STEP: 'max_step';
 MAXORDER: 'maxOrder';
@@ -178,6 +183,11 @@ RESETCONCENTRATIONS: 'resetConcentrations';
 SETPARAMETER: 'setParameter';
 SAVEPARAMETERS: 'saveParameters';
 RESETPARAMETERS: 'resetParameters';
+SETVOLUME: 'setVolume';
+SIMULATE_PSA: 'simulate_psa';
+POPLEVEL: 'poplevel';
+MOL_THRESHOLD: 'mol_threshold';
+NFSIM_EXEC: 'nfsim_exec';
 QUIT: 'quit';
 
 // Boolean literals (text form only - 0/1 handled as INT in expressions)
@@ -267,12 +277,16 @@ NOT_EQUALS: '!=' | '~=';
 BECOMES: '=';
 LOGICAL_AND: '&&';
 LOGICAL_OR: '||';
+LOGICAL_XOR: '^^';
 // Note: '!' is EMARK (used for bonds and logical NOT - context dependent)
 DIV: '/';
 TIMES: '*';
 MINUS: '-';
 PLUS: '+';
 POWER: '^' | '**';
+// Molecule tag: %N or %name — lexer-level token to prevent ambiguity with modulo
+// Must appear BEFORE MOD in grammar to take priority (ANTLR uses first-match)
+MOLECULE_TAG_TOKEN: '%' (DIGIT+ | LETTER (LETTER | DIGIT | '_')*);
 MOD: '%';
 PIPE: '|';
 QMARK: '?';

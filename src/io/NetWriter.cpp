@@ -52,27 +52,40 @@ double evaluateExpressionString(const std::string& expr,
     trimmed.erase(0, trimmed.find_first_not_of(" \t"));
     trimmed.erase(trimmed.find_last_not_of(" \t") + 1);
 
-    // Handle exp(...)
-    if (trimmed.rfind("exp(", 0) == 0) {
-        // Find matching close paren
-        int depth = 0;
-        size_t start = 4;  // After "exp("
-        size_t end = start;
-        for (size_t i = start - 1; i < trimmed.size(); ++i) {
-            if (trimmed[i] == '(') ++depth;
-            else if (trimmed[i] == ')') {
-                --depth;
-                if (depth == 0) {
-                    end = i;
-                    break;
+    // Handle function calls: exp(...), ln(...), log(...), sqrt(...), abs(...)
+    auto tryFunctionCall = [&](const std::string& funcName, double(*func)(double)) -> std::optional<double> {
+        if (trimmed.rfind(funcName + "(", 0) == 0) {
+            int depth = 0;
+            size_t start = funcName.size() + 1;
+            size_t end = start;
+            for (size_t i = start - 1; i < trimmed.size(); ++i) {
+                if (trimmed[i] == '(') ++depth;
+                else if (trimmed[i] == ')') {
+                    --depth;
+                    if (depth == 0) {
+                        end = i;
+                        break;
+                    }
                 }
             }
+            if (end > start) {
+                std::string inner = trimmed.substr(start, end - start);
+                return func(evaluateExpressionString(inner, resolve));
+            }
         }
-        if (end > start) {
-            std::string inner = trimmed.substr(start, end - start);
-            return std::exp(evaluateExpressionString(inner, resolve));
-        }
-    }
+        return std::nullopt;
+    };
+
+    if (auto r = tryFunctionCall("exp", std::exp)) return *r;
+    if (auto r = tryFunctionCall("ln", std::log)) return *r;
+    if (auto r = tryFunctionCall("log", std::log)) return *r;
+    if (auto r = tryFunctionCall("log2", std::log2)) return *r;
+    if (auto r = tryFunctionCall("log10", std::log10)) return *r;
+    if (auto r = tryFunctionCall("sqrt", std::sqrt)) return *r;
+    if (auto r = tryFunctionCall("abs", std::abs)) return *r;
+    if (auto r = tryFunctionCall("sin", std::sin)) return *r;
+    if (auto r = tryFunctionCall("cos", std::cos)) return *r;
+    if (auto r = tryFunctionCall("tan", std::tan)) return *r;
 
     // Handle parentheses - only strip if they're balanced and outermost
     if (trimmed.front() == '(' && trimmed.back() == ')') {
@@ -199,7 +212,23 @@ BNGcore::PatternGraph parseObservablePattern(const std::string& patternText, ast
     if (parser.getNumberOfSyntaxErrors() != 0) {
         throw std::runtime_error("Could not parse observable pattern: " + patternText);
     }
-    return bng::parser::buildPatternGraph(species, model);
+    return bng::parser::buildPatternGraph(species, model, false);
+}
+
+// Parse an observable pattern and also extract its compartment qualifier (if any)
+std::pair<BNGcore::PatternGraph, std::string> parseObservablePatternWithCompartment(
+    const std::string& patternText, ast::Model& model) {
+    antlr4::ANTLRInputStream input(patternText);
+    BNGLexer lexer(&input);
+    antlr4::CommonTokenStream tokens(&lexer);
+    BNGParser parser(&tokens);
+    auto* species = parser.species_def();
+    if (parser.getNumberOfSyntaxErrors() != 0) {
+        throw std::runtime_error("Could not parse observable pattern: " + patternText);
+    }
+    auto graph = bng::parser::buildPatternGraph(species, model, false);
+    auto compartment = bng::parser::extractSpeciesCompartment(species);
+    return {std::move(graph), std::move(compartment)};
 }
 
 std::string formatSpecies(const ast::Species& species) {
@@ -314,10 +343,39 @@ std::string formatSpeciesAmount(const ast::Species& species, const ast::Model& m
     return out.str();
 }
 
+// Check if a mapping respects node states (component states must match).
+// The Ullmann matcher only checks structural compatibility (types), not states.
+// Energy patterns like H(m~T) need state filtering to distinguish H(m~T) from H(m~R).
+bool mapRespectsNodeStates(const BNGcore::PatternGraph& pattern, const BNGcore::Map& map) {
+    for (auto nodeIter = pattern.begin(); nodeIter != pattern.end(); ++nodeIter) {
+        auto* target = map.mapf(*nodeIter);
+        if (target == nullptr) {
+            return false;
+        }
+        // Check type compatibility
+        if (!((*nodeIter)->get_type() == target->get_type())) {
+            return false;
+        }
+        // Check state compatibility (e.g., ~T vs ~R)
+        if (!((*nodeIter)->get_state() == target->get_state())) {
+            return false;
+        }
+    }
+    return true;
+}
+
 std::size_t countPatternMatches(const ast::SpeciesGraph& pattern, const ast::Species& species) {
     BNGcore::UllmannSGIso matcher(pattern.getGraph(), species.getSpeciesGraph().getGraph());
     BNGcore::List<BNGcore::Map> maps;
-    return matcher.find_maps(maps);
+    matcher.find_maps(maps);
+    // Filter maps by node state compatibility (Ullmann only checks structure)
+    std::size_t count = 0;
+    for (auto mapIter = maps.begin(); mapIter != maps.end(); ++mapIter) {
+        if (mapRespectsNodeStates(pattern.getGraph(), *mapIter)) {
+            ++count;
+        }
+    }
+    return count;
 }
 
 std::string parenthesize(const std::string& text) {
@@ -375,12 +433,50 @@ struct ArrheniusInfo {
 };
 
 std::optional<ArrheniusInfo> parseArrhenius(const std::string& rateLaw) {
-    static const std::regex pattern(R"(^\s*arrhenius\s*\(\s*([^,]+)\s*,\s*([^)]+)\s*\)\s*$)", std::regex::icase);
-    std::smatch match;
-    if (!std::regex_match(rateLaw, match, pattern)) {
+    // Parse "Arrhenius(phi, Ea)" allowing balanced parentheses inside arguments,
+    // e.g. "Arrhenius(phi, (Ea0_SA / RT))".  A simple regex with [^)]+ fails
+    // on the nested parens, so we manually find the comma and closing paren
+    // while respecting parenthesis depth.
+    std::string s = rateLaw;
+    // Trim whitespace
+    auto startPos = s.find_first_not_of(" \t");
+    if (startPos == std::string::npos) return std::nullopt;
+    s = s.substr(startPos);
+    auto endPos = s.find_last_not_of(" \t");
+    if (endPos != std::string::npos) s = s.substr(0, endPos + 1);
+
+    // Check for "arrhenius(" prefix (case-insensitive)
+    std::string lower = s;
+    std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
+    if (lower.rfind("arrhenius(", 0) != 0 && lower.rfind("arrhenius (", 0) != 0)
         return std::nullopt;
+
+    // Find opening paren
+    auto openParen = s.find('(');
+    if (openParen == std::string::npos) return std::nullopt;
+
+    // Find closing paren (must be last char)
+    if (s.back() != ')') return std::nullopt;
+
+    // Extract inner content between outer parens
+    std::string inner = s.substr(openParen + 1, s.size() - openParen - 2);
+
+    // Find the comma separating the two arguments at depth 0
+    int depth = 0;
+    std::size_t commaPos = std::string::npos;
+    for (std::size_t i = 0; i < inner.size(); ++i) {
+        if (inner[i] == '(') ++depth;
+        else if (inner[i] == ')') --depth;
+        else if (inner[i] == ',' && depth == 0) {
+            commaPos = i;
+            break;
+        }
     }
-    return ArrheniusInfo {compactExpression(match[1].str()), compactExpression(match[2].str())};
+    if (commaPos == std::string::npos) return std::nullopt;
+
+    std::string arg1 = inner.substr(0, commaPos);
+    std::string arg2 = inner.substr(commaPos + 1);
+    return ArrheniusInfo {compactExpression(arg1), compactExpression(arg2)};
 }
 
 std::optional<std::string> unitConversionExpression(const ast::Rxn& reaction, const ast::Model& model, const engine::GeneratedNetwork& network) {
@@ -916,8 +1012,10 @@ std::unordered_map<std::string, DerivedRateInfo> NetWriter::buildDerivedRatePara
             if (isKnownParam) {
                 continue;  // Use parameter directly
             }
-            // TODO: Check if it's a function name
-            // For now, assume simple names are parameters
+            // Check if it's a user-defined function name — if so, it will be
+            // resolved at runtime by the ODE integrator's function resolver.
+            // No derived parameter needed; the function is written to the
+            // functions block and evaluated each timestep.
             continue;
         }
 
@@ -1221,17 +1319,29 @@ void NetWriter::write(const std::filesystem::path& outputPath, ast::Model& model
     }
     out << "end parameters\n";
 
-    // Write functions section for derived rate laws that reference observables
-    bool hasFunctions = false;
+    // Write functions section: model-level named functions + derived rate laws
+    bool hasDerivedFunctions = false;
     for (const auto& [ruleName, info] : derivedRateParams) {
         if (info.asFunction) {
-            hasFunctions = true;
+            hasDerivedFunctions = true;
             break;
         }
     }
-    if (hasFunctions) {
+    bool hasModelFunctions = !model.getFunctions().empty();
+    if (hasModelFunctions || hasDerivedFunctions) {
         out << "begin functions\n";
         std::size_t functionIndex = 1;
+        // Write model-level named functions first
+        for (const auto& func : model.getFunctions()) {
+            out << "    " << functionIndex++ << " " << func.getName() << "(";
+            const auto& args = func.getArgs();
+            for (std::size_t i = 0; i < args.size(); ++i) {
+                if (i > 0) out << ",";
+                out << args[i];
+            }
+            out << ") " << func.getExpression().toString() << '\n';
+        }
+        // Write derived rate law functions
         for (const auto& rule : model.getReactionRules()) {
             const auto found = derivedRateParams.find(rule.getRuleName());
             if (found != derivedRateParams.end() && found->second.asFunction) {
@@ -1314,8 +1424,14 @@ void NetWriter::write(const std::filesystem::path& outputPath, ast::Model& model
             const auto rxnIt = derivedFound->second.perReactionRates.find(rxnIdx);
             std::string rateParamName = rxnIt != derivedFound->second.perReactionRates.end()
                 ? rxnIt->second.first : derivedFound->second.paramName;
-            if (std::abs(reaction.getFactor() - 1.0) >= 1e-9) {
-                out << formatFactor(reaction.getFactor()) << "*";
+            // Apply unit conversion for bimolecular+ reactions in compartments
+            // Perl convention: combine stat factor with unit conversion into one coefficient
+            const auto unitFactor = unitConversionFactor(reaction, model, network);
+            const auto unitExpr = unitConversionExpression(reaction, model, network);
+            double combinedFactor = reaction.getFactor();
+            if (unitFactor.has_value()) combinedFactor *= *unitFactor;
+            if (std::abs(combinedFactor - 1.0) >= 1e-9) {
+                out << formatDoubleScientific(combinedFactor) << "*";
             }
             out << rateParamName;
             // Perl uses #Rule1 / #Rule1r for forward/reverse
@@ -1324,6 +1440,9 @@ void NetWriter::write(const std::filesystem::path& outputPath, ast::Model& model
                 ? reaction.getOriginRuleName().substr(std::string("_reverse__").size()) + "r"
                 : reaction.getOriginRuleName();
             out << " #" << ruleComment;
+            if (unitExpr.has_value()) {
+                out << " unit_conversion=" << *unitExpr;
+            }
         } else if (derivedFound != derivedRateParams.end() && derivedFound->second.isLocalFunction) {
             // Per-species local function rate: look up by reactant species
             std::string rateParamName = derivedFound->second.paramName + "_1"; // fallback
@@ -1450,13 +1569,40 @@ void NetWriter::write(const std::filesystem::path& outputPath, ast::Model& model
         for (std::size_t speciesIndex = 0; speciesIndex < network.species.size(); ++speciesIndex) {
             std::size_t weight = 0;
             for (const auto& patternText : observable.getPatterns()) {
-                const auto pattern = parseObservablePattern(patternText, model);
+                auto [pattern, patternCompartment] = parseObservablePatternWithCompartment(patternText, model);
+
+                // Compartment matching strategy:
+                // 1. Molecule-level compartment (e.g., SARM()@Cyt) -- compartment is
+                //    set on pattern molecule nodes and the Ullmann matcher's
+                //    Node::operator== handles it. No species-level filter needed.
+                // 2. Species-level prefix compartment (e.g., @PM:L) -- no compartment
+                //    on pattern molecule nodes. Need species-level filter.
+                // Detect which case by checking if any pattern molecule node has a compartment.
+                bool patternHasMoleculeCompartment = false;
+                for (auto it = pattern.begin(); it != pattern.end(); ++it) {
+                    if (!(*it)->get_compartment().empty()) {
+                        patternHasMoleculeCompartment = true;
+                        break;
+                    }
+                }
+                if (!patternCompartment.empty() && !patternHasMoleculeCompartment) {
+                    // Species-level prefix compartment -- filter at species level
+                    const auto& speciesCompartment = network.species.get(speciesIndex).getCompartment();
+                    if (speciesCompartment != patternCompartment) {
+                        continue;
+                    }
+                }
+
                 BNGcore::UllmannSGIso matcher(pattern, network.species.get(speciesIndex).getSpeciesGraph().getGraph());
                 BNGcore::List<BNGcore::Map> maps;
-                weight += matcher.find_maps(maps);
-            }
-            if (observable.getType() == "Species" && weight > 0) {
-                weight = 1;
+                std::size_t matchCount = matcher.find_maps(maps);
+                // For "Species" observables, each pattern contributes 0 or 1
+                // (presence/absence). The total weight is the number of
+                // patterns that match, NOT clamped to 1 across all patterns.
+                if (observable.getType() == "Species" && matchCount > 0) {
+                    matchCount = 1;
+                }
+                weight += matchCount;
             }
             if (weight == 0) {
                 continue;

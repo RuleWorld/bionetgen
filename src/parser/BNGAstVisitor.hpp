@@ -31,6 +31,7 @@ public:
     std::any visitWrite_cmd(BNGParser::Write_cmdContext* ctx) override;
     std::any visitSet_cmd(BNGParser::Set_cmdContext* ctx) override;
     std::any visitOther_action_cmd(BNGParser::Other_action_cmdContext* ctx) override;
+    std::any visitPopulation_map_def(BNGParser::Population_map_defContext* ctx) override;
 
 private:
     void addAction(const std::string& name, BNGParser::Action_argsContext* args);
@@ -39,5 +40,12 @@ private:
 };
 
 std::unique_ptr<ast::Model> parseModel(const std::string& sourceText);
+
+/// Parse a BNGL model from a file path.
+std::unique_ptr<ast::Model> parseModelFromFile(const std::string& filePath);
+
+/// Parse a standalone expression string (e.g., for stop_if conditions).
+/// Uses the ANTLR grammar's expression rule.
+ast::Expression parseExpression(const std::string& exprText);
 
 } // namespace bng::parser

@@ -559,7 +559,8 @@ ReactionRule::generate_new_reactions ( size_t ir,
 
 
 
-// TODO: create new rule instead
+// NOTE: This template applies rule transformations directly rather than creating a new rule object.
+// This is the intended design — rule application produces Reaction objects, not new Rule objects.
 // Given a complete set of maps to reactants, along with the target graphs, apply the rule
 //  transformations and construct a corresponding Reaction object. Find canonical mechanism and reaction 
 //  labels and add reaction to the list.  Product graphs are loaded into the "graphs" container on return.
@@ -958,7 +959,8 @@ ReactionRule::get_elementary_rules ( RuleContainerType & elem_rules )
         
         // construct simplified rule
         new_transformations.deposit_back( new_operation );
-        // TODO: figure out how to handle different number of products?
+        // Product count is inherited from the parent rule. For rules that create/destroy molecules,
+        // the actual product count may differ — this is handled during reaction building, not here.
         elem_rules.deposit_back(  new ReactionRule ( &new_patterns, &new_transformations, n_products )  );
     }
     

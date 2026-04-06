@@ -1,5 +1,5 @@
 
-// Generated from BNGParser.g4 by ANTLR 4.13.1
+// Generated from src/parser/BNGParser.g4 by ANTLR 4.13.1
 
 #pragma once
 
@@ -91,6 +91,9 @@ public:
   virtual void enterMolecule_pattern(BNGParser::Molecule_patternContext * /*ctx*/) override { }
   virtual void exitMolecule_pattern(BNGParser::Molecule_patternContext * /*ctx*/) override { }
 
+  virtual void enterScope_prefix(BNGParser::Scope_prefixContext * /*ctx*/) override { }
+  virtual void exitScope_prefix(BNGParser::Scope_prefixContext * /*ctx*/) override { }
+
   virtual void enterPattern_bond_wildcard(BNGParser::Pattern_bond_wildcardContext * /*ctx*/) override { }
   virtual void exitPattern_bond_wildcard(BNGParser::Pattern_bond_wildcardContext * /*ctx*/) override { }
 
@@ -108,6 +111,9 @@ public:
 
   virtual void enterBond_spec(BNGParser::Bond_specContext * /*ctx*/) override { }
   virtual void exitBond_spec(BNGParser::Bond_specContext * /*ctx*/) override { }
+
+  virtual void enterComponent_label(BNGParser::Component_labelContext * /*ctx*/) override { }
+  virtual void exitComponent_label(BNGParser::Component_labelContext * /*ctx*/) override { }
 
   virtual void enterBond_id(BNGParser::Bond_idContext * /*ctx*/) override { }
   virtual void exitBond_id(BNGParser::Bond_idContext * /*ctx*/) override { }
@@ -147,6 +153,33 @@ public:
 
   virtual void enterRate_law(BNGParser::Rate_lawContext * /*ctx*/) override { }
   virtual void exitRate_law(BNGParser::Rate_lawContext * /*ctx*/) override { }
+
+  virtual void enterRate_law_expr(BNGParser::Rate_law_exprContext * /*ctx*/) override { }
+  virtual void exitRate_law_expr(BNGParser::Rate_law_exprContext * /*ctx*/) override { }
+
+  virtual void enterRate_law_or_expr(BNGParser::Rate_law_or_exprContext * /*ctx*/) override { }
+  virtual void exitRate_law_or_expr(BNGParser::Rate_law_or_exprContext * /*ctx*/) override { }
+
+  virtual void enterRate_law_and_expr(BNGParser::Rate_law_and_exprContext * /*ctx*/) override { }
+  virtual void exitRate_law_and_expr(BNGParser::Rate_law_and_exprContext * /*ctx*/) override { }
+
+  virtual void enterRate_law_eq_expr(BNGParser::Rate_law_eq_exprContext * /*ctx*/) override { }
+  virtual void exitRate_law_eq_expr(BNGParser::Rate_law_eq_exprContext * /*ctx*/) override { }
+
+  virtual void enterRate_law_add_expr(BNGParser::Rate_law_add_exprContext * /*ctx*/) override { }
+  virtual void exitRate_law_add_expr(BNGParser::Rate_law_add_exprContext * /*ctx*/) override { }
+
+  virtual void enterRate_law_mul_expr(BNGParser::Rate_law_mul_exprContext * /*ctx*/) override { }
+  virtual void exitRate_law_mul_expr(BNGParser::Rate_law_mul_exprContext * /*ctx*/) override { }
+
+  virtual void enterRate_law_pow_expr(BNGParser::Rate_law_pow_exprContext * /*ctx*/) override { }
+  virtual void exitRate_law_pow_expr(BNGParser::Rate_law_pow_exprContext * /*ctx*/) override { }
+
+  virtual void enterRate_law_unary_expr(BNGParser::Rate_law_unary_exprContext * /*ctx*/) override { }
+  virtual void exitRate_law_unary_expr(BNGParser::Rate_law_unary_exprContext * /*ctx*/) override { }
+
+  virtual void enterRate_law_primary_expr(BNGParser::Rate_law_primary_exprContext * /*ctx*/) override { }
+  virtual void exitRate_law_primary_expr(BNGParser::Rate_law_primary_exprContext * /*ctx*/) override { }
 
   virtual void enterRule_modifiers(BNGParser::Rule_modifiersContext * /*ctx*/) override { }
   virtual void exitRule_modifiers(BNGParser::Rule_modifiersContext * /*ctx*/) override { }
@@ -219,6 +252,9 @@ public:
 
   virtual void enterAction_arg_value(BNGParser::Action_arg_valueContext * /*ctx*/) override { }
   virtual void exitAction_arg_value(BNGParser::Action_arg_valueContext * /*ctx*/) override { }
+
+  virtual void enterQuoted_string(BNGParser::Quoted_stringContext * /*ctx*/) override { }
+  virtual void exitQuoted_string(BNGParser::Quoted_stringContext * /*ctx*/) override { }
 
   virtual void enterKeyword_as_value(BNGParser::Keyword_as_valueContext * /*ctx*/) override { }
   virtual void exitKeyword_as_value(BNGParser::Keyword_as_valueContext * /*ctx*/) override { }

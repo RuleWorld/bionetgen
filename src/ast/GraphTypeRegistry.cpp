@@ -56,7 +56,7 @@ const BNGcore::EntityType& GraphTypeRegistry::ensureComponentType(const Molecule
         runtimeType.stateType = std::move(labelType);
     }
 
-    runtimeType.nodeType = std::make_unique<BNGcore::EntityType>(componentType.name, BNGcore::ENTITY_NODE_TYPE, *stateType);
+    runtimeType.nodeType = std::make_unique<BNGcore::EntityType>(componentType.name, BNGcore::COMPONENT_NODE_TYPE, *stateType);
     runtimeType.nodeType->add_edges_out(BNGcore::BOND_NODE_TYPE, 1);
     auto moleculeIter = moleculeTypes_.find(moleculeType.getName());
     if (moleculeIter != moleculeTypes_.end()) {
@@ -66,6 +66,21 @@ const BNGcore::EntityType& GraphTypeRegistry::ensureComponentType(const Molecule
     BNGcore::EntityType* rawNodeType = runtimeType.nodeType.get();
     componentTypes_[key] = std::move(runtimeType);
     return *rawNodeType;
+}
+
+void GraphTypeRegistry::mergeFrom(GraphTypeRegistry& other) {
+    // Transfer molecule types (skip duplicates — keep ours)
+    for (auto& [name, ptr] : other.moleculeTypes_) {
+        if (moleculeTypes_.find(name) == moleculeTypes_.end()) {
+            moleculeTypes_[name] = std::move(ptr);
+        }
+    }
+    // Transfer component types
+    for (auto& [key, rt] : other.componentTypes_) {
+        if (componentTypes_.find(key) == componentTypes_.end()) {
+            componentTypes_[key] = std::move(rt);
+        }
+    }
 }
 
 } // namespace bng::ast

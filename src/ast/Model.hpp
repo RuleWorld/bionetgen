@@ -10,6 +10,7 @@
 #include "MoleculeType.hpp"
 #include "Observable.hpp"
 #include "ParameterList.hpp"
+#include "PopulationMap.hpp"
 #include "ReactionRule.hpp"
 #include "SeedSpecies.hpp"
 
@@ -36,12 +37,20 @@ public:
     void addMoleculeType(MoleculeType moleculeType);
     void addSeedSpecies(SeedSpecies seedSpecies);
     void addReactionRule(ReactionRule reactionRule);
+    void addPopulationMap(PopulationMap populationMap);
     void setVersion(std::string version);
     void setSubstanceUnits(std::string units);
     void setModelName(std::string modelName);
     void setOption(std::string key, std::string value);
-    
+
+    /// Merge all model elements from another model into this one.
+    /// Takes a non-const reference because it moves reaction rules and
+    /// transfers GraphTypeRegistry ownership to keep PatternGraph pointers valid.
+    /// Actions from the other model are NOT merged.
+    void merge(Model& other);
+
     const std::vector<Compartment>& getCompartments() const;
+    std::vector<Compartment>& getCompartments();
     const std::vector<Molecule>& getMolecules() const;
     const ParameterList& getParameters() const;
     ParameterList& getParameters();
@@ -54,6 +63,7 @@ public:
     const std::vector<SeedSpecies>& getSeedSpecies() const;
     const std::vector<ReactionRule>& getReactionRules() const;
     std::vector<ReactionRule>& getReactionRules();
+    const std::vector<PopulationMap>& getPopulationMaps() const;
     const std::string& getVersion() const;
     const std::string& getSubstanceUnits() const;
     const std::string& getModelName() const;
@@ -71,6 +81,7 @@ private:
     std::vector<MoleculeType> moleculeTypes_;
     std::vector<SeedSpecies> seedSpecies_;
     std::vector<ReactionRule> reactionRules_;
+    std::vector<PopulationMap> populationMaps_;
     GraphTypeRegistry graphTypeRegistry_;
     std::string version_;
     std::string substanceUnits_;

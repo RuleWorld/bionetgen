@@ -129,6 +129,58 @@ private:
     // Used when %tag labels map components across reactant/product boundaries
     std::map<ComponentRef, ComponentRef> tagComponentMap_;
 
+    // Per-molecule compartment transport: for each product molecule (identified by
+    // pattern index + molecule index), stores the compartment from the product pattern
+    // and the corresponding reactant molecule ref.  Used in buildReaction to apply
+    // compartment changes for bond-forming rules where product molecules originate
+    // from different reactant patterns.
+    struct MoleculeCompartmentTransport {
+        std::size_t productPatternIndex;
+        std::size_t productMoleculeIndex;
+        std::string productCompartment;       // compartment on the product pattern molecule
+        std::size_t reactantPatternIndex;
+        std::size_t reactantMoleculeIndex;
+    };
+    std::vector<MoleculeCompartmentTransport> moleculeCompartmentTransports_;
+
+    // Cross-boundary bonds: bonds in product patterns that connect a component in a
+    // matched reactant molecule to a component in a newly-added product molecule.
+    // These bonds are NOT captured as AddBond operations (which require both sides to
+    // be reactant-mapped) and must be established separately in buildReaction after
+    // AddMolecule operations clone the new molecules into the aggregate graph.
+    struct CrossBondRef {
+        ComponentRef reactantComponent;  // reactant-side component (has match mapping)
+        ComponentRef productComponent;   // product-side component (in new molecule)
+    };
+    std::vector<CrossBondRef> crossBonds_;
+
+    // Bonds between two newly-added product molecules (neither side mapped to reactant).
+    // Both ComponentRefs reference product-side components.
+    struct NewMoleculeBondRef {
+        ComponentRef productComponent1;
+        ComponentRef productComponent2;
+    };
+    std::vector<NewMoleculeBondRef> newMoleculeBonds_;
+
+    // Product-only component state changes: product pattern specifies a component
+    // with an explicit state (e.g. s~U) that was NOT mentioned in the reactant
+    // pattern.  During buildReaction, we resolve by finding the named component on
+    // the matched species molecule and setting its state / breaking bonds.
+    struct ProductOnlyStateChange {
+        std::size_t reactantPatternIndex;   // pattern index of the mapped reactant molecule
+        std::size_t reactantMoleculeIndex;  // molecule index within that pattern
+        std::string componentName;          // component name to find on the species molecule
+        std::string newState;               // state to set (empty = don't change state)
+        bool breakBond = false;             // if true, remove any existing bond on the component
+    };
+    std::vector<ProductOnlyStateChange> productOnlyStateChanges_;
+
+    // True when a product molecule has the same type name as a reactant molecule
+    // but a different set of components (different count or names).  This indicates
+    // a molecule "replacement" (delete old + add new) where bonded partners of the
+    // old molecule become orphans that should NOT survive as products.
+    bool hasMoleculeTypeMismatch_ = false;
+
 public:
     void setHasScopePrefix(bool v) { hasScopePrefix_ = v; }
     bool hasScopePrefix() const { return hasScopePrefix_; }

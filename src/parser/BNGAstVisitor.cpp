@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cctype>
 #include <cmath>
+#include <fstream>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -121,6 +122,7 @@ ast::Expression buildLeftAssociativeExpression(
 }
 
 ast::Expression buildExpression(BNGParser::ExpressionContext* ctx);
+ast::Expression buildRateLawExpression(BNGParser::Rate_law_exprContext* ctx);
 
 ast::Expression buildPrimary(BNGParser::Primary_exprContext* ctx);
 
@@ -221,13 +223,88 @@ ast::Expression buildAnd(BNGParser::And_exprContext* ctx) {
         ctx, [](auto* child) { return buildEquality(child); });
 }
 
-ast::Expression buildOr(BNGParser::Or_exprContext* ctx) {
-    return buildLeftAssociativeExpression<BNGParser::Or_exprContext, BNGParser::And_exprContext>(
+ast::Expression buildXor(BNGParser::Xor_exprContext* ctx) {
+    return buildLeftAssociativeExpression<BNGParser::Xor_exprContext, BNGParser::And_exprContext>(
         ctx, [](auto* child) { return buildAnd(child); });
+}
+
+ast::Expression buildOr(BNGParser::Or_exprContext* ctx) {
+    return buildLeftAssociativeExpression<BNGParser::Or_exprContext, BNGParser::Xor_exprContext>(
+        ctx, [](auto* child) { return buildXor(child); });
 }
 
 ast::Expression buildExpression(BNGParser::ExpressionContext* ctx) {
     return buildOr(ctx->conditional_expr()->or_expr());
+}
+
+// Rate law expression builders — mirror the expression builders but use rate_law_* contexts
+// The only difference is that rate_law_mul_expr excludes MOD (%) to avoid conflict with molecule tags
+ast::Expression buildRateLawPrimary(BNGParser::Rate_law_primary_exprContext* ctx) {
+    if (ctx->rate_law_expr() != nullptr) {
+        // Parenthesized expression
+        return buildRateLawExpression(ctx->rate_law_expr());
+    }
+    if (ctx->function_call() != nullptr) {
+        return buildFunction(ctx->function_call());
+    }
+    if (ctx->observable_ref() != nullptr) {
+        return buildObservableRef(ctx->observable_ref());
+    }
+    if (ctx->literal() != nullptr) {
+        return buildLiteral(ctx->literal());
+    }
+    if (ctx->arg_name() != nullptr) {
+        return ast::Expression::identifier(ctx->arg_name()->getText());
+    }
+    throw std::runtime_error("Unsupported rate law primary expression");
+}
+
+ast::Expression buildRateLawUnary(BNGParser::Rate_law_unary_exprContext* ctx) {
+    auto expr = buildRateLawPrimary(ctx->rate_law_primary_expr());
+    if (ctx->MINUS() != nullptr) return ast::Expression::unary("-", std::move(expr));
+    if (ctx->PLUS() != nullptr) return ast::Expression::unary("+", std::move(expr));
+    if (ctx->EMARK() != nullptr) return ast::Expression::unary("!", std::move(expr));
+    if (ctx->TILDE() != nullptr) return ast::Expression::unary("~", std::move(expr));
+    return expr;
+}
+
+ast::Expression buildRateLawPower(BNGParser::Rate_law_pow_exprContext* ctx) {
+    return buildLeftAssociativeExpression<BNGParser::Rate_law_pow_exprContext, BNGParser::Rate_law_unary_exprContext>(
+        ctx, [](auto* child) { return buildRateLawUnary(child); });
+}
+
+ast::Expression buildRateLawMul(BNGParser::Rate_law_mul_exprContext* ctx) {
+    return buildLeftAssociativeExpression<BNGParser::Rate_law_mul_exprContext, BNGParser::Rate_law_pow_exprContext>(
+        ctx, [](auto* child) { return buildRateLawPower(child); });
+}
+
+ast::Expression buildRateLawAdd(BNGParser::Rate_law_add_exprContext* ctx) {
+    return buildLeftAssociativeExpression<BNGParser::Rate_law_add_exprContext, BNGParser::Rate_law_mul_exprContext>(
+        ctx, [](auto* child) { return buildRateLawMul(child); });
+}
+
+ast::Expression buildRateLawEq(BNGParser::Rate_law_eq_exprContext* ctx) {
+    return buildLeftAssociativeExpression<BNGParser::Rate_law_eq_exprContext, BNGParser::Rate_law_add_exprContext>(
+        ctx, [](auto* child) { return buildRateLawAdd(child); });
+}
+
+ast::Expression buildRateLawAnd(BNGParser::Rate_law_and_exprContext* ctx) {
+    return buildLeftAssociativeExpression<BNGParser::Rate_law_and_exprContext, BNGParser::Rate_law_eq_exprContext>(
+        ctx, [](auto* child) { return buildRateLawEq(child); });
+}
+
+ast::Expression buildRateLawXor(BNGParser::Rate_law_xor_exprContext* ctx) {
+    return buildLeftAssociativeExpression<BNGParser::Rate_law_xor_exprContext, BNGParser::Rate_law_and_exprContext>(
+        ctx, [](auto* child) { return buildRateLawAnd(child); });
+}
+
+ast::Expression buildRateLawOr(BNGParser::Rate_law_or_exprContext* ctx) {
+    return buildLeftAssociativeExpression<BNGParser::Rate_law_or_exprContext, BNGParser::Rate_law_xor_exprContext>(
+        ctx, [](auto* child) { return buildRateLawXor(child); });
+}
+
+ast::Expression buildRateLawExpression(BNGParser::Rate_law_exprContext* ctx) {
+    return buildRateLawOr(ctx->rate_law_or_expr());
 }
 
 ast::Action buildActionFromArgs(const std::string& name, BNGParser::Action_argsContext* args) {
@@ -241,6 +318,20 @@ ast::Action buildActionFromArgs(const std::string& name, BNGParser::Action_argsC
         action.arguments[arg->arg_name()->getText()] = arg->action_arg_value()->getText();
     }
     return action;
+}
+
+ast::Expression parseExpressionImpl(const std::string& exprText) {
+    antlr4::ANTLRInputStream input(exprText);
+    BNGLexer lexer(&input);
+    antlr4::CommonTokenStream tokens(&lexer);
+    BNGParser parser(&tokens);
+
+    auto* exprCtx = parser.expression();
+    if (parser.getNumberOfSyntaxErrors() != 0) {
+        throw std::runtime_error("Failed to parse expression: " + exprText);
+    }
+
+    return buildExpression(exprCtx);
 }
 
 } // namespace
@@ -408,8 +499,10 @@ std::any BNGAstVisitor::visitReaction_rule_def(BNGParser::Reaction_rule_defConte
     for (auto* species : ctx->product_patterns()->species_def()) {
         products.push_back(species->getText());
     }
-    for (auto* expr : ctx->rate_law()->expression()) {
-        rates.push_back(buildExpression(expr));
+    for (auto* rateExpr : ctx->rate_law()->rate_law_expr()) {
+        // rate_law_expr has the same structure as expression but without MOD operator
+        // Drill down to the primary_expr which contains function_call, observable_ref, literal, etc.
+        rates.push_back(buildRateLawExpression(rateExpr));
     }
     for (auto* modifier : ctx->rule_modifiers()) {
         modifiers.push_back(modifier->getText());
@@ -519,6 +612,37 @@ std::any BNGAstVisitor::visitOther_action_cmd(BNGParser::Other_action_cmdContext
     return {};
 }
 
+std::any BNGAstVisitor::visitPopulation_map_def(BNGParser::Population_map_defContext* ctx) {
+    if (ctx->species_def() == nullptr) {
+        return {};
+    }
+
+    ast::PopulationMap pm;
+
+    // Optional label (STRING before the colon)
+    const auto strings = ctx->STRING();
+    if (strings.size() >= 2) {
+        // First STRING is the label, second is the function name
+        pm.label = strings[0]->getText();
+        pm.populationFunction = strings[1]->getText();
+    } else if (strings.size() == 1) {
+        // Only the function name
+        pm.populationFunction = strings[0]->getText();
+    }
+
+    pm.patternText = ctx->species_def()->getText();
+
+    // Function arguments from param_list
+    if (ctx->param_list() != nullptr) {
+        for (auto* token : ctx->param_list()->STRING()) {
+            pm.functionArgs.push_back(token->getText());
+        }
+    }
+
+    currentModel_->addPopulationMap(std::move(pm));
+    return {};
+}
+
 std::unique_ptr<ast::Model> parseModel(const std::string& sourceText) {
     antlr4::ANTLRInputStream input(sourceText);
     BNGLexer lexer(&input);
@@ -532,6 +656,20 @@ std::unique_ptr<ast::Model> parseModel(const std::string& sourceText) {
     BNGAstVisitor visitor;
     visitor.visit(tree);
     return visitor.takeModel();
+}
+
+std::unique_ptr<ast::Model> parseModelFromFile(const std::string& filePath) {
+    std::ifstream inputStream(filePath);
+    if (!inputStream) {
+        throw std::runtime_error("Could not open BNGL file: " + filePath);
+    }
+    std::string content((std::istreambuf_iterator<char>(inputStream)),
+                         std::istreambuf_iterator<char>());
+    return parseModel(content);
+}
+
+ast::Expression parseExpression(const std::string& exprText) {
+    return parseExpressionImpl(exprText);
 }
 
 } // namespace bng::parser

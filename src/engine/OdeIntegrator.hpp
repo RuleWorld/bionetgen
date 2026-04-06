@@ -2,6 +2,7 @@
 
 #include <functional>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "ast/Model.hpp"
@@ -10,6 +11,7 @@
 namespace bng::engine {
 
 struct OdeOptions {
+    double tStart = 0.0;
     double tEnd = 1.0;
     std::size_t nSteps = 100;
     double rtol = 1e-8;
@@ -21,6 +23,15 @@ struct OdeOptions {
     bool steadyState = false;      // Enable steady-state detection
     double steadyStateTol = 1e-8;  // Tolerance for steady-state (|dydt| < tol)
     std::string stopIf;            // Boolean expression to evaluate at each step
+    bool printCDAT = true;         // Whether to write .cdat output file
+    bool printFunctions = false;   // Whether to write .fdat output file
+    std::vector<double> sampleTimes; // Non-uniform output time points (overrides nSteps)
+    std::size_t maxSimSteps = 0;   // Max internal simulation steps (0 = unlimited)
+    bool saveProgress = false;     // Write .net checkpoint at each output step
+    bool printNet = false;         // Write .net file after simulation with final concentrations
+    bool printEnd = false;         // Output final state when simulation stops (stop_if or steady_state)
+    std::size_t outputStepInterval = 0; // Output every N internal steps (0 = disabled, use n_steps timing)
+    std::string netfile;           // Custom .net file to read instead of auto-generating
 };
 
 struct OdeResult {
@@ -34,7 +45,7 @@ public:
     OdeIntegrator(const ast::Model& model, const GeneratedNetwork& network);
 
     OdeResult integrate(const OdeOptions& options);
-    void writeOutputFiles(const std::string& prefix, const OdeResult& result) const;
+    void writeOutputFiles(const std::string& prefix, const OdeResult& result, bool printCDAT = true, bool printFunctions = false, bool append = false) const;
     void derivs(double t, const double* y, double* dydt) const;
 
 private:
@@ -49,6 +60,7 @@ private:
         double statFactor;            // statistical factor
         bool isFunctional = false;    // true if rate depends on time/observables
         std::optional<ast::Expression> functionalRateExpr;  // for runtime evaluation
+        bool isTotalRate = false;     // true if rate is total (not multiplied by reactant conc)
     };
 
     struct CompiledGroup {
@@ -61,6 +73,12 @@ private:
     std::vector<bool> fixedSpecies_;    // true for $ (constant) species
     std::size_t nSpecies_ = 0;
     bool hasFunctionalRates_ = false;
+
+    // Performance optimizations
+    mutable std::vector<double> groupValues_;                  // Pre-allocated for derivs()
+    std::unordered_map<std::string, std::size_t> observableIndex_; // O(1) observable lookup
+    std::vector<std::size_t> constantRxnIndices_;              // Indices of constant-rate reactions
+    std::vector<std::size_t> functionalRxnIndices_;            // Indices of functional-rate reactions
 
     void compile();
     void compileGroups();

@@ -1,5 +1,5 @@
 
-// Generated from src/parser/BNGParser.g4 by ANTLR 4.13.1
+// Generated from BNGParser.g4 by ANTLR 4.13.2
 
 #pragma once
 
@@ -32,33 +32,36 @@ public:
     SIMULATE_PLA = 83, PLA_CONFIG = 84, PLA_OUTPUT = 85, SIMULATE_NF = 86, 
     SIMULATE_RM = 87, PARAM = 88, COMPLEX = 89, GET_FINAL_STATE = 90, GML = 91, 
     NOCSLF = 92, NOTF = 93, BINARY_OUTPUT = 94, UTL = 95, EQUIL = 96, PARAMETER_SCAN = 97, 
-    BIFURCATE = 98, PARAMETER = 99, PAR_MIN = 100, PAR_MAX = 101, N_SCAN_PTS = 102, 
-    LOG_SCALE = 103, RESET_CONC = 104, READFILE = 105, FILE = 106, ATOMIZE = 107, 
-    BLOCKS = 108, SKIPACTIONS = 109, VISUALIZE = 110, TYPE = 111, BACKGROUND = 112, 
-    COLLAPSE = 113, OPTS = 114, WRITESSC = 115, WRITESSCCFG = 116, FORMAT = 117, 
-    WRITEFILE = 118, WRITEMODEL = 119, WRITEXML = 120, WRITENETWORK = 121, 
-    WRITESBML = 122, WRITEMDL = 123, WRITELATEX = 124, INCLUDE_MODEL = 125, 
-    INCLUDE_NETWORK = 126, PRETTY_FORMATTING = 127, EVALUATE_EXPRESSIONS = 128, 
-    TEXTREACTION = 129, TEXTSPECIES = 130, WRITEMFILE = 131, WRITEMEXFILE = 132, 
-    BDF = 133, MAX_STEP = 134, MAXORDER = 135, STATS = 136, MAX_NUM_STEPS = 137, 
-    MAX_ERR_TEST_FAILS = 138, MAX_CONV_FAILS = 139, STIFF = 140, SETCONCENTRATION = 141, 
-    ADDCONCENTRATION = 142, SAVECONCENTRATIONS = 143, RESETCONCENTRATIONS = 144, 
-    SETPARAMETER = 145, SAVEPARAMETERS = 146, RESETPARAMETERS = 147, QUIT = 148, 
-    TRUE = 149, FALSE = 150, SAT = 151, MM = 152, HILL = 153, ARRHENIUS = 154, 
-    MRATIO = 155, TFUN = 156, FUNCTIONPRODUCT = 157, PRIORITY = 158, IF = 159, 
-    EXP = 160, LN = 161, LOG10 = 162, LOG2 = 163, SQRT = 164, RINT = 165, 
-    ABS = 166, SIN = 167, COS = 168, TAN = 169, ASIN = 170, ACOS = 171, 
-    ATAN = 172, SINH = 173, COSH = 174, TANH = 175, ASINH = 176, ACOSH = 177, 
-    ATANH = 178, PI = 179, EULERIAN = 180, MIN = 181, MAX = 182, SUM = 183, 
-    AVG = 184, TIME = 185, FLOAT = 186, INT = 187, STRING = 188, QUOTED_STRING = 189, 
-    SINGLE_QUOTED_STRING = 190, SEMI = 191, COLON = 192, LSBRACKET = 193, 
-    RSBRACKET = 194, LBRACKET = 195, RBRACKET = 196, COMMA = 197, DOT = 198, 
-    LPAREN = 199, RPAREN = 200, UNI_REACTION_SIGN = 201, BI_REACTION_SIGN = 202, 
-    DOLLAR = 203, TILDE = 204, AT = 205, GTE = 206, GT = 207, LTE = 208, 
-    LT = 209, ASSIGNS = 210, EQUALS = 211, NOT_EQUALS = 212, BECOMES = 213, 
-    LOGICAL_AND = 214, LOGICAL_OR = 215, DIV = 216, TIMES = 217, MINUS = 218, 
-    PLUS = 219, POWER = 220, MOD = 221, PIPE = 222, QMARK = 223, EMARK = 224, 
-    AMPERSAND = 225, VERSION_NUMBER = 226, ULB = 227
+    BIFURCATE = 98, LINEAR_PARAMETER_SENSITIVITY = 99, PARAMETER = 100, 
+    PAR_MIN = 101, PAR_MAX = 102, N_SCAN_PTS = 103, LOG_SCALE = 104, RESET_CONC = 105, 
+    READFILE = 106, FILE = 107, ATOMIZE = 108, BLOCKS = 109, SKIPACTIONS = 110, 
+    VISUALIZE = 111, TYPE = 112, BACKGROUND = 113, COLLAPSE = 114, OPTS = 115, 
+    WRITESSC = 116, WRITESSCCFG = 117, FORMAT = 118, WRITEFILE = 119, WRITEMODEL = 120, 
+    WRITEXML = 121, WRITENETWORK = 122, WRITESBML = 123, WRITESBMLMULTI = 124, 
+    WRITEMDL = 125, WRITELATEX = 126, INCLUDE_MODEL = 127, INCLUDE_NETWORK = 128, 
+    PRETTY_FORMATTING = 129, EVALUATE_EXPRESSIONS = 130, TEXTREACTION = 131, 
+    TEXTSPECIES = 132, WRITEMFILE = 133, WRITEMEXFILE = 134, WRITECPPFILE = 135, 
+    WRITECPYFILE = 136, BDF = 137, MAX_STEP = 138, MAXORDER = 139, STATS = 140, 
+    MAX_NUM_STEPS = 141, MAX_ERR_TEST_FAILS = 142, MAX_CONV_FAILS = 143, 
+    STIFF = 144, SETCONCENTRATION = 145, ADDCONCENTRATION = 146, SAVECONCENTRATIONS = 147, 
+    RESETCONCENTRATIONS = 148, SETPARAMETER = 149, SAVEPARAMETERS = 150, 
+    RESETPARAMETERS = 151, SETVOLUME = 152, SIMULATE_PSA = 153, POPLEVEL = 154, 
+    MOL_THRESHOLD = 155, NFSIM_EXEC = 156, QUIT = 157, TRUE = 158, FALSE = 159, 
+    SAT = 160, MM = 161, HILL = 162, ARRHENIUS = 163, MRATIO = 164, TFUN = 165, 
+    FUNCTIONPRODUCT = 166, PRIORITY = 167, IF = 168, EXP = 169, LN = 170, 
+    LOG10 = 171, LOG2 = 172, SQRT = 173, RINT = 174, ABS = 175, SIN = 176, 
+    COS = 177, TAN = 178, ASIN = 179, ACOS = 180, ATAN = 181, SINH = 182, 
+    COSH = 183, TANH = 184, ASINH = 185, ACOSH = 186, ATANH = 187, PI = 188, 
+    EULERIAN = 189, MIN = 190, MAX = 191, SUM = 192, AVG = 193, TIME = 194, 
+    FLOAT = 195, INT = 196, STRING = 197, QUOTED_STRING = 198, SINGLE_QUOTED_STRING = 199, 
+    SEMI = 200, COLON = 201, LSBRACKET = 202, RSBRACKET = 203, LBRACKET = 204, 
+    RBRACKET = 205, COMMA = 206, DOT = 207, LPAREN = 208, RPAREN = 209, 
+    UNI_REACTION_SIGN = 210, BI_REACTION_SIGN = 211, DOLLAR = 212, TILDE = 213, 
+    AT = 214, GTE = 215, GT = 216, LTE = 217, LT = 218, ASSIGNS = 219, EQUALS = 220, 
+    NOT_EQUALS = 221, BECOMES = 222, LOGICAL_AND = 223, LOGICAL_OR = 224, 
+    LOGICAL_XOR = 225, DIV = 226, TIMES = 227, MINUS = 228, PLUS = 229, 
+    POWER = 230, MOLECULE_TAG_TOKEN = 231, MOD = 232, PIPE = 233, QMARK = 234, 
+    EMARK = 235, AMPERSAND = 236, VERSION_NUMBER = 237, ULB = 238
   };
 
   enum {
@@ -76,21 +79,24 @@ public:
     RuleObservable_def = 35, RuleObservable_type = 36, RuleObservable_pattern_list = 37, 
     RuleObservable_pattern = 38, RuleReaction_rules_block = 39, RuleReaction_rule_def = 40, 
     RuleLabel_def = 41, RuleReactant_patterns = 42, RuleProduct_patterns = 43, 
-    RuleReaction_sign = 44, RuleRate_law = 45, RuleRule_modifiers = 46, 
-    RulePattern_list = 47, RuleFunctions_block = 48, RuleFunction_def = 49, 
-    RuleParam_list = 50, RuleCompartments_block = 51, RuleCompartment_def = 52, 
-    RuleEnergy_patterns_block = 53, RuleEnergy_pattern_def = 54, RulePopulation_maps_block = 55, 
-    RulePopulation_map_def = 56, RuleActions_block = 57, RuleWrapped_actions_block = 58, 
-    RuleBegin_actions_block = 59, RuleAction_command = 60, RuleGenerate_network_cmd = 61, 
-    RuleSimulate_cmd = 62, RuleWrite_cmd = 63, RuleSet_cmd = 64, RuleOther_action_cmd = 65, 
-    RuleAction_args = 66, RuleAction_arg_list = 67, RuleAction_arg = 68, 
-    RuleAction_arg_value = 69, RuleQuoted_string = 70, RuleKeyword_as_value = 71, 
-    RuleNested_hash_list = 72, RuleNested_hash_item = 73, RuleArg_name = 74, 
-    RuleExpression_list = 75, RuleExpression = 76, RuleConditional_expr = 77, 
-    RuleOr_expr = 78, RuleAnd_expr = 79, RuleEquality_expr = 80, RuleRelational_expr = 81, 
-    RuleAdditive_expr = 82, RuleMultiplicative_expr = 83, RulePower_expr = 84, 
-    RuleUnary_expr = 85, RulePrimary_expr = 86, RuleFunction_call = 87, 
-    RuleObservable_ref = 88, RuleLiteral = 89
+    RuleReaction_sign = 44, RuleRate_law = 45, RuleRate_law_expr = 46, RuleRate_law_or_expr = 47, 
+    RuleRate_law_xor_expr = 48, RuleRate_law_and_expr = 49, RuleRate_law_eq_expr = 50, 
+    RuleRate_law_add_expr = 51, RuleRate_law_mul_expr = 52, RuleRate_law_pow_expr = 53, 
+    RuleRate_law_unary_expr = 54, RuleRate_law_primary_expr = 55, RuleRule_modifiers = 56, 
+    RulePattern_list = 57, RuleFunctions_block = 58, RuleFunction_def = 59, 
+    RuleParam_list = 60, RuleCompartments_block = 61, RuleCompartment_def = 62, 
+    RuleEnergy_patterns_block = 63, RuleEnergy_pattern_def = 64, RulePopulation_maps_block = 65, 
+    RulePopulation_map_def = 66, RuleActions_block = 67, RuleWrapped_actions_block = 68, 
+    RuleBegin_actions_block = 69, RuleAction_command = 70, RuleGenerate_network_cmd = 71, 
+    RuleSimulate_cmd = 72, RuleWrite_cmd = 73, RuleSet_cmd = 74, RuleOther_action_cmd = 75, 
+    RuleAction_args = 76, RuleAction_arg_list = 77, RuleAction_arg = 78, 
+    RuleAction_arg_value = 79, RuleQuoted_string = 80, RuleKeyword_as_value = 81, 
+    RuleNested_hash_list = 82, RuleNested_hash_item = 83, RuleArg_name = 84, 
+    RuleExpression_list = 85, RuleExpression = 86, RuleConditional_expr = 87, 
+    RuleOr_expr = 88, RuleXor_expr = 89, RuleAnd_expr = 90, RuleEquality_expr = 91, 
+    RuleRelational_expr = 92, RuleAdditive_expr = 93, RuleMultiplicative_expr = 94, 
+    RulePower_expr = 95, RuleUnary_expr = 96, RulePrimary_expr = 97, RuleFunction_call = 98, 
+    RuleObservable_ref = 99, RuleLiteral = 100
   };
 
   explicit BNGParser(antlr4::TokenStream *input);
@@ -156,6 +162,16 @@ public:
   class Product_patternsContext;
   class Reaction_signContext;
   class Rate_lawContext;
+  class Rate_law_exprContext;
+  class Rate_law_or_exprContext;
+  class Rate_law_xor_exprContext;
+  class Rate_law_and_exprContext;
+  class Rate_law_eq_exprContext;
+  class Rate_law_add_exprContext;
+  class Rate_law_mul_exprContext;
+  class Rate_law_pow_exprContext;
+  class Rate_law_unary_exprContext;
+  class Rate_law_primary_exprContext;
   class Rule_modifiersContext;
   class Pattern_listContext;
   class Functions_blockContext;
@@ -189,6 +205,7 @@ public:
   class ExpressionContext;
   class Conditional_exprContext;
   class Or_exprContext;
+  class Xor_exprContext;
   class And_exprContext;
   class Equality_exprContext;
   class Relational_exprContext;
@@ -723,8 +740,7 @@ public:
   public:
     Scope_prefixContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    antlr4::tree::TerminalNode *MOD();
-    antlr4::tree::TerminalNode *STRING();
+    antlr4::tree::TerminalNode *MOLECULE_TAG_TOKEN();
     std::vector<antlr4::tree::TerminalNode *> COLON();
     antlr4::tree::TerminalNode* COLON(size_t i);
 
@@ -754,9 +770,7 @@ public:
   public:
     Molecule_tagContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    antlr4::tree::TerminalNode *MOD();
-    antlr4::tree::TerminalNode *INT();
-    antlr4::tree::TerminalNode *STRING();
+    antlr4::tree::TerminalNode *MOLECULE_TAG_TOKEN();
 
 
     virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
@@ -842,9 +856,7 @@ public:
   public:
     Component_labelContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    antlr4::tree::TerminalNode *MOD();
-    antlr4::tree::TerminalNode *INT();
-    antlr4::tree::TerminalNode *STRING();
+    antlr4::tree::TerminalNode *MOLECULE_TAG_TOKEN();
 
 
     virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
@@ -1080,8 +1092,8 @@ public:
   public:
     Rate_lawContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    std::vector<ExpressionContext *> expression();
-    ExpressionContext* expression(size_t i);
+    std::vector<Rate_law_exprContext *> rate_law_expr();
+    Rate_law_exprContext* rate_law_expr(size_t i);
     antlr4::tree::TerminalNode *COMMA();
 
 
@@ -1090,6 +1102,181 @@ public:
   };
 
   Rate_lawContext* rate_law();
+
+  class  Rate_law_exprContext : public antlr4::ParserRuleContext {
+  public:
+    Rate_law_exprContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    Rate_law_or_exprContext *rate_law_or_expr();
+
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+   
+  };
+
+  Rate_law_exprContext* rate_law_expr();
+
+  class  Rate_law_or_exprContext : public antlr4::ParserRuleContext {
+  public:
+    Rate_law_or_exprContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    std::vector<Rate_law_xor_exprContext *> rate_law_xor_expr();
+    Rate_law_xor_exprContext* rate_law_xor_expr(size_t i);
+    std::vector<antlr4::tree::TerminalNode *> LOGICAL_OR();
+    antlr4::tree::TerminalNode* LOGICAL_OR(size_t i);
+
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+   
+  };
+
+  Rate_law_or_exprContext* rate_law_or_expr();
+
+  class  Rate_law_xor_exprContext : public antlr4::ParserRuleContext {
+  public:
+    Rate_law_xor_exprContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    std::vector<Rate_law_and_exprContext *> rate_law_and_expr();
+    Rate_law_and_exprContext* rate_law_and_expr(size_t i);
+    std::vector<antlr4::tree::TerminalNode *> LOGICAL_XOR();
+    antlr4::tree::TerminalNode* LOGICAL_XOR(size_t i);
+
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+   
+  };
+
+  Rate_law_xor_exprContext* rate_law_xor_expr();
+
+  class  Rate_law_and_exprContext : public antlr4::ParserRuleContext {
+  public:
+    Rate_law_and_exprContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    std::vector<Rate_law_eq_exprContext *> rate_law_eq_expr();
+    Rate_law_eq_exprContext* rate_law_eq_expr(size_t i);
+    std::vector<antlr4::tree::TerminalNode *> LOGICAL_AND();
+    antlr4::tree::TerminalNode* LOGICAL_AND(size_t i);
+
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+   
+  };
+
+  Rate_law_and_exprContext* rate_law_and_expr();
+
+  class  Rate_law_eq_exprContext : public antlr4::ParserRuleContext {
+  public:
+    Rate_law_eq_exprContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    std::vector<Rate_law_add_exprContext *> rate_law_add_expr();
+    Rate_law_add_exprContext* rate_law_add_expr(size_t i);
+    std::vector<antlr4::tree::TerminalNode *> EQUALS();
+    antlr4::tree::TerminalNode* EQUALS(size_t i);
+    std::vector<antlr4::tree::TerminalNode *> NOT_EQUALS();
+    antlr4::tree::TerminalNode* NOT_EQUALS(size_t i);
+    std::vector<antlr4::tree::TerminalNode *> GTE();
+    antlr4::tree::TerminalNode* GTE(size_t i);
+    std::vector<antlr4::tree::TerminalNode *> GT();
+    antlr4::tree::TerminalNode* GT(size_t i);
+    std::vector<antlr4::tree::TerminalNode *> LTE();
+    antlr4::tree::TerminalNode* LTE(size_t i);
+    std::vector<antlr4::tree::TerminalNode *> LT();
+    antlr4::tree::TerminalNode* LT(size_t i);
+
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+   
+  };
+
+  Rate_law_eq_exprContext* rate_law_eq_expr();
+
+  class  Rate_law_add_exprContext : public antlr4::ParserRuleContext {
+  public:
+    Rate_law_add_exprContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    std::vector<Rate_law_mul_exprContext *> rate_law_mul_expr();
+    Rate_law_mul_exprContext* rate_law_mul_expr(size_t i);
+    std::vector<antlr4::tree::TerminalNode *> PLUS();
+    antlr4::tree::TerminalNode* PLUS(size_t i);
+    std::vector<antlr4::tree::TerminalNode *> MINUS();
+    antlr4::tree::TerminalNode* MINUS(size_t i);
+
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+   
+  };
+
+  Rate_law_add_exprContext* rate_law_add_expr();
+
+  class  Rate_law_mul_exprContext : public antlr4::ParserRuleContext {
+  public:
+    Rate_law_mul_exprContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    std::vector<Rate_law_pow_exprContext *> rate_law_pow_expr();
+    Rate_law_pow_exprContext* rate_law_pow_expr(size_t i);
+    std::vector<antlr4::tree::TerminalNode *> TIMES();
+    antlr4::tree::TerminalNode* TIMES(size_t i);
+    std::vector<antlr4::tree::TerminalNode *> DIV();
+    antlr4::tree::TerminalNode* DIV(size_t i);
+
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+   
+  };
+
+  Rate_law_mul_exprContext* rate_law_mul_expr();
+
+  class  Rate_law_pow_exprContext : public antlr4::ParserRuleContext {
+  public:
+    Rate_law_pow_exprContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    std::vector<Rate_law_unary_exprContext *> rate_law_unary_expr();
+    Rate_law_unary_exprContext* rate_law_unary_expr(size_t i);
+    std::vector<antlr4::tree::TerminalNode *> POWER();
+    antlr4::tree::TerminalNode* POWER(size_t i);
+
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+   
+  };
+
+  Rate_law_pow_exprContext* rate_law_pow_expr();
+
+  class  Rate_law_unary_exprContext : public antlr4::ParserRuleContext {
+  public:
+    Rate_law_unary_exprContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    Rate_law_primary_exprContext *rate_law_primary_expr();
+    antlr4::tree::TerminalNode *PLUS();
+    antlr4::tree::TerminalNode *MINUS();
+    antlr4::tree::TerminalNode *EMARK();
+    antlr4::tree::TerminalNode *TILDE();
+
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+   
+  };
+
+  Rate_law_unary_exprContext* rate_law_unary_expr();
+
+  class  Rate_law_primary_exprContext : public antlr4::ParserRuleContext {
+  public:
+    Rate_law_primary_exprContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *LPAREN();
+    Rate_law_exprContext *rate_law_expr();
+    antlr4::tree::TerminalNode *RPAREN();
+    Function_callContext *function_call();
+    Observable_refContext *observable_ref();
+    LiteralContext *literal();
+    Arg_nameContext *arg_name();
+
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+   
+  };
+
+  Rate_law_primary_exprContext* rate_law_primary_expr();
 
   class  Rule_modifiersContext : public antlr4::ParserRuleContext {
   public:
@@ -1410,6 +1597,7 @@ public:
     antlr4::tree::TerminalNode *SIMULATE_PLA();
     antlr4::tree::TerminalNode *SIMULATE_NF();
     antlr4::tree::TerminalNode *SIMULATE_RM();
+    antlr4::tree::TerminalNode *SIMULATE_PSA();
     Action_argsContext *action_args();
     antlr4::tree::TerminalNode *SEMI();
     std::vector<antlr4::tree::TerminalNode *> LB();
@@ -1431,11 +1619,17 @@ public:
     antlr4::tree::TerminalNode *WRITEFILE();
     antlr4::tree::TerminalNode *WRITEXML();
     antlr4::tree::TerminalNode *WRITESBML();
+    antlr4::tree::TerminalNode *WRITESBMLMULTI();
     antlr4::tree::TerminalNode *WRITENETWORK();
     antlr4::tree::TerminalNode *WRITEMODEL();
     antlr4::tree::TerminalNode *WRITEMFILE();
     antlr4::tree::TerminalNode *WRITEMEXFILE();
+    antlr4::tree::TerminalNode *WRITECPPFILE();
+    antlr4::tree::TerminalNode *WRITECPYFILE();
     antlr4::tree::TerminalNode *WRITELATEX();
+    antlr4::tree::TerminalNode *WRITEMDL();
+    antlr4::tree::TerminalNode *WRITESSC();
+    antlr4::tree::TerminalNode *WRITESSCCFG();
     Action_argsContext *action_args();
     antlr4::tree::TerminalNode *SEMI();
     std::vector<antlr4::tree::TerminalNode *> LB();
@@ -1484,9 +1678,13 @@ public:
     antlr4::tree::TerminalNode *QUIT();
     antlr4::tree::TerminalNode *PARAMETER_SCAN();
     antlr4::tree::TerminalNode *BIFURCATE();
+    antlr4::tree::TerminalNode *LINEAR_PARAMETER_SENSITIVITY();
     antlr4::tree::TerminalNode *VISUALIZE();
     antlr4::tree::TerminalNode *GENERATEHYBRIDMODEL();
     antlr4::tree::TerminalNode *READFILE();
+    antlr4::tree::TerminalNode *SETVOLUME();
+    antlr4::tree::TerminalNode *INCLUDE_MODEL();
+    antlr4::tree::TerminalNode *INCLUDE_NETWORK();
     Action_argsContext *action_args();
     Action_arg_valueContext *action_arg_value();
     antlr4::tree::TerminalNode *SEMI();
@@ -1683,6 +1881,9 @@ public:
     antlr4::tree::TerminalNode *SAMPLE_TIMES();
     antlr4::tree::TerminalNode *PLA_CONFIG();
     antlr4::tree::TerminalNode *PLA_OUTPUT();
+    antlr4::tree::TerminalNode *SEED();
+    antlr4::tree::TerminalNode *POPLEVEL();
+    antlr4::tree::TerminalNode *ARGFILE();
     antlr4::tree::TerminalNode *PARAM();
     antlr4::tree::TerminalNode *COMPLEX();
     antlr4::tree::TerminalNode *GET_FINAL_STATE();
@@ -1692,6 +1893,8 @@ public:
     antlr4::tree::TerminalNode *BINARY_OUTPUT();
     antlr4::tree::TerminalNode *UTL();
     antlr4::tree::TerminalNode *EQUIL();
+    antlr4::tree::TerminalNode *NFSIM_EXEC();
+    antlr4::tree::TerminalNode *MOL_THRESHOLD();
     antlr4::tree::TerminalNode *PARAMETER();
     antlr4::tree::TerminalNode *PAR_MIN();
     antlr4::tree::TerminalNode *PAR_MAX();
@@ -1775,8 +1978,8 @@ public:
   public:
     Or_exprContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    std::vector<And_exprContext *> and_expr();
-    And_exprContext* and_expr(size_t i);
+    std::vector<Xor_exprContext *> xor_expr();
+    Xor_exprContext* xor_expr(size_t i);
     std::vector<antlr4::tree::TerminalNode *> LOGICAL_OR();
     antlr4::tree::TerminalNode* LOGICAL_OR(size_t i);
 
@@ -1786,6 +1989,22 @@ public:
   };
 
   Or_exprContext* or_expr();
+
+  class  Xor_exprContext : public antlr4::ParserRuleContext {
+  public:
+    Xor_exprContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    std::vector<And_exprContext *> and_expr();
+    And_exprContext* and_expr(size_t i);
+    std::vector<antlr4::tree::TerminalNode *> LOGICAL_XOR();
+    antlr4::tree::TerminalNode* LOGICAL_XOR(size_t i);
+
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+   
+  };
+
+  Xor_exprContext* xor_expr();
 
   class  And_exprContext : public antlr4::ParserRuleContext {
   public:

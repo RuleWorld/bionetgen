@@ -9,6 +9,7 @@
 #include "BNGLexer.h"
 #include "BNGParser.h"
 #include "actions/ActionDispatch.hpp"
+#include "console/Console.hpp"
 #include "parser/BNGAstVisitor.hpp"
 
 namespace {
@@ -55,7 +56,8 @@ ParseResult parseFile(const std::string& path) {
 }
 
 void printUsage() {
-    std::cerr << "Usage: bng_cpp [--check] [--verbose] [--version] <model1.bngl> [model2.bngl ...]\n";
+    std::cerr << "Usage: bng_cpp [--check] [--verbose] [--version] [--console|-i] <model1.bngl> [model2.bngl ...]\n";
+    std::cerr << "  --console, -i   Enter interactive console mode\n";
 }
 
 } // namespace
@@ -63,6 +65,7 @@ void printUsage() {
 int main(int argc, char** argv) {
     bool checkOnly = false;
     bool verbose = false;
+    bool consoleMode = false;
     std::vector<std::string> inputs;
 
     for (int i = 1; i < argc; ++i) {
@@ -79,7 +82,31 @@ int main(int argc, char** argv) {
             std::cout << "bng_cpp version 4.0\n";
             return 0;
         }
+        if (arg == "--console" || arg == "-i") {
+            consoleMode = true;
+            continue;
+        }
         inputs.push_back(arg);
+    }
+
+    // Console mode: optionally load a model, then enter REPL
+    if (consoleMode) {
+        std::unique_ptr<bng::ast::Model> model;
+        std::string sourcePath = ".";
+        if (!inputs.empty()) {
+            auto result = parseFile(inputs[0]);
+            if (result.opened && result.syntaxErrors == 0 && result.error.empty() && result.model) {
+                model = std::move(result.model);
+                sourcePath = inputs[0];
+            } else {
+                std::cerr << "WARNING: Could not load " << inputs[0] << ", starting with empty model.\n";
+            }
+        }
+        if (!model) {
+            model = std::make_unique<bng::ast::Model>();
+        }
+        bng::console::Console::run(std::move(model), sourcePath, verbose);
+        return 0;
     }
 
     if (inputs.empty()) {
@@ -115,6 +142,7 @@ int main(int argc, char** argv) {
                   << ", seed_species=" << result.model->getSeedSpecies().size()
                   << ", observables=" << result.model->getObservables().size()
                   << ", reaction_rules=" << result.model->getReactionRules().size()
+                  << ", population_maps=" << result.model->getPopulationMaps().size()
                   << ", actions=" << result.model->getActions().size()
                   << ")\n";
     }

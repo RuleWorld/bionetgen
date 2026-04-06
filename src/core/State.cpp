@@ -179,7 +179,12 @@ LabelState::is_wildcard ( ) const
 BondState::BondState ( const BondStateType & state_type, const std::string & state )
    : LabelState( state_type, state )
 {
-    // TODO: validate state!
+    // Validate that the bond state is a recognized value for the BondStateType.
+    // Valid bond states are "-" (unbound) and "+" (bound), as defined by BondStateType.
+    if ( !state.empty() && !state_type.check_state( state ) )
+    {
+        throw std::runtime_error( "BondState: invalid bond state '" + state + "'" );
+    }
 }
 
 

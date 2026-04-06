@@ -53,10 +53,11 @@ endif()
 FetchContent_Declare(
   sundials
   GIT_REPOSITORY https://github.com/LLNL/sundials.git
-  GIT_TAG        v2.7.0   # Compatible with CVODE 2.6.0 API
+  GIT_TAG        v7.6.0
+  GIT_SUBMODULES ""  # Skip submodules (not needed for CVODE build)
 )
 
-# Configure SUNDIALS build options - only build CVODE, no tests/examples
+# Configure SUNDIALS v7 build options - only build CVODE, no tests/examples
 set(BUILD_CVODE ON CACHE INTERNAL "Build CVODE solver")
 set(BUILD_CVODES OFF CACHE INTERNAL "")
 set(BUILD_IDA OFF CACHE INTERNAL "")
@@ -69,6 +70,7 @@ set(BUILD_TESTING OFF CACHE INTERNAL "Disable SUNDIALS tests")
 set(EXAMPLES_ENABLE OFF CACHE INTERNAL "Disable all SUNDIALS examples")
 set(EXAMPLES_ENABLE_C OFF CACHE INTERNAL "Disable C examples")
 set(EXAMPLES_INSTALL OFF CACHE INTERNAL "Don't install examples")
+set(SUNDIALS_INDEX_SIZE 64 CACHE INTERNAL "Use 64-bit indexing")
 
 FetchContent_MakeAvailable(sundials)
 
