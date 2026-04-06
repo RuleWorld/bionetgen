@@ -1851,8 +1851,7 @@ EOF
 
 	close(Mscript);
 	print "Wrote M-file script $mscript_path.\n";
-    open( Mscript, "| perl -pi.bak -e 's/_rateLaw/rateLaw__/g' $mscript_path" ) || die "Couldn't open $mscript_path: $!\n";
-	close(Mscript);
+    system('perl', '-pi.bak', '-e', 's/_rateLaw/rateLaw__/g', $mscript_path);
     my $toRemove = $mscript_path . ".bak";
     unlink($toRemove);
 	return ();	
