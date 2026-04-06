@@ -5906,7 +5906,7 @@ int update_concentrations(int irxn) {
 	return (force_update);
 }
 
-int update_concentrations_has(int irxn) {
+int update_concentrations_psa(int irxn) {
 	int i;
 	int offset;
 	int force_update = 0;
@@ -6118,7 +6118,7 @@ void update_rxn_rates(int irxn) {
 }
 
 
-void update_rxn_rates_has(int irxn, double poplevel, bool pScaleChecker) {
+void update_rxn_rates_psa(int irxn, double poplevel, bool pScaleChecker) {
 	//iarray *iarr;
 	Rxn** rarray;
 	unsigned int j;
@@ -6324,7 +6324,7 @@ int adaptive_scaling_network(double* t, double delta_t, double poplevel, bool pS
 		if (irxn == GSP.na) break; // This can happen if a_tot = 0.0
 
 		/* fire rule by updating concentrations */
-		rxn_rate_update = update_concentrations_has(irxn);
+		rxn_rate_update = update_concentrations_psa(irxn);
 		++GSP.n_steps;
 
 		/* update rxn rates */
@@ -6332,7 +6332,7 @@ int adaptive_scaling_network(double* t, double delta_t, double poplevel, bool pS
 		double fmod = GSP.n_steps - (double)((long)(GSP.n_steps/GSP_interval))*GSP_interval;
 //		if (rxn_rate_update || ((long)GSP.n_steps % GSP.rxn_rate_update_interval == 0)){
 		if (rxn_rate_update || fmod <= 1e-12){ // Use 1e-12 as a tolerance
-			update_rxn_rates_has(irxn, poplevel, pScaleChecker);
+			update_rxn_rates_psa(irxn, poplevel, pScaleChecker);
 		}
 		/* Floating-point modulus
 		double a = 200000.0;
@@ -6356,7 +6356,7 @@ int adaptive_scaling_network(double* t, double delta_t, double poplevel, bool pS
 		*t = t_end;
 		// Need to update time(), functions that depend on time(), and rates that depend on time()
 		if (network.has_functions){
-			update_rxn_rates_has(0, poplevel, pScaleChecker); // All rxns have the necessary update lists, so just call any of them
+			update_rxn_rates_psa(0, poplevel, pScaleChecker); // All rxns have the necessary update lists, so just call any of them
 		}
 	}
 	else{ // t_remain might be > 0 if maxSteps reached

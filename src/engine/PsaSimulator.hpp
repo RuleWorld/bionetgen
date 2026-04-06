@@ -11,16 +11,16 @@
 namespace bng::engine {
 
 /**
- * PsaSimulator - Heterogeneous Adaptive Scaling (HAS) / PSA Simulation
+ * PsaSimulator - Partial Scaling Algorithm (PSA) / Partial Scaling Approximation Simulation
  *
- * Faithfully implements the HAS algorithm from BNG2 Network3/src/network.cpp:
+ * Faithfully implements the PSA algorithm from BNG2 Network3/src/network.cpp:
  *   - init_adaptive_scaling_network()
  *   - adaptive_scaling_network()
  *   - rxn_rate_scaled()
- *   - update_concentrations_has()
- *   - update_rxn_rates_has()
+ *   - update_concentrations_psa()
+ *   - update_rxn_rates_psa()
  *
- * The HAS algorithm is a Gillespie-type SSA with adaptive propensity scaling.
+ * The PSA algorithm is a Gillespie-type SSA with adaptive propensity scaling.
  * For each reaction, a scaling factor s[i] is computed based on the minimum
  * population of reactants/products relative to poplevel. Propensities are
  * computed using scaled concentrations: rate = k * prod((X[r]/s - n_offset))
@@ -37,7 +37,7 @@ public:
     PsaSimulator(const ast::Model& model, const GeneratedNetwork& network);
 
     /**
-     * Run HAS/PSA simulation.
+     * Run PSA simulation.
      * @param opts      Standard simulation options (t_end, n_steps, seed, etc.)
      * @param poplevel  Population scaling target. Scaling factor for each reaction
      *                  is floor(minPop / poplevel) where minPop is the minimum
@@ -87,24 +87,24 @@ private:
                          double& scaling) const;
 
     /**
-     * Update concentrations after firing reaction irxn (HAS version).
-     * Faithful port of update_concentrations_has() from network.cpp.
+     * Update concentrations after firing reaction irxn (PSA version).
+     * Faithful port of update_concentrations_psa() from network.cpp.
      *
      * Reactant concentrations decrease by s[irxn], product concentrations
      * increase by s[irxn]. Returns true if a force_update of rates is needed
      * (when any affected species drops below threshold).
      */
-    bool updateConcentrationsHas(std::size_t irxn, std::vector<double>& state,
+    bool updateConcentrationsPsa(std::size_t irxn, std::vector<double>& state,
                                  const std::vector<double>& scaling) const;
 
     /**
-     * Update reaction rates after firing reaction irxn (HAS version).
-     * Faithful port of update_rxn_rates_has() from network.cpp.
+     * Update reaction rates after firing reaction irxn (PSA version).
+     * Faithful port of update_rxn_rates_psa() from network.cpp.
      *
      * Recomputes propensities for all reactions that depend on the species
      * affected by reaction irxn.
      */
-    void updateRxnRatesHas(std::size_t irxn, std::vector<double>& propensities,
+    void updateRxnRatesPsa(std::size_t irxn, std::vector<double>& propensities,
                            std::vector<double>& scaling, double& aTot,
                            const std::vector<double>& state,
                            double poplevel, bool pScaleChecker) const;

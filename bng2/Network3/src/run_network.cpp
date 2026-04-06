@@ -130,7 +130,7 @@ int main(int argc, char *argv[]){
 //  extern int optind, opterr;
     //
     // Allowed propagator types
-    enum {SSA, CVODE, EULER, RKCS, PLA, HAS};
+    enum {SSA, CVODE, EULER, RKCS, PLA, PSA};
     int propagator = CVODE;
     int SOLVER = DENSE;
     int outtime = -1;
@@ -293,13 +293,13 @@ int main(int argc, char *argv[]){
                     propagator = SSA;
 				}
                 else {
-                    propagator = HAS;
+                    propagator = PSA;
                     cout << "Using scaling method to accelerate simulation" << endl;
                 }
 			}
 			else if (long_opt == "check_product_scale"){
 				if (atoi(argv[iarg]) != 0){
-                    cout << "The heterogeneous adaptive scaling method is also checking the scale of products (right hand side)" << endl;
+                    cout << "The partial scaling algorithm (PSA) is also checking the scale of products (right hand side)" << endl;
                     pScaleChecker = true;
 				}
 			}
@@ -511,7 +511,7 @@ int main(int argc, char *argv[]){
 	init_network(reactions, rates, species, spec_groups, network_name);
 
 	// Round species populations if propagator is SSA or PLA
-	if (propagator == SSA || propagator == PLA || propagator == HAS){
+	if (propagator == SSA || propagator == PLA || propagator == PSA){
 		for (int i=0;i < network.species->n_elt;i++) {
 			network.species->elt[i]->val = floor(network.species->elt[i]->val + 0.5);
 		}
@@ -521,8 +521,8 @@ int main(int argc, char *argv[]){
 	if (propagator == SSA){
 		init_gillespie_direct_network(gillespie_update_interval,seed);
 	}
-    /* Initialize HAS */
-	if (propagator == HAS){
+    /* Initialize PSA */
+	if (propagator == PSA){
 		init_adaptive_scaling_network(gillespie_update_interval,seed,poplevel,pScaleChecker);
 	}
 
@@ -586,7 +586,7 @@ int main(int argc, char *argv[]){
 	if (print_flux){
 		flux_file = init_print_flux_network(outpre);
 		int discrete = 0;
-		if (propagator == SSA || propagator == PLA || propagator == HAS) discrete = 1;
+		if (propagator == SSA || propagator == PLA || propagator == PSA) discrete = 1;
 		print_flux_network(flux_file,t,discrete);
 	}
 
@@ -768,7 +768,7 @@ int main(int argc, char *argv[]){
 						);
 			}
 		break;
-		case HAS:
+		case PSA:
 			fprintf(stdout, "Stochastic simulation using heterogenous adaptive scaling method\n");
 			if (verbose){
 				fprintf(stdout, "%15s %8s %12s %7s %7s %10s %7s\n", "time", "n_steps", "n_rate_calls",
@@ -867,11 +867,11 @@ int main(int argc, char *argv[]){
 							") reached in Gillespie simulation.";
 				}
 				break;
-			case HAS:
+			case PSA:
 				if (gillespie_n_steps() >= stepLimit - network3::TOL){
 					// Error check
 					if (gillespie_n_steps() > stepLimit + network3::TOL){
-						cout << "Uh oh, step limit exceeded in HAS (step limit = " << stepLimit << ", current step = "
+						cout << "Uh oh, step limit exceeded in PSA (step limit = " << stepLimit << ", current step = "
 							 << gillespie_n_steps() << "). This shouldn't happen. Exiting." << endl;
 						exit(1);
 					}

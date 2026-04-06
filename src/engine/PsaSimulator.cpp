@@ -267,7 +267,7 @@ double PsaSimulator::rxnRateScaled(std::size_t rxnIdx,
                                      double& scaling) const {
     // Faithful port of rxn_rate_scaled() from network.cpp (ELEMENTARY case).
     // For our C++ port, all compiled reactions are ELEMENTARY-like since
-    // rate constants are pre-evaluated. The scaling logic is the key HAS feature.
+    // rate constants are pre-evaluated. The scaling logic is the key PSA feature.
 
     const auto& rxn = compiledRxns_[rxnIdx];
     const auto& reactants = rxn.reactantIndices;
@@ -298,7 +298,7 @@ double PsaSimulator::rxnRateScaled(std::size_t rxnIdx,
         return rate;
     }
 
-    // HAS scaling computation (discrete case with poplevel > 0)
+    // PSA scaling computation (discrete case with poplevel > 0)
     // Mirrors network.cpp lines 2686-2737
     const double upperBound = 2.0 * poplevel;
     double tempPop = 1.0;
@@ -369,10 +369,10 @@ double PsaSimulator::rxnRateScaled(std::size_t rxnIdx,
     return rate;
 }
 
-bool PsaSimulator::updateConcentrationsHas(std::size_t irxn,
+bool PsaSimulator::updateConcentrationsPsa(std::size_t irxn,
                                              std::vector<double>& state,
                                              const std::vector<double>& scaling) const {
-    // Faithful port of update_concentrations_has() from network.cpp.
+    // Faithful port of update_concentrations_psa() from network.cpp.
     // Concentration changes by +/- s[irxn] instead of +/- 1.
     const int threshOcc = 10;
     bool forceUpdate = false;
@@ -405,14 +405,14 @@ bool PsaSimulator::updateConcentrationsHas(std::size_t irxn,
     return forceUpdate;
 }
 
-void PsaSimulator::updateRxnRatesHas(std::size_t irxn,
+void PsaSimulator::updateRxnRatesPsa(std::size_t irxn,
                                        std::vector<double>& propensities,
                                        std::vector<double>& scaling,
                                        double& aTot,
                                        const std::vector<double>& state,
                                        double poplevel,
                                        bool pScaleChecker) const {
-    // Faithful port of update_rxn_rates_has() from network.cpp.
+    // Faithful port of update_rxn_rates_psa() from network.cpp.
     // Recompute propensities only for reactions in the dependency list of irxn.
 
     for (const auto jrxn : rxnUpdateRxn_[irxn]) {
@@ -584,8 +584,8 @@ OdeResult PsaSimulator::simulate(const OdeOptions& opts, double poplevel,
             std::size_t irxn = selectNextRxn(a, aTot, propOrder, rng);
             if (irxn == nReactions_) break;  // a_tot = 0.0
 
-            // Fire reaction by updating concentrations (HAS version)
-            bool rxnRateUpdate = updateConcentrationsHas(irxn, c, s);
+            // Fire reaction by updating concentrations (PSA version)
+            bool rxnRateUpdate = updateConcentrationsPsa(irxn, c, s);
             nSteps += 1.0;
 
             // Update reaction rates
@@ -593,7 +593,7 @@ OdeResult PsaSimulator::simulate(const OdeOptions& opts, double poplevel,
             double gspInterval = static_cast<double>(rxnRateUpdateInterval);
             double fmod = nSteps - static_cast<double>(static_cast<long>(nSteps / gspInterval)) * gspInterval;
             if (rxnRateUpdate || fmod <= 1e-12) {
-                updateRxnRatesHas(irxn, a, s, aTot, c, poplevel, pScaleChecker);
+                updateRxnRatesPsa(irxn, a, s, aTot, c, poplevel, pScaleChecker);
             }
         }
 
