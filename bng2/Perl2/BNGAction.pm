@@ -593,7 +593,7 @@ sub simulate
             # remember that we've attempted On-the-fly!
             $otf = 1;
 
-            unless ( $model->SpeciesList )
+            unless ( $model->SpeciesList and $model->RxnRules and @{$model->RxnRules} )
             {   # Can't generate new species if running from netfile
                 # TODO: I don't think it's sufficient to check if SpeciesList is defined.
                 #  It's possible that it exists but the Network generation infrastructure is missing --Justin
@@ -720,7 +720,7 @@ sub simulate
     
     # At this point, the simulation seems to be ok.
     #  Go ahead and print out final netfile (if there are new reactions or species)
-    if ( $otf  and  $model->SpeciesList )
+    if ( $otf  and  $model->SpeciesList and $model->RxnRules and @{$model->RxnRules} )
     {   # TODO: I don't think it's sufficient to check if SpeciesList is defined.
         #  It's possible that it exists but the Network generation infrastructure is missing --Justin
         $err = $model->writeNetwork({include_model=>0, overwrite=>1, prefix=>"$netpre"});
