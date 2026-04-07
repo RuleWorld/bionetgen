@@ -238,10 +238,20 @@ class TransformationMap:
 		self.t2p_reactant = list(set( [ (dictTransformations[t],dictPatterns[p]) for t in dictTransformations.keys() for p in t.getLHS()] ))
 		self.t2p_product = list(set( [ (dictTransformations[t],dictPatterns[p]) for t in dictTransformations.keys() for p in t.getRHS()] ))
 		
-		self.t2p_context =  set()
-		self.t2p_context.update([  (dictTransformations[t],dictPatterns[p]) for r in dictRules.keys() for t in r.transformations for p in r.context])
-		self.t2p_context.update([  (dictTransformations[t],dictPatterns[p]) for r in dictRules.keys() for t in r.transformations for tr in r.transformations for p in tr.getLHS() if tr!=t ])
-		self.t2p_context = list(set(self.t2p_context))
+		self.t2p_context = set()
+		self.t2p_context.update((dictTransformations[t], dictPatterns[p]) for r in dictRules.keys() for t in r.transformations for p in r.context)
+
+		for r in dictRules.keys():
+			# Pre-resolve LHS patterns for all transformations in this rule to avoid redundant lookups
+			tr_pats = [(tr, [dictPatterns[p] for p in tr.getLHS()]) for tr in r.transformations]
+			for t in r.transformations:
+				dt = dictTransformations[t]
+				for tr, dp_list in tr_pats:
+					if tr != t:
+						for dp in dp_list:
+							self.t2p_context.add((dt, dp))
+
+		self.t2p_context = list(self.t2p_context)
 		
 		self.t2p_syndelcontext = list(set( [ (dictTransformations[t],dictPatterns[p]) for r in dictRules.keys() for idx,t in enumerate(r.transformations) for p in r.syndel_context[idx] if t.isSynDel() ] ))
 		
