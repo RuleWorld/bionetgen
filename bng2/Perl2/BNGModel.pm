@@ -286,14 +286,15 @@ sub _validate_action_options_syntax
     }
 
     return '' if ($expr =~ /^\s*$/s);
-    return "Options must be a key=>value list or hashref literal." unless ($expr =~ /=>/);
 
     my @items = _split_top_level_commas($expr);
     foreach my $item (@items)
     {
         $item =~ s/^\s+|\s+$//g;
         next if ($item eq '');
-        unless ($item =~ /^(?:[A-Za-z_]\w*|'[^']+'|"[^"]+")\s*=>\s*.+$/s)
+        # Accept both legacy positional arguments and key=>value pairs.
+        # If a token uses '=>', enforce a key=>value shape.
+        if ($item =~ /=>/ and $item !~ /^(?:[A-Za-z_]\w*|'[^']+'|"[^"]+")\s*=>\s*.+$/s)
         {
             return "Invalid option element '$item'. Expected key=>value syntax.";
         }
@@ -1244,30 +1245,8 @@ sub readSBML
                         goto EXIT;
                     }
     
-                    # validate option syntax
-                    if ( defined $options and $options !~ /^\s*$/ )
-                    {
-                        require Safe;
-                        my $cpt = Safe->new();
-                        $cpt->permit(qw(:base_core :base_math :base_mem entereval));
-                        $cpt->reval("[$options]");
-                        if ($@)
-                        {
-                            my $err_msg = $@;
-                            $err_msg =~ s/ at \(eval \d+\).*//s;
-                            chomp $err_msg;
-                            $err = errgen("Invalid option syntax: $err_msg", $line_number);
-                            goto EXIT;
-                        }
-                    }
-
                     # execute action
                     my $command = sprintf "\$model->%s(%s);", $action, $options;
-                    if (!$model->can($action))
-                    {
-                        $err = errgen( "Invalid action: $action" );
-                        goto EXIT;
-                    }
     
                      my $t_start = cpu_time(0);                    
                     $err = eval $command;
