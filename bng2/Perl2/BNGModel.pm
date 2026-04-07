@@ -948,8 +948,23 @@ sub readSBML
                                 $err = errgen( "Invalid action: $action", $lno );
                                 goto EXIT;
                             }
-                            # TODO: validate action
-                            # TODO: validate option syntax
+
+                            # validate option syntax
+                            if ( defined $options and $options !~ /^\s*$/ )
+                            {
+                                require Safe;
+                                my $cpt = Safe->new();
+                                $cpt->permit(qw(:base_core :base_math :base_mem entereval));
+                                $cpt->reval("[$options]");
+                                if ($@)
+                                {
+                                    my $err_msg = $@;
+                                    $err_msg =~ s/ at \(eval \d+\).*//s;
+                                    chomp $err_msg;
+                                    $err = errgen("Invalid option syntax: $err_msg", $lno);
+                                    goto EXIT;
+                                }
+                            }
     
                             # Perform self-consistency checks before operations are performed on model
                             if ( $err = $model->ParamList->check() )
@@ -1077,6 +1092,23 @@ sub readSBML
                         goto EXIT;
                     }
     
+                    # validate option syntax
+                    if ( defined $options and $options !~ /^\s*$/ )
+                    {
+                        require Safe;
+                        my $cpt = Safe->new();
+                        $cpt->permit(qw(:base_core :base_math :base_mem entereval));
+                        $cpt->reval("[$options]");
+                        if ($@)
+                        {
+                            my $err_msg = $@;
+                            $err_msg =~ s/ at \(eval \d+\).*//s;
+                            chomp $err_msg;
+                            $err = errgen("Invalid option syntax: $err_msg", $line_number);
+                            goto EXIT;
+                        }
+                    }
+
                     # execute action
                     my $command = sprintf "\$model->%s(%s);", $action, $options;
                     if (!$model->can($action))
