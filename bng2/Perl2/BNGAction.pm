@@ -346,7 +346,9 @@ sub simulate
     my @command = ($program);
 
     # add output prefix
-    push @command, "-o", "$prefix";
+    # properly delimit file paths to prevent parameter injection
+    my $safe_prefix = ($prefix =~ /^-/) ? "./$prefix" : $prefix;
+    push @command, "-o", "$safe_prefix";
     
     # add method to command
     push @command, "-p", "$method";
@@ -358,9 +360,13 @@ sub simulate
         		$params->{pla_config} = "fEuler|pre-neg:sb|eps=0.03";
         		send_warning("'pla_config' not defined, using default: $params->{pla_config}");
         }
+        if ($params->{pla_config} =~ /^-/) {
+            return "Security Error: Parameter injection detected. 'pla_config' cannot start with '-'";
+        }
         push @command, $params->{pla_config};
         if (defined $params->{pla_output}){
-        		push @command, "--pla_output", $params->{pla_output};
+                my $safe_pla_output = ($params->{pla_output} =~ /^-/) ? "./" . $params->{pla_output} : $params->{pla_output};
+			push @command, "--pla_output", $safe_pla_output;
         }
     }
 
@@ -371,8 +377,14 @@ sub simulate
             $params->{poplevel} = "100";
             send_warning("'poplevel' not defined, using default scaling targert: $params->{poplevel}");
         }
+        if ($params->{poplevel} =~ /^-/) {
+            return "Security Error: Parameter injection detected. 'poplevel' cannot start with '-'";
+        }
         push @command, "--poplevel", $params->{poplevel};
         if (exists $params->{check_product_scale}) {
+            if ($params->{check_product_scale} =~ /^-/) {
+                return "Security Error: Parameter injection detected. 'check_product_scale' cannot start with '-'";
+            }
             push @command, "--check_product_scale", $params->{check_product_scale};
         }
     }
@@ -480,11 +492,14 @@ sub simulate
     unless ( $t_start == 0.0 )
     {  push @command, "-i", "$t_start";  }
 
-    # Use program to compute observables
-    push @command, "-g", $netfile;
+    # properly delimit file paths to prevent parameter injection
+    my $safe_netfile = ($netfile =~ /^-/) ? "./$netfile" : $netfile;
 
-    # Read network from $netfile
-    push @command, $netfile;
+    # Use program to compute observables
+    push @command, "-g", $safe_netfile;
+
+    # Read network from $safe_netfile
+    push @command, $safe_netfile;
 
     # define t_end and n_steps
     my ($n_steps, $t_end);
@@ -893,7 +908,9 @@ sub simulate_nf
     $model->writeXML( {'prefix'=>$prefix} );
 
     # Define command line
-    push @command, "-xml", "${prefix}.xml", "-o", "${prefix}.gdat";
+    # properly delimit file paths to prevent parameter injection
+    my $safe_prefix = ($prefix =~ /^-/) ? "./$prefix" : $prefix;
+    push @command, "-xml", "${safe_prefix}.xml", "-o", "${safe_prefix}.gdat";
 
     # Append the run time and output intervals
     my $t_start;
