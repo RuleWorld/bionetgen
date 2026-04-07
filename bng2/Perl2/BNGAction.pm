@@ -28,6 +28,14 @@ sub process_val_express{
     return($expr->evaluate($plist));
 }
 
+sub _validate_no_option_injection {
+    my ($name, $value) = @_;
+    return "Parameter '$name' is undefined." unless defined $value;
+    return "Security Error: Parameter injection detected. '$name' cannot start with '-'"
+        if $value =~ /^-/;
+    return undef;
+}
+
 sub simulate_protocol
 {
     my $model = shift @_;
@@ -260,6 +268,8 @@ sub simulate
     # check method
     unless ( $method )
     {  return "simulate() requires 'method' parameter (ode, ssa, pla, psa, nf).";  }
+    if ($method =~ /^-/)
+    {  return "Security Error: Parameter injection detected. 'method' cannot start with '-'";  }
     if ($method =~ /^ode$/){  $method = 'cvode';  } # Support 'ode' as a valid method
     unless ( exists $METHODS->{$method} )
     {  return "Simulation method '$method' is not a valid option.";  }
@@ -343,9 +353,9 @@ sub simulate
     my @command = ($program);
 
     # add output prefix
-    # properly delimit file paths to prevent parameter injection
-    my $safe_prefix = ($prefix =~ /^-/) ? "./$prefix" : $prefix;
-    push @command, "-o", "$safe_prefix";
+    if (my $inj_err = _validate_no_option_injection('prefix', $prefix))
+    {   return $inj_err;   }
+    push @command, "-o", "$prefix";
     
     # add method to command
     push @command, "-p", "$method";
@@ -357,13 +367,13 @@ sub simulate
         		$params->{pla_config} = "fEuler|pre-neg:sb|eps=0.03";
         		send_warning("'pla_config' not defined, using default: $params->{pla_config}");
         }
-        if ($params->{pla_config} =~ /^-/) {
-            return "Security Error: Parameter injection detected. 'pla_config' cannot start with '-'";
-        }
+        if (my $inj_err = _validate_no_option_injection('pla_config', $params->{pla_config}))
+        {   return $inj_err;   }
         push @command, $params->{pla_config};
         if (defined $params->{pla_output}){
-                my $safe_pla_output = ($params->{pla_output} =~ /^-/) ? "./" . $params->{pla_output} : $params->{pla_output};
-			push @command, "--pla_output", $safe_pla_output;
+			if (my $inj_err = _validate_no_option_injection('pla_output', $params->{pla_output}))
+			{   return $inj_err;   }
+			push @command, "--pla_output", $params->{pla_output};
         }
     }
 
@@ -489,14 +499,14 @@ sub simulate
     unless ( $t_start == 0.0 )
     {  push @command, "-i", "$t_start";  }
 
-    # properly delimit file paths to prevent parameter injection
-    my $safe_netfile = ($netfile =~ /^-/) ? "./$netfile" : $netfile;
+    if (my $inj_err = _validate_no_option_injection('netfile', $netfile))
+    {   return $inj_err;   }
 
     # Use program to compute observables
-    push @command, "-g", $safe_netfile;
+    push @command, "-g", $netfile;
 
-    # Read network from $safe_netfile
-    push @command, $safe_netfile;
+    # Read network from $netfile
+    push @command, $netfile;
 
     # define t_end and n_steps
     my ($n_steps, $t_end);
