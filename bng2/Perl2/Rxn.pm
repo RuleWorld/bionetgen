@@ -430,7 +430,7 @@ sub stringID
   
     # sort reactants and products (if ratelaw is elementary or zero-order)
     my $type= $rxn->RateLaw->Type;
-    if ( $type eq "Ele" )
+    if ( $type eq "Ele" or $type eq "Function" )
     {   # don't sort MM, Sat, or Hill...  TODO: sort Function ratelaws? (since local context is already evaluated)
         @rstrings = sort {$a<=>$b} @rstrings;
         @pstrings = sort {$a<=>$b} @pstrings;
