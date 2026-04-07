@@ -77,6 +77,15 @@ sub writeMDL
 	if ( $suffix )
 	{   $prefix .= "_${suffix}";   }
 		
+    # Validate prefix against path traversal and unauthorized absolute paths
+    my $user_prefix = defined $params->{prefix} ? $params->{prefix} : $model->Name;
+    if ($user_prefix =~ /(?:^|[\/\\])\.\.(?:[\/\\]|$)/) {
+        die "Path traversal detected in model metadata or prefix: $user_prefix\n";
+    }
+    if (File::Spec->file_name_is_absolute($user_prefix) && !defined $params->{prefix}) {
+        die "Absolute paths are not permitted in model metadata: $user_prefix\n";
+    }
+
     # split prefix into volume, path and filebase
     my ($vol, $path, $filebase) = File::Spec->splitpath($prefix);
 
@@ -1423,6 +1432,15 @@ sub writeMfile
 	if ( $suffix )
 	{   $prefix .= "_${suffix}";   }
 
+    # Validate prefix against path traversal and unauthorized absolute paths
+    my $user_prefix = defined $params->{prefix} ? $params->{prefix} : $model->Name;
+    if ($user_prefix =~ /(?:^|[\/\\])\.\.(?:[\/\\]|$)/) {
+        die "Path traversal detected in model metadata or prefix: $user_prefix\n";
+    }
+    if (File::Spec->file_name_is_absolute($user_prefix) && !defined $params->{prefix}) {
+        die "Absolute paths are not permitted in model metadata: $user_prefix\n";
+    }
+
     # split prefix into volume, path and filebase
     my ($vol, $path, $filebase) = File::Spec->splitpath($prefix);
     
@@ -1905,6 +1923,15 @@ sub writeMexfile
 	if ( $suffix )
 	{   $prefix .= "_${suffix}";   }
 	
+    # Validate prefix against path traversal and unauthorized absolute paths
+    my $user_prefix = defined $params->{prefix} ? $params->{prefix} : $model->Name;
+    if ($user_prefix =~ /(?:^|[\/\\])\.\.(?:[\/\\]|$)/) {
+        die "Path traversal detected in model metadata or prefix: $user_prefix\n";
+    }
+    if (File::Spec->file_name_is_absolute($user_prefix) && !defined $params->{prefix}) {
+        die "Absolute paths are not permitted in model metadata: $user_prefix\n";
+    }
+
     # split prefix into volume, path and filebase
     my ($vol, $path, $filebase) = File::Spec->splitpath($prefix);
 
@@ -2723,6 +2750,15 @@ sub writeCPPfile
 	if ( $suffix )
 	{   $prefix .= "_${suffix}";   }
 	
+    # Validate prefix against path traversal and unauthorized absolute paths
+    my $user_prefix = defined $params->{prefix} ? $params->{prefix} : $model->Name;
+    if ($user_prefix =~ /(?:^|[\/\\])\.\.(?:[\/\\]|$)/) {
+        die "Path traversal detected in model metadata or prefix: $user_prefix\n";
+    }
+    if (File::Spec->file_name_is_absolute($user_prefix) && !defined $params->{prefix}) {
+        die "Absolute paths are not permitted in model metadata: $user_prefix\n";
+    }
+
     # split prefix into volume, path and filebase
     my ($vol, $path, $filebase) = File::Spec->splitpath($prefix);
 
@@ -3302,6 +3338,15 @@ sub writeCPYfile
 	if ( $suffix )
 	{   $prefix .= "_${suffix}";   }
 	
+    # Validate prefix against path traversal and unauthorized absolute paths
+    my $user_prefix = defined $params->{prefix} ? $params->{prefix} : $model->Name;
+    if ($user_prefix =~ /(?:^|[\/\\])\.\.(?:[\/\\]|$)/) {
+        die "Path traversal detected in model metadata or prefix: $user_prefix\n";
+    }
+    if (File::Spec->file_name_is_absolute($user_prefix) && !defined $params->{prefix}) {
+        die "Absolute paths are not permitted in model metadata: $user_prefix\n";
+    }
+
     # split prefix into volume, path and filebase
     my ($vol, $path, $filebase) = File::Spec->splitpath($prefix);
 
@@ -4227,6 +4272,15 @@ sub writeMfile_all
 	my $suffix = ( defined $params->{suffix} ) ? $params->{suffix} : undef;
 	if ( $suffix )
 	{   $prefix .= "_${suffix}";   }
+
+    # Validate prefix against path traversal and unauthorized absolute paths
+    my $user_prefix = defined $params->{prefix} ? $params->{prefix} : $model->Name;
+    if ($user_prefix =~ /(?:^|[\/\\])\.\.(?:[\/\\]|$)/) {
+        die "Path traversal detected in model metadata or prefix: $user_prefix\n";
+    }
+    if (File::Spec->file_name_is_absolute($user_prefix) && !defined $params->{prefix}) {
+        die "Absolute paths are not permitted in model metadata: $user_prefix\n";
+    }
 
     # split prefix into volume, path and filebase
     my ($vol, $path, $filebase) = File::Spec->splitpath($prefix);
