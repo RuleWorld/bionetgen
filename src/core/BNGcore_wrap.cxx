@@ -679,8 +679,7 @@ SWIG_PackVoidPtr(char *buff, void *ptr, const char *name, size_t bsz) {
   *(r++) = '_';
   r = SWIG_PackData(r,&ptr,sizeof(void *));
   if (strlen(name) + 1 > (bsz - (r - buff))) return 0;
-  strncpy(r, name, bsz - (r - buff));
-  r[bsz - (r - buff) - 1] = '\0';
+  strcpy(r,name);
   return buff;
 }
 
@@ -1281,8 +1280,7 @@ SWIG_Perl_MakePackedObj(SWIG_MAYBE_PERL_OBJECT SV *sv, void *ptr, int sz, swig_t
   if ((2*sz + 1 + strlen(SWIG_Perl_TypeProxyName(type))) > 1000) return;
   *(r++) = '_';
   r = SWIG_PackData(r,ptr,sz);
-  strncpy(r, SWIG_Perl_TypeProxyName(type), sizeof(result) - (r - result));
-  result[sizeof(result) - 1] = '\0';
+  strcpy(r,SWIG_Perl_TypeProxyName(type));
   sv_setpv(sv, result);
 }
 

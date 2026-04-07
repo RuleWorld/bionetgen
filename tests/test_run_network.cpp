@@ -18,6 +18,10 @@ inline bool file_exists(const std::string& name) {
     }
 }
 
+inline bool is_safe_shell_token(const std::string& value) {
+    return value.find_first_of("&;|`$><\n\r") == std::string::npos;
+}
+
 TEST_CASE("run_network print_error calls exit(1) and prints usage", "[run_network]") {
     // If the executable hasn't been built (e.g., in modern C++ CI pipeline), skip the test gracefully
     if (!file_exists(RUN_NETWORK_PATH)) {
@@ -27,7 +31,9 @@ TEST_CASE("run_network print_error calls exit(1) and prints usage", "[run_networ
 
     // Construct the command to run the executable and redirect stderr to a temporary file
     std::string temp_file = "test_run_network_stderr.txt";
-    std::string command = std::string(RUN_NETWORK_PATH) + " 2> " + temp_file;
+    REQUIRE(is_safe_shell_token(RUN_NETWORK_PATH));
+    REQUIRE(is_safe_shell_token(temp_file));
+    std::string command = std::string("\"") + RUN_NETWORK_PATH + "\" 2> \"" + temp_file + "\"";
 
     // Execute the command
     int result = std::system(command.c_str());

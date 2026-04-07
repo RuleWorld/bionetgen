@@ -3333,7 +3333,13 @@ sub build_reaction
 		}
 
 		# Add the product Species
-		push @$product_species, $spec;
+		unless ($iprod == -1)
+		{   # Preserve deprecated behavior for fixed products to avoid silent model changes.
+			unless ($rr->Products->[$iprod]->Fixed)
+			{   push @$product_species, $spec;   }
+		}
+		else
+		{   push @$product_species, $spec;   }
 	}
 
     
