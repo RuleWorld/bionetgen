@@ -76,6 +76,9 @@ use IPC::Open3;
 
 # perl binary
 my $perlbin = $^X;
+if ($perlbin =~ /[;&|<>`"\$\n\r]/) {
+    die "Invalid characters in perl binary path\n";
+}
 
 # BNG root directory
 my $bngpath;
@@ -84,6 +87,9 @@ my $bngexec;
     # try to find path in environment variables
     $bngpath = (exists $ENV{'BNGPATH'} ? $ENV{'BNGPATH'} :
                                 (exists $ENV{'BioNetGenRoot'} ? $ENV{'BioNetGenRoot'} : undef) );
+    if (defined $bngpath && $bngpath =~ /[;&|<>`"\$\n\r]/) {
+        die "Invalid characters in BNG path\n";
+    }
     unless (defined $bngpath)
     {   # use FindBin to locate BNG
         my ($volume,$directories,$file) = File::Spec->splitpath( $FindBin::RealBin );
@@ -104,6 +110,9 @@ my $outdir = $modeldir; #File::Spec->curdir();
 # compare species and rxns script
 my $compare_species = File::Spec->catfile( $modeldir, 'compare_species.pl' );
 my $compare_rxn = File::Spec->catfile( $modeldir, 'compare_rxn.pl' );
+
+if ($compare_species =~ /[;&|<>`"\$\n\r]/) { die "Invalid characters in compare_species path\n"; }
+if ($compare_rxn =~ /[;&|<>`"\$\n\r]/) { die "Invalid characters in compare_rxn path\n"; }
  # if true, delete output files after validation
 my $delete_working_files = 1;   
 # size of indent to STDOUT       
@@ -184,11 +193,17 @@ foreach my $x (@exclude){
 # check that we can find the BNG2.pl executable script!
 unless ( -e $bngexec )
 {   exit_error( "Cannot find BNG2.pl script" );   }
+if ($bngexec =~ /[;&|<>`"\$\n\r]/) {
+    exit_error( "Invalid characters in BNG2.pl script path" );
+}
 # check that we can find ODE trajectory verification script
 my $verifyexec = File::Spec->catfile( $bngpath, "Perl2", "verify.pl" );
 {
     unless ( -e $verifyexec )
     {   exit_error("cannot find verify.pl script\n");   }
+}
+if ($verifyexec =~ /[;&|<>`"\$\n\r]/) {
+    exit_error( "Invalid characters in verify.pl script path" );
 }
 # check if BioNetGen can find NFsim binary
 if ($check_nfsim)
