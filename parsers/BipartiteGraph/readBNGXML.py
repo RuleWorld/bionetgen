@@ -85,8 +85,8 @@ def parseRule(rule):
         tag = operation.tag
         tag = tag.replace('{http://www.sbml.org/sbml/level3}','')
         if tag in ['Add','Delete']:
-		action.setAction(tag,operation.get('id'),None)
-	elif 'Bond' in tag:
+                action.setAction(tag,operation.get('id'),None)
+        elif 'Bond' in tag:
             action.setAction(tag, operation.get('site1'), operation.get('site2'))
         else:
             action.setAction(tag, operation.get('site'), None)
