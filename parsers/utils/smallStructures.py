@@ -198,25 +198,31 @@ class Species:
     def extend(self,species,update=True):
         if(len(self.molecules) == len(species.molecules)):
             for (selement,oelement) in zip(self.molecules,species.molecules):
+                selement_component_names = {x.name for x in selement.components}
                 for component in oelement.components:
-                    if component.name not in [x.name for x in selement.components]:
+                    if component.name not in selement_component_names:
                         selement.components.append(component)
+                        selement_component_names.add(component.name)
                     else:
                         for element in selement.components:
                             if element.name == component.name:
                                 element.addStates(component.states,update)
                                 
         else:
+            self_molecule_names = {x.name for x in self.molecules}
             for element in species.molecules:
-                if element.name not in [x.name for x in self.molecules]:
+                if element.name not in self_molecule_names:
                     
                     self.addMolecule(deepcopy(element),update)
+                    self_molecule_names.add(element.name)
                 else:
                     for molecule in self.molecules:
                         if molecule.name == element.name:
+                            molecule_component_names = {x.name for x in molecule.components}
                             for component in element.components:
-                                if component.name not in [x.name for x in molecule.components]:
+                                if component.name not in molecule_component_names:
                                     molecule.addComponent(deepcopy(component),update)
+                                    molecule_component_names.add(component.name)
                                 else:
                                     comp = molecule.getComponent(component.name)
                                     for state in component.states:
