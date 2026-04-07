@@ -943,7 +943,12 @@ sub readSBML
                                 $err = errgen( $err, $lno );
                             }
     
-                            # TODO: validate action                        
+                            if (!$model->can($action))
+                            {
+                                $err = errgen( "Invalid action: $action", $lno );
+                                goto EXIT;
+                            }
+                            # TODO: validate action
                             # TODO: validate option syntax
     
                             # Perform self-consistency checks before operations are performed on model
@@ -1074,6 +1079,11 @@ sub readSBML
     
                     # execute action
                     my $command = sprintf "\$model->%s(%s);", $action, $options;
+                    if (!$model->can($action))
+                    {
+                        $err = errgen( "Invalid action: $action" );
+                        goto EXIT;
+                    }
     
                      my $t_start = cpu_time(0);                    
                     $err = eval $command;

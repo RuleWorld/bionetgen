@@ -155,6 +155,11 @@ sub BNGconsole
 		    	
                 # define action
                 my $command = '$model->' . $action . '(' . $options . ');';
+                if (!$model->can($action))
+                {
+                    send_warning( "Problem executing action: Invalid action: $action." );
+                    last PROCESS_INPUT;
+                }
                 print "Begin action $action\n";
     
 	            # Perform self-consistency checks before operations are performed on model
