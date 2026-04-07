@@ -187,4 +187,4 @@ def getNumObservablesXML(xmlFile):
 if __name__ == "__main__":
     #mol,rule,par = parseXML("output19.xml")
     #print [str(x) for x in mol]
-    print getNumObservablesXML('output19.xml')
+    print(getNumObservablesXML('output19.xml'))
