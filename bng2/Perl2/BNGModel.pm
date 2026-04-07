@@ -152,6 +152,157 @@ sub readModel
 }
 
 
+# Split a comma-separated expression at top level only (outside quotes/brackets).
+sub _split_top_level_commas
+{
+    my $text = shift;
+    my @parts = ();
+    my $buf = '';
+    my @stack = ();
+    my $in_single = 0;
+    my $in_double = 0;
+    my $escaped = 0;
+
+    foreach my $ch (split //, $text)
+    {
+        if ($escaped)
+        {
+            $buf .= $ch;
+            $escaped = 0;
+            next;
+        }
+
+        if ($ch eq '\\')
+        {
+            $buf .= $ch;
+            $escaped = 1;
+            next;
+        }
+
+        if ($in_single)
+        {
+            $buf .= $ch;
+            $in_single = 0 if ($ch eq "'");
+            next;
+        }
+        if ($in_double)
+        {
+            $buf .= $ch;
+            $in_double = 0 if ($ch eq '"');
+            next;
+        }
+
+        if ($ch eq "'")
+        {
+            $buf .= $ch;
+            $in_single = 1;
+            next;
+        }
+        if ($ch eq '"')
+        {
+            $buf .= $ch;
+            $in_double = 1;
+            next;
+        }
+
+        if ($ch eq '{' or $ch eq '[' or $ch eq '(')
+        {
+            push @stack, $ch;
+            $buf .= $ch;
+            next;
+        }
+        if ($ch eq '}' or $ch eq ']' or $ch eq ')')
+        {
+            pop @stack;
+            $buf .= $ch;
+            next;
+        }
+
+        if ($ch eq ',' and !@stack)
+        {
+            push @parts, $buf;
+            $buf = '';
+            next;
+        }
+
+        $buf .= $ch;
+    }
+
+    push @parts, $buf if (length $buf);
+    return @parts;
+}
+
+
+# Validate action option syntax without evaluating Perl code.
+sub _validate_action_options_syntax
+{
+    my $options = shift;
+
+    return '' unless defined $options;
+    return '' if ($options =~ /^\s*$/s);
+
+    # Block statement separators and command-substitution chars.
+    if ($options =~ /[;`]/)
+    {
+        return "Options contain forbidden characters.";
+    }
+
+    # Check delimiter/quote balance.
+    my @stack = ();
+    my $in_single = 0;
+    my $in_double = 0;
+    my $escaped = 0;
+    foreach my $ch (split //, $options)
+    {
+        if ($escaped) { $escaped = 0; next; }
+        if ($ch eq '\\') { $escaped = 1; next; }
+
+        if ($in_single) { $in_single = 0 if ($ch eq "'"); next; }
+        if ($in_double) { $in_double = 0 if ($ch eq '"'); next; }
+
+        if ($ch eq "'") { $in_single = 1; next; }
+        if ($ch eq '"') { $in_double = 1; next; }
+
+        if ($ch eq '{' or $ch eq '[' or $ch eq '(') { push @stack, $ch; next; }
+        if ($ch eq '}' or $ch eq ']' or $ch eq ')')
+        {
+            return "Unmatched closing delimiter in options." unless @stack;
+            my $open = pop @stack;
+            return "Mismatched delimiters in options." if (
+                ($open eq '{' and $ch ne '}') or
+                ($open eq '[' and $ch ne ']') or
+                ($open eq '(' and $ch ne ')')
+            );
+        }
+    }
+    return "Unterminated quoted string in options." if ($in_single or $in_double);
+    return "Unmatched opening delimiter in options." if (@stack);
+
+    my $expr = $options;
+    $expr =~ s/^\s+|\s+$//g;
+    if ($expr =~ /^\{(.*)\}$/s)
+    {
+        $expr = $1;
+    }
+
+    return '' if ($expr =~ /^\s*$/s);
+    return "Options must be a key=>value list or hashref literal." unless ($expr =~ /=>/);
+
+    my @items = _split_top_level_commas($expr);
+    foreach my $item (@items)
+    {
+        $item =~ s/^\s+|\s+$//g;
+        next if ($item eq '');
+        unless ($item =~ /^(?:[A-Za-z_]\w*|'[^']+'|"[^"]+")\s*=>\s*.+$/s)
+        {
+            return "Invalid option element '$item'. Expected key=>value syntax.";
+        }
+    }
+
+    return '';
+}
+
+
 # read Network from file
 # $err = $model->readModel({file=>FILENAME}) 
 sub readNetwork
@@ -943,27 +1094,16 @@ sub readSBML
                                 $err = errgen( $err, $lno );
                             }
     
-                            if (!$model->can($action))
+                            unless ($model->can($action))
                             {
                                 $err = errgen( "Invalid action: $action", $lno );
                                 goto EXIT;
                             }
 
-                            # validate option syntax
-                            if ( defined $options and $options !~ /^\s*$/ )
+                            if (my $syntax_err = _validate_action_options_syntax($options))
                             {
-                                require Safe;
-                                my $cpt = Safe->new();
-                                $cpt->permit(qw(:base_core :base_math :base_mem entereval));
-                                $cpt->reval("[$options]");
-                                if ($@)
-                                {
-                                    my $err_msg = $@;
-                                    $err_msg =~ s/ at \(eval \d+\).*//s;
-                                    chomp $err_msg;
-                                    $err = errgen("Invalid option syntax: $err_msg", $lno);
-                                    goto EXIT;
-                                }
+                                $err = errgen( "Invalid option syntax: $syntax_err", $lno );
+                                goto EXIT;
                             }
     
                             # Perform self-consistency checks before operations are performed on model
@@ -1083,6 +1223,18 @@ sub readSBML
                         unless ($model->Params->{'action_skip_warn'})
                         {   send_warning( errgen("Skipping actions") );   }
                         next;
+                    }
+
+                    unless ($model->can($action))
+                    {
+                        $err = errgen( "Invalid action: $action" );
+                        goto EXIT;
+                    }
+
+                    if (my $syntax_err = _validate_action_options_syntax($options))
+                    {
+                        $err = errgen( "Invalid option syntax: $syntax_err" );
+                        goto EXIT;
                     }
     
                     # Perform self-consistency checks before operations are performed on model
