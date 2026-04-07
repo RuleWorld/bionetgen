@@ -763,24 +763,25 @@ PatternGraph::validate ( bool instance ) const
 bool
 PatternGraph::validate_instance_types ( ) const
 {
-    // TODO: need to handle bond neighbors of instance nodes
     // local variables
     const Node *       node;
     const Node *       child_node;
+    const Node *       bond_neighbor;
     node_const_iter_t  node_iter;
     node_const_iter_t  child_iter;
-    
+    node_const_iter_t  neighbor_iter;
+
     // loop over nodes
     for ( node_iter = nodes.begin();  node_iter != nodes.end();  ++node_iter )
     {
         node = *node_iter;
         // check the nodetype instance flag
         if ( node->get_type().get_instance_flag() )
-        {   
+        {
             // validate typing of this node as an instance
             if ( !(node->validate_typing(true)) )
                 return false;
-            
+
             // check that bonds are well-defined
             for ( child_iter = node->edges_out_begin();  child_iter != node->edges_out_end();  ++child_iter )
             {
@@ -789,14 +790,29 @@ PatternGraph::validate_instance_types ( ) const
                 {
                     if ( !(child_node->validate_typing(true)) )
                         return false;
+
+                    // Validate bond neighbors: for each bond node connected to this
+                    // instance node, check the in-edge neighbors of the bond (i.e. the
+                    // other entity endpoints). A bond neighbor of an instance node
+                    // must also be an instance node.
+                    for ( neighbor_iter = child_node->edges_in_begin();
+                          neighbor_iter != child_node->edges_in_end();  ++neighbor_iter )
+                    {
+                        bond_neighbor = *neighbor_iter;
+                        if ( bond_neighbor != node )
+                        {
+                            if ( !(bond_neighbor->get_type().get_instance_flag()) )
+                                return false;
+                        }
+                    }
                 }
             }
         }
         else
         {   // validate typing of this node as a non-instance
             if ( !(node->validate_typing(false)) )
-                return false;        
-        } 
+                return false;
+        }
     }
     return true;
 }
