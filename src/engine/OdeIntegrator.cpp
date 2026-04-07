@@ -97,6 +97,27 @@ double evaluateRateString(const std::string& rateStr,
     return resolve(s);
 }
 
+// Checks if 'target' exists in 'text' bounded by non-word characters
+// Word characters are defined as alphanumeric or underscore.
+bool hasWordBoundaryMatch(const std::string& text, const std::string& target) {
+    if (target.empty() || text.length() < target.length()) {
+        return false;
+    }
+
+    std::size_t pos = text.find(target);
+    while (pos != std::string::npos) {
+        bool leftBoundary = (pos == 0) || (!std::isalnum(static_cast<unsigned char>(text[pos - 1])) && text[pos - 1] != '_');
+        bool rightBoundary = (pos + target.length() == text.length()) ||
+                             (!std::isalnum(static_cast<unsigned char>(text[pos + target.length()])) && text[pos + target.length()] != '_');
+
+        if (leftBoundary && rightBoundary) {
+            return true;
+        }
+        pos = text.find(target, pos + 1);
+    }
+    return false;
+}
+
 } // anonymous namespace
 
 
@@ -447,8 +468,8 @@ void OdeIntegrator::compile() {
                     const auto& fname = func.getName();
                     std::string fnameLower = fname;
                     std::transform(fnameLower.begin(), fnameLower.end(), fnameLower.begin(), ::tolower);
-                    if (rateLawLower.find(fnameLower) != std::string::npos ||
-                        rawRL.find(fname) != std::string::npos) {
+                    if (hasWordBoundaryMatch(rateLawLower, fnameLower) ||
+                        hasWordBoundaryMatch(rawRL, fname)) {
                         isFunctional = true;
                         matchedFuncName = fname;
                         break;
@@ -487,7 +508,7 @@ void OdeIntegrator::compile() {
             for (const auto& func : model_.getFunctions()) {
                 std::string fnameLow = func.getName();
                 std::transform(fnameLow.begin(), fnameLow.end(), fnameLow.begin(), ::tolower);
-                if (rlLow.find(fnameLow) != std::string::npos) {
+                if (hasWordBoundaryMatch(rlLow, fnameLow)) {
                     crxn.isFunctional = true;
                     // Parse the full rate law string into an expression so that
                     // compound expressions like "k * funcName()" are preserved.
@@ -552,7 +573,7 @@ void OdeIntegrator::compile() {
                     // name is not a built-in).
                     if (!needsRuntime && str.find('(') != std::string::npos) {
                         for (const auto& func : model_.getFunctions()) {
-                            if (str.find(func.getName()) != std::string::npos) {
+                            if (hasWordBoundaryMatch(str, func.getName())) {
                                 needsRuntime = true;
                                 break;
                             }
