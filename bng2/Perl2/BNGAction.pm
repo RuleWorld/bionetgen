@@ -161,6 +161,13 @@ sub simulate
     my $argfile = defined $params->{argfile} ? $params->{argfile} : undef;
     if ($argfile)
     {
+        require File::Basename;
+        my $safe_argfile = File::Basename::basename($argfile);
+        if ($safe_argfile ne $argfile) {
+            send_warning("argfile path contains directory components. Using basename '$safe_argfile' for security.");
+            $argfile = $safe_argfile;
+        }
+
         print "Reading simulation arguments from $argfile.\n";
         open(ARGS, "<", $argfile) or return "Could not open argfile '$argfile'.";
         my $lineCounter = 0;
