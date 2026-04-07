@@ -2046,8 +2046,7 @@ sub toMatlabString
                 my @sarr = ( map {$_->toMatlabString($plist, $level+1)} @{$expr->Arglist}[1..$#{$expr->Arglist}] );
 
                 if ( @sarr == 3)
-                {   # TODO: find better solution here. this version will return NaN if either return value is Inf.
-                    #$string = sprintf( "((%s~=0)*%s + (%s==0)*%s)", $sarr[0], $sarr[1], $sarr[0], $sarr[2]);
+                {
                     $string = sprintf( "if__fun( %s, %s, %s)", $sarr[0], $sarr[1], $sarr[2]);
                 }
                 else
