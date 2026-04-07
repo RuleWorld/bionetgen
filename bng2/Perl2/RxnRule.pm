@@ -3333,14 +3333,7 @@ sub build_reaction
 		}
 
 		# Add the product Species
-	    unless ($iprod == -1)
-	    {   # TODO: the Fixed product feature will be depreacted in a future release
-	        unless ($rr->Products->[$iprod]->Fixed)
-	        {   push @$product_species, $spec;   }
-	    }
-	    else
-	    {   push @$product_species, $spec;   }
-
+		push @$product_species, $spec;
 	}
 
     
