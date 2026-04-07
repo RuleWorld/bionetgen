@@ -814,8 +814,6 @@ sub inferSpeciesCompartment
 	{
 		my $comp = $mol->Compartment;
 
-		# fixed BUG: if compartment molecule isn't explictly defined,
-		# transfer the explicit species compartment (if any)  --justin
 		if ( !(defined $comp)  and  defined $sg->Compartment )
 		{
 			$comp = $sg->Compartment;
