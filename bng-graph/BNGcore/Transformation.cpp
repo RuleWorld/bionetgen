@@ -484,9 +484,12 @@ DeleteBond::get_center ( node_container_t & center_nodes )
 ChangeState::ChangeState ( Node * _node, const State & _state )
 {
     node  = _node;
+    // check state type
+    if ( !(node->get_type().get_state_type().check_state(_state.get_label())) )
+    {
+        throw std::invalid_argument("ChangeState::ChangeState: Invalid state passed for node type.");
+    }
     state = _state.clone();
-    // TODO: check state type
-    //if (  !(node->get_type().get_state_type().check_state( state ))  ) throw;
 }
 
 // Copy constructor

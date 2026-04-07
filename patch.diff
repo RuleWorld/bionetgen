@@ -1,0 +1,20 @@
+<<<<<<< SEARCH
+ChangeState::ChangeState ( Node * _node, const State & _state )
+{
+    node  = _node;
+    state = _state.clone();
+    // TODO: check state type
+    //if (  !(node->get_type().get_state_type().check_state( state ))  ) throw;
+}
+=======
+ChangeState::ChangeState ( Node * _node, const State & _state )
+{
+    node  = _node;
+    // check state type
+    if ( !(node->get_type().get_state_type().check_state(_state.get_label())) )
+    {
+        std::cerr << "ChangeState::ChangeState:  Invalid state passed for node type." << std::endl;
+    }
+    state = _state.clone();
+}
+>>>>>>> REPLACE
