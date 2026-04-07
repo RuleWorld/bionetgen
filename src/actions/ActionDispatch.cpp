@@ -42,6 +42,13 @@
 #include "io/RuleInfluenceGraphWriter.hpp"
 #include "parser/BNGAstVisitor.hpp"
 
+#if defined(_WIN32) || defined(__WIN32__) || defined(__CYGWIN__)
+#include <process.h>
+#else
+#include <unistd.h>
+#include <sys/wait.h>
+#endif
+
 namespace bng::actions {
 
 namespace {
@@ -1293,7 +1300,47 @@ void ActionDispatch::execute(ast::Model& model, const std::filesystem::path& sou
             }
 
             // Execute NFSim
-            int exitCode = std::system(cmd.c_str());
+            std::vector<std::string> args = {nfsimExec, "-xml", xmlPath.string(), "-o", gdatPath.string(), "-sim", stripQuotes(tEnd), "-oSteps", stripQuotes(nSteps)};
+
+            if (!seedText.empty()) { args.push_back("-seed"); args.push_back(stripQuotes(seedText)); }
+            if (!utlText.empty()) { args.push_back("-utl"); args.push_back(stripQuotes(utlText)); }
+            if (verboseFlag == "1" || verboseFlag == "true") { args.push_back("-v"); }
+            if (complexFlag == "1" || complexFlag == "true") { args.push_back("-cb"); }
+            if (getFinalState == "1" || getFinalState == "true") {
+                const auto speciesPath = sourcePath.parent_path() / (prefix + ".species");
+                args.push_back("-ss");
+                args.push_back(speciesPath.string());
+            }
+
+            std::vector<char*> c_args;
+            for (auto& arg : args) {
+                c_args.push_back(const_cast<char*>(arg.c_str()));
+            }
+            c_args.push_back(nullptr);
+
+            int exitCode = -1;
+#if defined(_WIN32) || defined(__WIN32__) || defined(__CYGWIN__)
+            exitCode = _spawnvp(_P_WAIT, c_args[0], c_args.data());
+#else
+            pid_t pid = fork();
+            if (pid == -1) {
+                std::cerr << "[bng_cpp] Error: Failed to fork process for NFSim\n";
+            } else if (pid == 0) {
+                execvp(c_args[0], c_args.data());
+                std::cerr << "[bng_cpp] Error: Failed to execute NFSim\n";
+                _exit(1);
+            } else {
+                int status;
+                if (waitpid(pid, &status, 0) != -1) {
+                    if (WIFEXITED(status)) {
+                        exitCode = WEXITSTATUS(status);
+                    } else if (WIFSIGNALED(status)) {
+                        std::cerr << "[bng_cpp] Warning: NFSim terminated by signal " << WTERMSIG(status) << "\n";
+                    }
+                }
+            }
+#endif
+
             if (exitCode != 0) {
                 std::cerr << "[bng_cpp] Warning: NFSim returned exit code " << exitCode << "\n";
             }
