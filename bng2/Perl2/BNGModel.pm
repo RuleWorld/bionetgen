@@ -1712,8 +1712,17 @@ sub setOption
         }
         elsif ( $arg eq "NumberPerQuantityUnit" )
         {   # set conversion from quantity units to pure numbers
-            # TODO: allow this to be a parameter?
-            $model->Options->{$arg} = $val;
+            require Scalar::Util;
+            if ( Scalar::Util::looks_like_number($val) )
+            {   $model->Options->{$arg} = $val;   }
+            else
+            {
+                my ( $param, $err ) = $model->ParamList->lookup($val);
+                if ( defined $param )
+                {   $model->Options->{$arg} = $val;   }
+                else
+                {   return "Invalid value or parameter for $arg: $val";   }
+            }
         }
         elsif ( $arg eq "MoleculesObservables" )
         {   # set molecules observables mode
