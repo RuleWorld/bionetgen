@@ -161,12 +161,9 @@ sub simulate
     my $argfile = defined $params->{argfile} ? $params->{argfile} : undef;
     if ($argfile)
     {
-        require File::Basename;
-        my $safe_argfile = File::Basename::basename($argfile);
-        if ($safe_argfile ne $argfile) {
-            send_warning("argfile path contains directory components. Using basename '$safe_argfile' for security.");
-            $argfile = $safe_argfile;
-        }
+        $argfile = File::Spec->canonpath($argfile);
+        if ($argfile =~ /(?:^|[\/\\])\.\.(?:[\/\\]|$)/)
+        {   return "argfile path traversal detected in '$argfile'.";   }
 
         print "Reading simulation arguments from $argfile.\n";
         open(ARGS, "<", $argfile) or return "Could not open argfile '$argfile'.";
@@ -1195,6 +1192,12 @@ sub generate_hybrid_model
     foreach my $opt (keys %$user_options)
     {
         my $val = $user_options->{$opt};
+
+        if ($opt eq "exact")
+        {
+            send_warning("The 'exact' option has been renamed 'safe', please use this in the future.");
+            $opt = "safe";
+        }
 
         unless ( exists $options->{$opt} )
         {   return "Unrecognized option $opt in call to generate_hybrid_model";   }

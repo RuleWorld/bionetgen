@@ -70,3 +70,6 @@ bng2/Network3/cmake_install.cmake
 .jules/
 statfactor_*.txt
 bng2/Network3/run_network
+Node.o
+patch.diff
+test.sh
