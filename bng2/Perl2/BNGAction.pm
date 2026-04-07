@@ -1171,11 +1171,6 @@ sub generate_hybrid_model
     foreach my $opt (keys %$user_options)
     {
         my $val = $user_options->{$opt};
-        if ($opt eq "exact")
-        {   # TODO: temporary patch to allow the old "exact" option
-            send_warning("The 'exact' option has been renamed 'safe', please use this in the future.");
-            $opt = "safe";
-        }
 
         unless ( exists $options->{$opt} )
         {   return "Unrecognized option $opt in call to generate_hybrid_model";   }
