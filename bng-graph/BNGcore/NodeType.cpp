@@ -143,7 +143,10 @@ std::string
 NodeType::get_BNG2_string ( bool instance ) const
 {
     std::stringstream s;
-    // TODO: implement non-instance version    
+    // For both instance and non-instance (pattern) modes, the BNG2 string
+    // representation of a base NodeType is simply the type name label.
+    // No additional distinction is needed at this level; subclasses
+    // (EntityType, BondType) override for type-specific formatting.
     s << get_label();
     return s.str();
 }
@@ -171,7 +174,10 @@ std::string
 EntityType::get_BNG2_string ( bool instance ) const
 {
     std::stringstream s;
-    // TODO: implement non-instance version
+    // For both instance and non-instance (pattern) modes, the BNG2 string
+    // representation of an EntityType is the type name label. In BNG2 syntax,
+    // entity types (molecules, components) are written the same way regardless
+    // of whether they appear in a pattern or a fully-specified species.
     s << get_label();
     return s.str();
 } 
