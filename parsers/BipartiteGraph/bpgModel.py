@@ -242,8 +242,8 @@ def chopRule(reactants, products, actions, mappings, nameDict):
 			# Adding elements to chopped rule
 			rule.transformations[act_idx] = tr
 			rule.transf_center[act_idx] = getTransfCenterIDs(act,maps)
-			rule.syndel_context[act_idx] = getSynDelContextIDs(rule.transf_center[act_idx][0],nameDict.keys())
-			rule.syncontext[act_idx] = getSynDelContextIDs(rule.transf_center[act_idx][0],nameDict.keys())
+			rule.syndel_context[act_idx] = getSynDelContextIDs(rule.transf_center[act_idx][0],nameDict)
+			rule.syncontext[act_idx] = getSynDelContextIDs(rule.transf_center[act_idx][0],nameDict)
 
 			
 		if act.action=='Delete':
@@ -258,8 +258,8 @@ def chopRule(reactants, products, actions, mappings, nameDict):
 			# Adding elements to chopped rule
 			rule.transformations[act_idx] = tr
 			rule.transf_center[act_idx] = getTransfCenterIDs(act,maps)
-			rule.syndel_context[act_idx] = getSynDelContextIDs(rule.transf_center[act_idx][0],nameDict.keys())
-			rule.delcontext[act_idx] = getSynDelContextIDs(rule.transf_center[act_idx][0],nameDict.keys())
+			rule.syndel_context[act_idx] = getSynDelContextIDs(rule.transf_center[act_idx][0],nameDict)
+			rule.delcontext[act_idx] = getSynDelContextIDs(rule.transf_center[act_idx][0],nameDict)
 	return rule
 
 def printRule(reactants,products):
@@ -532,15 +532,15 @@ def getTransfCenterIDs(act,maps):
 	
 	if act.action in ['AddBond','DeleteBond','StateChange']:
 		temp = temp + [act.site1]
-		if act.site1 in maps.keys():
+		if act.site1 in maps:
 			temp = temp + [maps[act.site1]]
-		elif act.site1 in inv_maps.keys():
+		elif act.site1 in inv_maps:
 			temp = temp + [inv_maps[act.site1]]
 		if act.site2:
 			temp = temp + [act.site2]
-			if act.site1 in maps.keys():
+			if act.site1 in maps:
 				temp = temp + [maps[act.site1]]
-			elif act.site1 in inv_maps.keys():
+			elif act.site1 in inv_maps:
 				temp = temp + [inv_maps[act.site1]]
 				
 	if act.action in ['Add','Delete']:

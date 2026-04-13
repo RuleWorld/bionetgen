@@ -258,7 +258,7 @@ def summarizeModel(patternDict,transformationDict,atomicPatternAnnotations,trans
 	with open('model_summary.txt','w') as f:
 		# Summarizing Atomic Pattern Annotations
 		f.write('Model entities:\n')
-		maxsize = max([len(str(item)) for item in atomicPatternAnnotations.keys()])
+		maxsize = max([len(str(item)) for item in atomicPatternAnnotations])
     		for key,val in sorted(atomicPatternAnnotations.iteritems()):
     			f.write('%-4s: %-*s:\t%s\n' %(patternDict[key],maxsize,str(key),str(val)))
 		f.write('\n\n')
@@ -271,7 +271,7 @@ def summarizeModel(patternDict,transformationDict,atomicPatternAnnotations,trans
     			rulestring = lhs + " -> " + rhs
     			newdict[transformationDict[key]] = rulestring
 		
-		maxsize = max([len(str(item)) for item in newdict.keys()])
+		maxsize = max([len(str(item)) for item in newdict])
     		f.write('Model processes:\n')
     		for key,val in sorted(transformationAnnotations.iteritems()):
 			#f.write('%-*s\t%s\n' %(maxsize,str(key),str(val)))
@@ -287,7 +287,7 @@ def summarizeModel(patternDict,transformationDict,atomicPatternAnnotations,trans
 			f.write("Kinetic Modifiers: " + ', '.join(annot_list)+"\n\n")
 		
 def writeAnnotationFiles(atomicPatternAnnotations,transformationAnnotations,patternDict,transformationDict):
-	maxsize = max([len(str(item)) for item in atomicPatternAnnotations.keys()])
+	maxsize = max([len(str(item)) for item in atomicPatternAnnotations])
 	with open('atomicPatternAnnotations.txt','w') as f:
     		f.write('#Atomic Pattern Annotations\n')
 	    	for key,val in sorted(atomicPatternAnnotations.iteritems()):
@@ -299,7 +299,7 @@ def writeAnnotationFiles(atomicPatternAnnotations,transformationAnnotations,patt
 	    	rhs = '+'.join(key[1])
     		rulestring = lhs + " -> " + rhs
     		newdict[transformationDict[key]] = rulestring
-    	maxsize = max([len(str(item)) for item in newdict.keys()])
+	maxsize = max([len(str(item)) for item in newdict])
     	with open('transformationAnnotations.txt','w') as f:
     		f.write('#Transformation Annotations\n')
     		for key,val in sorted(transformationAnnotations.iteritems()):
@@ -316,14 +316,14 @@ def readAnnotationFiles(patternDict,transformationDict):
 				line_contents[idx] = item.strip()
 			patt_id = line_contents.popleft()
 			patt = line_contents.popleft()
-			assert(patt in patternDict.keys()), 'Pattern not found'
+			assert(patt in patternDict), 'Pattern not found'
 			atomicPatternAnnotations[patt] = ' '.join(line_contents)
 	
 	transformationAnnotations = dict()
 	with open('transformationAnnotations.txt','r') as f:
 		transformationAnnotations = dict()
 		newdict = dict()
-		for key in transformationDict.keys():
+		for key in transformationDict:
     			lhs = '+'.join(key[0])
 		    	rhs = '+'.join(key[1])
     			rulestring = lhs + " -> " + rhs
@@ -338,7 +338,7 @@ def readAnnotationFiles(patternDict,transformationDict):
 				line_contents[idx] = item.strip()
 			tr_id = line_contents.popleft()
 			rulestring = line_contents.popleft()
-			assert(rulestring in newdict.keys()), 'Transformation not found'
+			assert(rulestring in newdict), 'Transformation not found'
 			#Note we are only comparing rule-strings to see if the transformation is present. May need refining!!
 			transformationAnnotations[newdict[rulestring]] = ' '.join(line_contents)	
 	return atomicPatternAnnotations, transformationAnnotations
@@ -416,8 +416,8 @@ def writeDot(patternDict,transformationDict,atomicPatternAnnotations,transformat
 		#	f.write('{ rank = same; \"r' + str(patt_id) + '\"; \"p' + str(patt_id) + '\"; }\n' )
 		
 		# Ranking the transformation nodes in the middle of the reactant and product nodes
-		#n_reactants = len(patternDict.keys())
-		#n_transforms = len(transformationDict.keys())
+		#n_reactants = len(patternDict)
+		#n_transforms = len(transformationDict)
 		#n_nodes_to_leave = int(ceil((n_reactants - n_transforms)/2))
 		#print n_reactants, n_transforms, n_nodes_to_leave
 		
@@ -477,7 +477,7 @@ def printList(list1):
 		
 def printDict(dict1):
 	#getting max size for column1
-	maxsize = max([len(str(item)) for item in dict1.keys()])
+	maxsize = max([len(str(item)) for item in dict1])
 	for key,val in dict1.iteritems():
 		print '%-*s\t%s' %(maxsize,str(key),str(val))
 
@@ -597,11 +597,11 @@ if __name__ == "__main__":
 					for item in templist:
 						if '!+' in item:
 							loc = string.find(item,'+')
-							newlist = [x for x in patternDict.keys() if item[0:loc] in x]
+							newlist = [x for x in patternDict if item[0:loc] in x]
 							assert len(newlist) > 0, 'Bond pattern ' + item + ' not found'
 							patlist.update(newlist)
 						else:
-							assert item in patternDict.keys(), 'Bond pattern ' + item + ' not found'
+							assert item in patternDict, 'Bond pattern ' + item + ' not found'
 							patlist.update([item])
     							
 						

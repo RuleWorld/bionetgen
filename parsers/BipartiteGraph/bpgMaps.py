@@ -214,13 +214,13 @@ class RuleMap:
 		dictPatterns = dictNames.p
 		dictTransformations = dictNames.t
 		
-		self.r2t = set( [ (dictRules[r],dictTransformations[t]) for r in dictRules.keys() for t in r.transformations ] )
-		self.r2p_transfcenter = set( [ (dictRules[r],dictPatterns[p]) for r in dictRules.keys() for item in r.transf_center_lhs for p in item ] )
-		self.r2p_context = set( [ (dictRules[r],dictPatterns[p]) for r in dictRules.keys() for p in r.context ] )
-		self.r2p_syndelcontext = set( [ (dictRules[r],dictPatterns[p]) for r in dictRules.keys() for item in r.syndel_context for p in item ] )
+		self.r2t = set( [ (dictRules[r],dictTransformations[t]) for r in dictRules for t in r.transformations ] )
+		self.r2p_transfcenter = set( [ (dictRules[r],dictPatterns[p]) for r in dictRules for item in r.transf_center_lhs for p in item ] )
+		self.r2p_context = set( [ (dictRules[r],dictPatterns[p]) for r in dictRules for p in r.context ] )
+		self.r2p_syndelcontext = set( [ (dictRules[r],dictPatterns[p]) for r in dictRules for item in r.syndel_context for p in item ] )
 		#moving to syncontext and delcontext
-		self.r2p_syncontext = set( [ (dictRules[r],dictPatterns[p]) for r in dictRules.keys() for item in r.syncontext for p in item ] )
-		self.r2p_delcontext = set( [ (dictRules[r],dictPatterns[p]) for r in dictRules.keys() for item in r.delcontext for p in item ] )
+		self.r2p_syncontext = set( [ (dictRules[r],dictPatterns[p]) for r in dictRules for item in r.syncontext for p in item ] )
+		self.r2p_delcontext = set( [ (dictRules[r],dictPatterns[p]) for r in dictRules for item in r.delcontext for p in item ] )
 
  
 class TransformationMap:
@@ -233,15 +233,15 @@ class TransformationMap:
 		dictPatterns = dictNames.p
 		dictTransformations = dictNames.t
 		
-		self.t2action = dict([(dictTransformations[t],t.action) for t in dictTransformations.keys()])
+		self.t2action = dict([(dictTransformations[t],t.action) for t in dictTransformations])
 	
-		self.t2p_reactant = list(set( [ (dictTransformations[t],dictPatterns[p]) for t in dictTransformations.keys() for p in t.getLHS()] ))
-		self.t2p_product = list(set( [ (dictTransformations[t],dictPatterns[p]) for t in dictTransformations.keys() for p in t.getRHS()] ))
+		self.t2p_reactant = list(set( [ (dictTransformations[t],dictPatterns[p]) for t in dictTransformations for p in t.getLHS()] ))
+		self.t2p_product = list(set( [ (dictTransformations[t],dictPatterns[p]) for t in dictTransformations for p in t.getRHS()] ))
 		
 		self.t2p_context = set()
-		self.t2p_context.update((dictTransformations[t], dictPatterns[p]) for r in dictRules.keys() for t in r.transformations for p in r.context)
+		self.t2p_context.update((dictTransformations[t], dictPatterns[p]) for r in dictRules for t in r.transformations for p in r.context)
 
-		for r in dictRules.keys():
+		for r in dictRules:
 			# Pre-resolve LHS patterns for all transformations in this rule to avoid redundant lookups
 			tr_pats = [(tr, [dictPatterns[p] for p in tr.getLHS()]) for tr in r.transformations]
 			for t in r.transformations:
@@ -253,10 +253,10 @@ class TransformationMap:
 
 		self.t2p_context = list(self.t2p_context)
 		
-		self.t2p_syndelcontext = list(set( [ (dictTransformations[t],dictPatterns[p]) for r in dictRules.keys() for idx,t in enumerate(r.transformations) for p in r.syndel_context[idx] if t.isSynDel() ] ))
+		self.t2p_syndelcontext = list(set( [ (dictTransformations[t],dictPatterns[p]) for r in dictRules for idx,t in enumerate(r.transformations) for p in r.syndel_context[idx] if t.isSynDel() ] ))
 		
-		self.t2p_syncontext = list(set( [ (dictTransformations[t],dictPatterns[p]) for r in dictRules.keys() for idx,t in enumerate(r.transformations) for p in r.syncontext[idx] if t.action=='Add' ] ))		
-		self.t2p_delcontext = list(set( [ (dictTransformations[t],dictPatterns[p]) for r in dictRules.keys() for idx,t in enumerate(r.transformations) for p in r.delcontext[idx] if t.action=='Delete' ] ))
+		self.t2p_syncontext = list(set( [ (dictTransformations[t],dictPatterns[p]) for r in dictRules for idx,t in enumerate(r.transformations) for p in r.syncontext[idx] if t.action=='Add' ] ))
+		self.t2p_delcontext = list(set( [ (dictTransformations[t],dictPatterns[p]) for r in dictRules for idx,t in enumerate(r.transformations) for p in r.delcontext[idx] if t.action=='Delete' ] ))
 		
 class TransformationPairMap:
 	'''
@@ -269,10 +269,10 @@ class TransformationPairMap:
 		dictTransformations = dictNames.t
 		dictTransformationPairs = dictNames.tp	
 	
-		self.tp2actions = dict([(dictTransformationPairs[tp],[tp.forward.action,tp.reverse.action]) for tp in dictTransformationPairs.keys()])
+		self.tp2actions = dict([(dictTransformationPairs[tp],[tp.forward.action,tp.reverse.action]) for tp in dictTransformationPairs])
 	
-		self.tp2t_forward = dict([ [dictTransformationPairs[tp], dictTransformations[tp.forward]] for tp in dictTransformationPairs.keys() ] )
-		self.tp2t_reverse = dict([ [dictTransformationPairs[tp], dictTransformations[tp.reverse]] for tp in dictTransformationPairs.keys() ] )
+		self.tp2t_forward = dict([ [dictTransformationPairs[tp], dictTransformations[tp.forward]] for tp in dictTransformationPairs ] )
+		self.tp2t_reverse = dict([ [dictTransformationPairs[tp], dictTransformations[tp.reverse]] for tp in dictTransformationPairs ] )
 
 		self.tp2p_forwardreactant = list(set( [ (tp_id,p_id) for tp_id in dictTransformationPairs.values() for t_id,p_id in tr_map.t2p_reactant if t_id==self.tp2t_forward[tp_id] ] ))
 		self.tp2p_reversereactant = list(set( [ (tp_id,p_id) for tp_id in dictTransformationPairs.values() for t_id,p_id in tr_map.t2p_reactant if t_id==self.tp2t_reverse[tp_id] ] ))
@@ -296,6 +296,7 @@ class allMaps:
 		self.t = tr_map
 		self.tp = trpair_map
 		self.names = names
+		self.irr_ids = set(names.irr.values())
 		
 	def getFlow(self, type_vector, idx_list):
 		if type_vector == ['p','t']:
@@ -312,7 +313,7 @@ class allMaps:
 			list4 = unq([tp_id for tp_id,p_id1 in self.tp.tp2p_delcontext for p_id2 in idx_list if p_id1==p_id2])
 			return unq(combineLists([list1,list2,list3,list4]))
 		elif type_vector == ['p','irr']:
-			return [ x for x in self.getFlow(['p','t'],idx_list) if x in self.names.irr.values() ]	
+			return [x for x in self.getFlow(['p','t'],idx_list) if x in self.irr_ids]
 		
 		elif type_vector == ['t','p']:
 			# get transformations that contain the pattern as product or syncontext
@@ -362,7 +363,7 @@ class allMaps:
 			list3 = unq([t_id for t_id,p_id1 in self.t.t2p_syndelcontext for p_id2 in idx_list if p_id1==p_id2])
 			return unq(combineLists([list1,list2,list3]))
 		if type_vector == ['p','irr']:
-			return [x for x in self.getFlux(['p','t'],idx_list) if x in self.names.irr.values()]
+			return [x for x in self.getFlux(['p','t'],idx_list) if x in self.irr_ids]
 			
 	def getAll(self,type_vector,idx_list):
 		if type_vector == ['tp','p']:
@@ -574,7 +575,7 @@ def getLevels(start,end,names,all_maps):
 	p_levels = dict()
 	for trace in p_stack.stack:
 		for idx,p in enumerate(trace.trace):
-			if p not in p_levels.keys():
+			if p not in p_levels:
 				p_levels[p]=idx
 				
 	# First round of assigning levels to transformation pairs
@@ -589,7 +590,8 @@ def getLevels(start,end,names,all_maps):
 		max_p_levels = None
 		min_p_levels = None
 
-	for tp in [x for x in names.tp.values() if x not in tp_levels]:
+	remaining_tp = [x for x in names.tp.values() if x not in tp_levels]
+	for tp in remaining_tp:
 		possiblelevels = [p_levels[y] for x,y in maps if x==tp and y in p_levels]
 		if len(possiblelevels)>0:
 			possiblelevels_set = set(possiblelevels)
@@ -601,7 +603,8 @@ def getLevels(start,end,names,all_maps):
 				tp_levels[tp] = min(possiblelevels)
 	irr_levels = dict()
 	maps2 = all_maps.t.t2p_reactant+all_maps.t.t2p_product+all_maps.t.t2p_syndelcontext
-	for irr in [x for x in names.irr.values() if x not in irr_levels]:
+	remaining_irr = [x for x in names.irr.values() if x not in irr_levels]
+	for irr in remaining_irr:
 		possiblelevels = [p_levels[y] for x,y in maps2 if x==irr and y in p_levels]
 		if len(possiblelevels)>0:
 			possiblelevels_set = set(possiblelevels)
@@ -615,12 +618,14 @@ def getLevels(start,end,names,all_maps):
 
 	# Second round of assigning levels to patterns
 	maps = all_maps.tp.tp2p_forwardreactant+all_maps.tp.tp2p_delcontext + all_maps.tp.tp2p_forwardcontext + all_maps.tp.tp2p_reversecontext
-	for p in [x for x in names.p.values() if x not in p_levels]:
+	remaining_p = [x for x in names.p.values() if x not in p_levels]
+	for p in remaining_p:
 		possiblelevels = [tp_levels[x] for x,y in maps if y==p and x in tp_levels]
 		if len(possiblelevels) > 0:
 			p_levels[p] = min(possiblelevels)
 	maps2 = all_maps.t.t2p_reactant+all_maps.t.t2p_product+all_maps.t.t2p_syndelcontext + all_maps.t.t2p_context
-	for p in [x for x in names.p.values() if x not in p_levels]:
+	remaining_p = [x for x in names.p.values() if x not in p_levels]
+	for p in remaining_p:
 		possiblelevels = [irr_levels[x] for x,y in maps2 if y==p and x in irr_levels]
 		if len(possiblelevels) > 0:
 			p_levels[p] = min(possiblelevels)
@@ -649,44 +654,44 @@ def graphData(names,levels,all_maps):
 			
 	edge_list=[]
 	for idx1,(tp,p) in enumerate(all_maps.tp.tp2p_forwardreactant):
-		if p in levels.p.keys() and tp in levels.tp.keys():
+		if p in levels.p and tp in levels.tp:
 			dict1 = {'source':getCounter('p',p),'target':getCounter('tp',tp),'type':'reactant','linktype':'tp2p'}
 			edge_list.append(dict1)
 	for idx1,(tp,p) in enumerate(all_maps.tp.tp2p_reversereactant):
-		if p in levels.p.keys() and tp in levels.tp.keys():
+		if p in levels.p and tp in levels.tp:
 			dict1 = {'source':getCounter('tp',tp),'target':getCounter('p',p),'type':'product','linktype':'tp2p'}
 			edge_list.append(dict1)
 	for idx1,(tp,p) in enumerate(all_maps.tp.tp2p_forwardcontext):
-		if p in levels.p.keys() and tp in levels.tp.keys():
+		if p in levels.p and tp in levels.tp:
 			dict1 = {'source':getCounter('p',p),'target':getCounter('tp',tp),'type':'forwardcontext','linktype':'tp2p'}
 			edge_list.append(dict1)
 	for idx1,(tp,p) in enumerate(all_maps.tp.tp2p_reversecontext):
-		if p in levels.p.keys() and tp in levels.tp.keys():
+		if p in levels.p and tp in levels.tp:
 			dict1 = {'source':getCounter('p',p),'target':getCounter('tp',tp),'type':'reversecontext','linktype':'tp2p'}
 			edge_list.append(dict1)
 	for idx1,(tp,p) in enumerate(all_maps.tp.tp2p_delcontext):
-		if p in levels.p.keys() and tp in levels.tp.keys():
+		if p in levels.p and tp in levels.tp:
 			dict1 = {'source':getCounter('p',p),'target':getCounter('tp',tp),'type':'delcontext','linktype':'tp2p'}
 			edge_list.append(dict1)
 	for idx1,(tp,p) in enumerate(all_maps.tp.tp2p_syncontext):
-		if p in levels.p.keys() and tp in levels.tp.keys():
+		if p in levels.p and tp in levels.tp:
 			dict1 = {'source':getCounter('tp',tp),'target':getCounter('p',p),'type':'syncontext','linktype':'tp2p'}
 			edge_list.append(dict1)
 			
 	for idx1,(t,p) in enumerate(all_maps.t.t2p_reactant):
-		if p in levels.p.keys() and t in levels.irr.keys():
+		if p in levels.p and t in levels.irr:
 			dict1 = {'source':getCounter('p',p),'target':getCounter('irr',t),'type':'reactant','linktype':'t2p'}
 			edge_list.append(dict1)	
 	for idx1,(t,p) in enumerate(all_maps.t.t2p_product):
-		if p in levels.p.keys() and t in levels.irr.keys():
+		if p in levels.p and t in levels.irr:
 			dict1 = {'source':getCounter('irr',t),'target':getCounter('p',p),'type':'product','linktype':'t2p'}
 			edge_list.append(dict1)	
 	for idx1,(t,p) in enumerate(all_maps.t.t2p_context):
-		if p in levels.p.keys() and t in levels.irr.keys():
+		if p in levels.p and t in levels.irr:
 			dict1 = {'source':getCounter('p',p),'target':getCounter('irr',t),'type':'context','linktype':'t2p'}
 			edge_list.append(dict1)	
 	for idx1,(t,p) in enumerate(all_maps.t.t2p_syndelcontext):
-		if p in levels.p.keys() and t in levels.irr.keys():
+		if p in levels.p and t in levels.irr:
 			if names.t.t2action[t] == 'Delete':
 				dict1 = {'source':getCounter('p',p),'target':getCounter('irr',t),'type':'delcontext','linktype':'t2p'}
 			elif names.t.t2action[t]=='Add':
@@ -708,11 +713,11 @@ def makeFlow(names,all_maps,start,end):
 	Returns a dictionaries of patterns and transformation groups and irreversibles with levels attached to them
 	Level meaning: None - not important/default, 1 - start, -1 or max - end
 	'''
-	start  = resolveBondWildcards(start,names.p.keys())
-	end  = resolveBondWildcards(end,names.p.keys())
+	start  = resolveBondWildcards(start,names.p)
+	end  = resolveBondWildcards(end,names.p)
 	
-	start = [names.p[x] for x in names.p.keys() if str(x) in start]
-	end = [names.p[x] for x in names.p.keys() if str(x) in end]
+	start = [names.p[x] for x in names.p if str(x) in start]
+	end = [names.p[x] for x in names.p if str(x) in end]
 	
 	lev = getLevels(start,end,names,all_maps)
 	graphData(names,lev,all_maps)
@@ -734,7 +739,7 @@ def writeJSON(names,all_maps,annot):
 	for tr,idx in names.t.items():
 		temp = tr.getJSON()
 		temp.update({"idx":idx,"annot":annot.p[idx]})
-		if idx in [str(x) for x in names.irr.keys()]:
+		if idx in [str(x) for x in names.irr]:
 			temp.update({"irr":True})
 		else:
 			temp.update({"irr":False})
