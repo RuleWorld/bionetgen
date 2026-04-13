@@ -40,6 +40,7 @@ use File::Spec::Win32;
 use POSIX ("floor", "ceil");
 use Scalar::Util ("looks_like_number");
 use Config;
+use Safe;
 
 use Cwd;
 
@@ -301,6 +302,51 @@ sub _validate_action_options_syntax
     }
 
     return '';
+}
+
+
+sub _safe_reval_literal
+{
+    my ($expr) = @_;
+
+    my $cpt = Safe->new;
+    $cpt->permit(qw(:base_core :base_math :base_mem));
+
+    local $@;
+    my $value = $cpt->reval($expr);
+    my $eval_err = $@;
+
+    return ($value, $eval_err);
+}
+
+
+sub _parse_action_args
+{
+    my ($options) = @_;
+
+    return ([], '') unless defined $options and $options =~ /\S/;
+
+    my ($args_ref, $eval_err) = _safe_reval_literal("[$options]");
+    return (undef, $eval_err) if $eval_err;
+    return (undef, "Action options did not parse to an argument list.")
+        unless ref($args_ref) eq 'ARRAY';
+
+    return ($args_ref, '');
+}
+
+
+sub _invoke_model_action
+{
+    my ($model, $action, $options) = @_;
+
+    my ($args_ref, $parse_err) = _parse_action_args($options);
+    return ('', $parse_err) if $parse_err;
+
+    local $@;
+    my $result = eval { $model->$action(@$args_ref) };
+    my $eval_err = $@;
+
+    return ($result, $eval_err);
 }
 
 
