@@ -389,7 +389,7 @@ class Molecule:
         return [x for x in self.components if x.bonds != []]
         
     def contains(self,componentName):
-        return componentName in [x.name for x in self.components]
+        return any(componentName == x.name for x in self.components)
         
     def __str__(self):
         return self.name + '(' + ','.join(sorted([str(x) for x in self.components])) + ')' + self.compartment
@@ -417,9 +417,11 @@ class Molecule:
             element.reset()
             
     def update(self,molecule):
+        self_component_names = set(x.name for x in self.components)
         for comp in molecule.components:
-            if comp.name not in [x.name for x in self.components]:
+            if comp.name not in self_component_names:
                 self.components.append(deepcopy(comp))
+                self_component_names.add(comp.name)
                 
     def graphVizGraph(self,graph,identifier,components=None,flag=False):
         moleculeDictionary = {}
