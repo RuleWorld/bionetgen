@@ -29,6 +29,7 @@ package BNGModel;
 # pragmas
 use strict;
 use warnings;
+use Safe;
 no warnings 'redefine';
 
 # Perl Modules
@@ -1160,11 +1161,11 @@ sub readSBML
                                 goto EXIT;
                             }
     
-                            # execute action        
-                            my $command = sprintf "\$model->%s(%s);", $action, $options;
+                            # Execute the action without string eval after validating the option syntax.
                             my $t_start = cpu_time(0);
-                            $err = eval $command;
-                            if ($@)   { $err = errgen($@);    goto EXIT; }
+                            my $eval_err;
+                            ($err, $eval_err) = _invoke_model_action($model, $action, $options);
+                            if ($eval_err) { $err = errgen($eval_err); goto EXIT; }
                             if ($err) { $err = errgen($err);  goto EXIT; }
                             my $t_elapsed = cpu_time($t_start);
                             printf "CPU TIME: %s %.2f s.\n", $action, $t_elapsed;
@@ -1239,9 +1240,12 @@ sub readSBML
                     {  $err = errgen($err);  goto EXIT;  }
     
                     # call to methods associated with $model
-                    my $command = '$model->' . $action . '(' . $options . ');';
-                    $err = eval $command;
-                    if ($@)   {  $err = errgen($@);    goto EXIT;  }
+                    if (my $syntax_err = _validate_action_options_syntax($options))
+                    {  $err = errgen( "Invalid option syntax: $syntax_err" );  goto EXIT;  }
+
+                    my $eval_err;
+                    ($err, $eval_err) = _invoke_model_action($model, $action, $options);
+                    if ($eval_err)   {  $err = errgen($eval_err);    goto EXIT;  }
                     if ($err) {  $err = errgen($err);  goto EXIT;  }
                 }
     
@@ -1291,12 +1295,11 @@ sub readSBML
                         goto EXIT;
                     }
     
-                    # execute action
-                    my $command = sprintf "\$model->%s(%s);", $action, $options;
-    
-                     my $t_start = cpu_time(0);                    
-                    $err = eval $command;
-                    if ($@)   { $err = errgen($@);    goto EXIT; }
+                    # Execute the action without string eval after validating the option syntax.
+                    my $t_start = cpu_time(0);
+                    my $eval_err;
+                    ($err, $eval_err) = _invoke_model_action($model, $action, $options);
+                    if ($eval_err) { $err = errgen($eval_err); goto EXIT; }
                     if ($err) { $err = errgen($err);  goto EXIT; }
                     my $t_elapsed = cpu_time($t_start);
                     printf "CPU TIME: %s %.2f s.\n", $action, $t_elapsed;
