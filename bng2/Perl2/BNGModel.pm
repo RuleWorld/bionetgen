@@ -1906,7 +1906,8 @@ sub setOption
         unless (@_) { return "No value specified for option $arg"; }
         my $val = shift @_;
         
-        # TODO: print arg and val to user?
+        my $val_str = defined $val ? $val : 'undef';
+        print "Setting option $arg => $val_str\n";
 
         if ( $arg eq "SpeciesLabel" )
         {
