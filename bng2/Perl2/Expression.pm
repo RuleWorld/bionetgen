@@ -1721,28 +1721,50 @@ sub toXML
     }
     elsif ( $type eq 'FunctionCall' )
     {
-        if ( $expand )
-        {
-            # TODO
-            my @sarr = ();
+        my $name = $expr->Arglist->[0];
+        if ( $expand  or  (ref $name eq "Function") )
+        {   # expand the function
+            my @sarr = ($expr->Arglist->[0]);
             foreach my $i ( 1 .. $#{$expr->Arglist} )
-            {
-                push @sarr, $expr->Arglist->[$i]->toXML( $plist, $level + 1 );
+            {   push @sarr, $expr->Arglist->[$i]->toXML($plist, $level+1, $expand);   }
+
+            if (ref $name eq "Function")
+            {   # anonymous function
+                my $fcn = $name;
+                (my $local_fcn) = $fcn->evaluate_local( \@sarr, $plist, $level+1 );
+                $string = $local_fcn->Expr->toXML( $plist, $level+1, $expand );
             }
-            $string = $expr->Arglist->[0] . '(' . join( ',', @sarr ) . ')';
+            elsif ( exists $functions{$name} )
+            {   # built-in function
+                $string = $expr->Arglist->[0] . "(" . join(",", @sarr[1..$#sarr]) . ")";
+            }
+            else
+            {   # lookup custom function by name and expand
+                ( my $param, $err ) = $plist->lookup($name);
+                (my $local_fcn) = $param->Ref->evaluate_local( \@sarr, $plist, $level+1 );
+                $string = $local_fcn->Expr->toXML( $plist, $level+1, $expand );
+            }
         }
         else
-        {
+        {   # just write the function and its argument values
             my @sarr = ();
             foreach my $i ( 1 .. $#{$expr->Arglist} )
             {
                 push @sarr, $expr->Arglist->[$i]->toXML( $plist, $level + 1 );
             }
-            $string = $expr->Arglist->[0] . '(' . join( ',', @sarr ) . ')';
+            $string = $name . '(' . join( ',', @sarr ) . ')';
         }
     }
     else
     {
+        my $xml_type = $type;
+        $xml_type = '&lt;'   if $type eq '<';
+        $xml_type = '&gt;'   if $type eq '>';
+        $xml_type = '&lt;='  if $type eq '<=';
+        $xml_type = '&gt;='  if $type eq '>=';
+        $xml_type = 'and'    if $type eq '&&';
+        $xml_type = 'or'     if $type eq '||';
+
         if ( $expand )
         {
             my @sarr = ();
@@ -1751,9 +1773,9 @@ sub toXML
                 push @sarr, $e->toXML( $plist, $level+1, $expand );
             }
             if ( $#sarr > 0 )
-            {   $string = join( $type, @sarr );   }
+            {   $string = join( $xml_type, @sarr );   }
             else
-            {   $string = $type . $sarr[0];       }
+            {   $string = $xml_type . $sarr[0];       }
 
             # enclose in brackets if not at top level
             #    print "level=$level\n";
@@ -1768,10 +1790,10 @@ sub toXML
             }
             if ( $#sarr > 0 )
             {
-                $string = join( $type, @sarr );
+                $string = join( $xml_type, @sarr );
             }
             else {
-                $string = $type . $sarr[0];
+                $string = $xml_type . $sarr[0];
             }
 
             # enclose in brackets if not at top level
@@ -1782,22 +1804,6 @@ sub toXML
             #printf "%s=$string\n", $expr->Type;
         }
     }
-
-    # TODO: special handling for XML output should be handled by a special option
-    #  or a toXML sub.  --Justin
-    
-    #BEGIN edit, msneddon
-    # for outputting to XML, we need to make sure we put in some special
-    # characters and operators to match the muParser library and to allow
-    # the XML parser to work.<" with "&lt;", ">" with "&gt;", and
-    #"&" with "&amp
-    #print "before XML replacement: $string\n";
-    $string =~ s/</&lt\;/g;
-    $string =~ s/>/&gt\;/g;
-    $string =~ s/&&/and/g;
-    $string =~ s/\|\|/or/g;
-    #print "after XML replacement: $string\n";
-    #END edit, msneddon
 
     # AS-2021
     if ($expr->tfunFile) {

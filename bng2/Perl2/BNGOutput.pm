@@ -551,10 +551,10 @@ sub toXML
 		my $do_print = 0;
 		if ( $param->Type =~ /^Constant/ )
 		{
-			$value = ($evaluate_expressions) ? sprintf "%.8g", $param->evaluate([], $plist) : $param->toString($plist);
+			$value = ($evaluate_expressions) ? sprintf "%.8g", $param->evaluate([], $plist) : $param->toXML($plist);
 			$value =~ s/(e[+-])0+(\d+)/$1$2/; # strip any leading zeros in exponent (improves cross-platform portability)
 			$type  = ($evaluate_expressions) ? "Constant" : $param->Type;
-      $expr = $param->toString($plist);
+      $expr = $param->toXML($plist);
 			$do_print = 1;
 		}
 		next unless $do_print;
