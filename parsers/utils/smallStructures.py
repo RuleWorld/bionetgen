@@ -196,37 +196,53 @@ class Species:
                 self.molecules.append(tmp)
                 
     def extend(self,species,update=True):
-        if(len(self.molecules) == len(species.molecules)):
-            for (selement,oelement) in zip(self.molecules,species.molecules):
-                selement_component_names = {x.name for x in selement.components}
+        if len(self.molecules) == len(species.molecules):
+            for selement, oelement in zip(self.molecules, species.molecules):
+                comp_dict = {}
+                for x in selement.components:
+                    if x.name not in comp_dict:
+                        comp_dict[x.name] = []
+                    comp_dict[x.name].append(x)
+
                 for component in oelement.components:
-                    if component.name not in selement_component_names:
+                    comp_list = comp_dict.get(component.name)
+                    if not comp_list:
                         selement.components.append(component)
-                        selement_component_names.add(component.name)
+                        comp_dict[component.name] = [component]
                     else:
-                        for element in selement.components:
-                            if element.name == component.name:
-                                element.addStates(component.states,update)
-                                
+                        for comp in comp_list:
+                            comp.addStates(component.states, update)
         else:
-            self_molecule_names = {x.name for x in self.molecules}
-            for element in species.molecules:
-                if element.name not in self_molecule_names:
+            mol_dict = {}
+            for x in self.molecules:
+                if x.name not in mol_dict:
+                    mol_dict[x.name] = []
+                mol_dict[x.name].append(x)
                     
-                    self.addMolecule(deepcopy(element),update)
-                    self_molecule_names.add(element.name)
+            for element in species.molecules:
+                mol_list = mol_dict.get(element.name)
+                if not mol_list:
+                    new_mol = deepcopy(element)
+                    self.addMolecule(new_mol, update)
+                    mol_dict[new_mol.name] = [new_mol]
                 else:
-                    for molecule in self.molecules:
-                        if molecule.name == element.name:
-                            molecule_component_names = {x.name for x in molecule.components}
-                            for component in element.components:
-                                if component.name not in molecule_component_names:
-                                    molecule.addComponent(deepcopy(component),update)
-                                    molecule_component_names.add(component.name)
-                                else:
-                                    comp = molecule.getComponent(component.name)
-                                    for state in component.states:
-                                        comp.addState(state,update)
+                    for mol in mol_list:
+                        comp_dict = {}
+                        for x in mol.components:
+                            if x.name not in comp_dict:
+                                comp_dict[x.name] = []
+                            comp_dict[x.name].append(x)
+
+                        for component in element.components:
+                            comp_list = comp_dict.get(component.name)
+                            if not comp_list:
+                                new_comp = deepcopy(component)
+                                mol.addComponent(new_comp, update)
+                                comp_dict[new_comp.name] = [new_comp]
+                            else:
+                                comp = comp_list[0]
+                                for state in component.states:
+                                    comp.addState(state, update)
                     
     
     def updateBonds(self,bondNumbers):
@@ -448,9 +464,10 @@ class Molecule:
                 return component
                 
     def removeComponent(self,componentName):
-        x = [x for x in self.components if x.name == componentName]
-        if x != []:
-            self.components.remove(x[0])
+        for i, x in enumerate(self.components):
+            if x.name == componentName:
+                del self.components[i]
+                break
             
     def removeComponents(self,components):
         for element in components:
@@ -490,15 +507,24 @@ class Molecule:
         return self.name + '(' + self.components[0].name + ')'
 
     def extend(self,molecule):
+        comp_dict = {}
+        for x in self.components:
+            if x.name not in comp_dict:
+                comp_dict[x.name] = []
+            comp_dict[x.name].append(x)
+
         for element in molecule.components:
-            comp = [x for x in self.components if x.name == element.name]
-            if len(comp) == 0:
-                self.components.append(deepcopy(element))
+            comp_list = comp_dict.get(element.name)
+            if not comp_list:
+                new_comp = deepcopy(element)
+                self.components.append(new_comp)
+                comp_dict[new_comp.name] = [new_comp]
             else:
+                comp = comp_list[0]
                 for bond in element.bonds:
-                    comp[0].addBond(bond)
+                    comp.addBond(bond)
                 for state in element.states:
-                    comp[0].addState(state)
+                    comp.addState(state)
                     
     def reset(self):
         for element in self.components:
