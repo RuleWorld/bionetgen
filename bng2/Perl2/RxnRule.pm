@@ -2831,8 +2831,8 @@ sub findMap
         my $iR = 0;
         while ( $iR < @context_rgs )
         {
-            # TODO: make sure isomorphicTo works correctly on patterns!
-            if ( $crg->isomorphicTo($context_rgs[$iR]) )
+            if ( $crg->isomorphicToSubgraph($context_rgs[$iR]) &&
+                 $context_rgs[$iR]->isomorphicToSubgraph($crg) )
             {   # toss out this graph and increment instances
                 splice @context_rgs, $iR, 1;
                 ++$instances;
