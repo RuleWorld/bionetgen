@@ -1999,6 +1999,7 @@ sub LinearParameterSensitivity
     my %simodeinputs;
     my $simname;
     my $basemodel = BNGModel->new();
+    $basemodel->initialize();
     my $plist;
     my $param_name;
     my $param_value;
@@ -2010,6 +2011,7 @@ sub LinearParameterSensitivity
 #    my $pert_names;
 #    my $pert_values;
     my $newbumpmodel = BNGModel->new();
+    $newbumpmodel->initialize();
     my $foo;
     my $i;
 
@@ -2166,9 +2168,75 @@ sub LinearParameterSensitivity
         $newbumpmodel->simulate_ode( \%simodeinputs );
 
         #Evaluate sensitivities and write to file
+        my $dp = $new_param_value - $param_value;
+        my $base_prefix = "$net_file\_basecase_$suffix";
+        my $bump_prefix = "${net_file}_${simname}_${suffix}";
+
+        foreach my $ext ("cdat", "gdat") {
+            my $base_file = "${base_prefix}.${ext}";
+            my $bump_file = "${bump_prefix}.${ext}";
+            my $sc_ext = ($ext eq "cdat") ? "csc" : "gsc";
+            my $out_file  = "${bump_prefix}.${sc_ext}";
+
+            if (-e $base_file && -e $bump_file) {
+                open(my $bfh, "<", $base_file) or next;
+                open(my $pfh, "<", $bump_file) or do { close($bfh); next; };
+                open(my $ofh, ">", $out_file)  or do { close($bfh); close($pfh); next; };
+
+                my $b_head = <$bfh>;
+                my $p_head = <$pfh>;
+
+                chomp $b_head;
+                $b_head =~ s/^\s*#\s*//;
+                my @cols = split(/\s+/, $b_head);
+
+                my @times;
+                my @base_data;
+                my @bump_data;
+
+                while(my $b_line = <$bfh>) {
+                    chomp $b_line;
+                    my $p_line = <$pfh>;
+                    chomp $p_line;
+
+                    $b_line =~ s/^\s+//;
+                    $p_line =~ s/^\s+//;
+
+                    my @b_vals = split(/\s+/, $b_line);
+                    my @p_vals = split(/\s+/, $p_line);
+
+                    push @times, $b_vals[0];
+                    push @base_data, \@b_vals;
+                    push @bump_data, \@p_vals;
+                }
+                close($bfh);
+                close($pfh);
+
+                # Write header: first row is time
+                print $ofh sprintf("%16s", "# time");
+                foreach my $t (@times) {
+                    print $ofh sprintf(" %16.8e", $t);
+                }
+                print $ofh "\n";
+
+                # Write rows for each species/observable
+                # columns are 1 to $#cols
+                for my $c (1 .. $#cols) {
+                    print $ofh sprintf("%16s", $cols[$c]);
+                    for my $r (0 .. $#times) {
+                        my $diff = $bump_data[$r]->[$c] - $base_data[$r]->[$c];
+                        my $sens = $dp != 0 ? $diff / $dp : 0;
+                        print $ofh sprintf(" %16.8e", $sens);
+                    }
+                    print $ofh "\n";
+                }
+                close($ofh);
+            }
+        }
 
         #Get ready for next bump
         $newbumpmodel = BNGModel->new();
+        $newbumpmodel->initialize();
     }
 
   
