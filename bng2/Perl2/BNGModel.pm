@@ -394,7 +394,8 @@ sub readSBML
     my $bindir = File::Spec->catpath($vol, $dir);
 
     # Begin writing command: start with 'program'
-    my @cmd = ($program, '-i', $filepath, '-o', $outfile);
+    # Convert filepaths to absolute paths to prevent argument injection if the path starts with a hyphen
+    my @cmd = ($program, '-i', File::Spec->rel2abs($filepath), '-o', File::Spec->rel2abs($outfile));
     if ($args{"atomize"}){
         push @cmd, '-a';
     }
