@@ -177,7 +177,7 @@
       </ReactionRule>
     </ListOfReactionRules>
     <ListOfObservables>
-      <Observable id="O1" name="LR" type="Species">
+      <Observable id="O1" name="LR" type="Species" output="1">
         <ListOfPatterns>
           <Pattern id="O1_P1" matchOnce="1">
             <ListOfMolecules>
