@@ -48,7 +48,8 @@ class TestReadBNGXML(unittest.TestCase):
              moleculeList, ruleDescription = readBNGXML.parseXML("dummy.xml")
 
              # Assertions
-             mock_etree.parse.assert_called_once_with("dummy.xml")
+             mock_etree.parse.assert_called_once()
+             self.assertEqual(mock_etree.parse.call_args[0][0], "dummy.xml")
              mock_doc.findall.assert_any_call('.//{http://www.sbml.org/sbml/level3}MoleculeType')
              mock_doc.findall.assert_any_call('.//{http://www.sbml.org/sbml/level3}ReactionRule')
 
@@ -79,7 +80,8 @@ class TestReadBNGXML(unittest.TestCase):
         moleculeList, ruleDescription = readBNGXML.parseXML("empty.xml")
 
         # Assertions
-        mock_etree.parse.assert_called_once_with("empty.xml")
+        mock_etree.parse.assert_called_once()
+        self.assertEqual(mock_etree.parse.call_args[0][0], "empty.xml")
         self.assertEqual(moleculeList, [])
         self.assertEqual(ruleDescription, [])
 
