@@ -1569,9 +1569,27 @@ sub generate_hybrid_model
         my $errors = [];
         foreach my $action ( @{$options->{actions}} )
         {
-            my $action_string = "\$hybrid_model->$action";
-            my $err = eval "$action_string";
-            if ($@)   {  warn $@;  }
+            my $err;
+            if ( $action =~ /^\s*([A-Za-z_]\w*)\s*(?:\(\s*(.*)\s*\))?\s*$/ )
+            {
+                my $method = $1;
+                my $opts = $2 // '';
+                if ( $hybrid_model->can($method) )
+                {
+                    my $eval_err;
+                    ($err, $eval_err) = BNGModel::_invoke_model_action($hybrid_model, $method, $opts);
+                    if ($eval_err) { warn $eval_err; }
+                }
+                else
+                {
+                    $err = "Method $method does not exist on hybrid model.";
+                }
+            }
+            else
+            {
+                $err = "Could not parse action string: $action";
+            }
+
             if ($err) {  push @$errors, $err;  }
         }
         $BNGModel::GLOBAL_MODEL = $model;
