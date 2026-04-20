@@ -826,8 +826,11 @@ sub operate
                 }
                 else
                 {   # nothing more to do
-                    # TODO: add warning for trailing characters?
                     $$sptr =~ s/^\s*//;
+                    if ( length($$sptr) > 0 )
+                    {
+                        return "Syntax error (invalid trailing characters) in $string_sav at $$sptr";
+                    }
                     last;
                 }
             }
