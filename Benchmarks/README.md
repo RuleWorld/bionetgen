@@ -36,7 +36,8 @@ Full benchmark suite with multiple runs and averaging.
 **Options:**
 - `--runs N`: Number of runs per test (default: 3)
 - `--models MODEL1,MODEL2,...`: Comma-separated list of models to test
-- `--rebuild`: Force rebuild of Network3 binaries (default: auto-detect changes)
+- `--rebuild`: Force rebuild of binaries (including Network3 and NFsim)
+- `--validate`: Run BioNetGen validation suite for the benchmarked models
 
 **Examples:**
 ```bash
@@ -63,9 +64,12 @@ Fast single-run benchmark for quick testing.
 
 ## Benchmark Models
 
-Default models tested (from `bng2/Models2/`):
+Default models tested:
 - `egfr_net.bngl` - EGFR signaling network (good for network generation performance)
 - `fceri_ji.bngl` - FcεRI signaling (good for rule-based performance)
+- `fceri_fyn.bngl` - Large signaling network for scalability testing
+- `gene_expr.bngl` - Gene expression model for SSA performance testing
+- `simple_nfsim.bngl` - Rule-based model for NFsim throughput testing
 
 You can specify custom models with the `--models` option.
 
@@ -80,9 +84,11 @@ results/
 
 ### Phase Breakdown
 
-The benchmark automatically parses BNG2.pl log output to provide timing breakdowns:
+The benchmark automatically parses BioNetGen log output to provide timing and resource breakdowns:
 
 - **Overall**: Total wall-clock time
+- **Peak RSS**: Peak memory usage (tracked via custom tool)
+- **NFsim events/sec**: Simulation throughput for NFsim models
 - **generate_network()**: Perl network generation time
 - **simulate()**: C++ simulation time
 
