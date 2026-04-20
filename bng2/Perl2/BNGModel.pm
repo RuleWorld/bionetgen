@@ -1599,7 +1599,7 @@ sub writeFile
     );
 
     # change this to a constant?
-    my %allowed_formats = ( 'net'=>1, 'bngl'=>1, 'sbml'=>0, 'xml'=>1, 'ssc'=>0 );
+    my %allowed_formats = ( 'net'=>1, 'bngl'=>1, 'sbml'=>1, 'xml'=>1, 'ssc'=>1 );
 
     # copy user_params into params and pass_params structures
     foreach my $key ( keys %$user_params )
@@ -1637,11 +1637,14 @@ sub writeFile
     return undef if $NO_EXEC;
 
     ## Execute the Action ##
+    my %extensions = ( 'net'=>'net', 'bngl'=>'bngl', 'sbml'=>'xml', 'xml'=>'xml', 'ssc'=>'rxn' );
+    my $ext = $extensions{$params{'format'}} || $params{'format'};
+
     # first, build output filename
     my $file = $params{prefix};
     unless ( $params{suffix} eq '' )
     {   $file .= "_$params{suffix}";   }
-    $file .= ".$params{format}";
+    $file .= ".$ext";
 
     # now check if we're overwriting an existing file
     if ( -e $file )
@@ -1677,12 +1680,23 @@ sub writeFile
     {   # write XML format
         $file_string = $model->toXML( \%params );
     }
+    elsif ( $params{'format'} eq 'sbml' )
+    {
+        return $model->writeSBML( \%params );
+    }
+    elsif ( $params{'format'} eq 'ssc' )
+    {
+        return $model->writeSSC( \%params );
+    }
 
-    # write the string to file
-    my $FH;
-    open($FH, '>', $file)  or  return "Couldn't write to $file: $!\n";
-    print $FH $file_string;
-    close $FH;
+    if ( defined $file_string )
+    {
+        # write the string to file
+        my $FH;
+        open($FH, '>', $file)  or  return "Couldn't write to $file: $!\n";
+        print $FH $file_string;
+        close $FH;
+    }
 
     # all done
     print sprintf( "Wrote %s in %s format to %s.\n", $output, $params{'format'}, $file);
