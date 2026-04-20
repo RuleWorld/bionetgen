@@ -376,7 +376,6 @@ sub evaluate_local
     my $local_rl = $rl;
     if ($rl->Type eq "Arrhenius" )
     {
-        # TODO: verify that phi is a constant expression! (do this is ratelaw verify?)
         # evaluate activation energy in local context and get activation energy fingerprint
         my $local_expr;
         my $lfcn_fingerprint;
@@ -1209,8 +1208,18 @@ sub validate
     elsif ( $rl->Type eq "Arrhenius" )
     {
         # Validate local arguments here ?
-        # TODO: 1) verify that phi is not a function
-        #       2) verify that actE is independent of deltaG (is this possible here?)
+        if ( defined $model )
+        {
+            my ($phi_param, $err) = $model->ParamList->lookup($rl->Constants->[0]);
+            if ( !$err )
+            {
+                if ( $phi_param->Type ne "Constant" && $phi_param->Type ne "ConstantExpression" )
+                {
+                    return sprintf("Arrhenius ratelaw phi parameter '%s' must be a constant expression", $rl->Constants->[0]);
+                }
+            }
+        }
+        # TODO: verify that actE is independent of deltaG (is this possible here?)
     }
     else
     {   return sprintf("Unrecognized RateLaw type %s", $rl->Type);   }
