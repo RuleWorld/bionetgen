@@ -222,7 +222,7 @@ PatternGraph::gather_subtree ( Node * curr_node, node_container_t & visited, nod
         {
             visited.push_back( curr_node );
             for ( node_const_iter = curr_node->edges_out_begin();  node_const_iter != curr_node->edges_out_end();  ++node_const_iter )
-                gather_subtree ( *node_iter, visited, bonds );
+                gather_subtree ( *node_const_iter, visited, bonds );
         }
     } 
     
@@ -246,10 +246,10 @@ PatternGraph::gather_connected ( Node * curr_node, node_container_t & visited )
         visited.push_back( curr_node );
 
         for ( node_const_iter = curr_node->edges_in_begin();  node_const_iter != curr_node->edges_in_end();  ++node_const_iter )
-            gather_connected ( *node_iter, visited );
+            gather_connected ( *node_const_iter, visited );
 
         for ( node_const_iter = curr_node->edges_out_begin();  node_const_iter != curr_node->edges_out_end();  ++node_const_iter )
-            gather_connected ( *node_iter, visited );
+            gather_connected ( *node_const_iter, visited );
     }  
 }
 

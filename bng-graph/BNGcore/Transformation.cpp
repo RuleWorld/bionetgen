@@ -614,11 +614,26 @@ DeleteSubtree::print ( )
     std::cout << "> Transformation(DeleteSubtree): " << node << " : " << node->get_label() << std::endl;
 }
 
+static void gather_subtree_nodes(Node* curr_node, node_container_t& visited) {
+    if (curr_node->get_type() < ENTITY_NODE_TYPE) {
+        if (std::find(visited.begin(), visited.end(), curr_node) == visited.end()) {
+            visited.push_back(curr_node);
+            for (node_const_iter_t it = curr_node->edges_out_begin(); it != curr_node->edges_out_end(); ++it) {
+                gather_subtree_nodes(*it, visited);
+            }
+        }
+    } else if (curr_node->get_type() < LINK_NODE_TYPE) {
+        if (std::find(visited.begin(), visited.end(), curr_node) == visited.end()) {
+            visited.push_back(curr_node);
+        }
+    }
+}
+
 // load operation center nodes into the container passes as argument
 void
 DeleteSubtree::get_center ( node_container_t & center_nodes )
 {
-    center_nodes.push_back( node );
+    gather_subtree_nodes( node, center_nodes );
 }
 
 
@@ -686,12 +701,23 @@ DeleteConnected::print ( )
 }
 
 
+static void gather_connected_nodes(Node* curr_node, node_container_t& visited) {
+    if (std::find(visited.begin(), visited.end(), curr_node) == visited.end()) {
+        visited.push_back(curr_node);
+        for (node_const_iter_t it = curr_node->edges_in_begin(); it != curr_node->edges_in_end(); ++it) {
+            gather_connected_nodes(*it, visited);
+        }
+        for (node_const_iter_t it = curr_node->edges_out_begin(); it != curr_node->edges_out_end(); ++it) {
+            gather_connected_nodes(*it, visited);
+        }
+    }
+}
+
 // load operation center nodes into the container passes as argument
 void
 DeleteConnected::get_center ( node_container_t & center_nodes )
 {
-    // TODO: hmm...
-    center_nodes.push_back( node );
+    gather_connected_nodes( node, center_nodes );
 }
 
 
