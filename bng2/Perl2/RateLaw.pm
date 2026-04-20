@@ -85,7 +85,9 @@ sub newRateLaw
 
     # Determine type of RateLaw
     if ( $string_left =~ s/^(Sat|MM|Hill)\(// )
-    {   # TODO: convert Sat, MM and Hill into regular functions?
+    {   # We do not convert Sat, MM, and Hill into regular functions because their
+        # translation depends on the localized concentration of explicitly matched
+        # species in Network3, which prevents using general functional observables.
         $rate_law_type = $1;
         
         if ($totalRate) { return undef, "TotalRate keyword is not compatible with $rate_law_type type RateLaw."; }
