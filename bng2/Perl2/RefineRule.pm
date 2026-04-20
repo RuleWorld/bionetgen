@@ -493,8 +493,9 @@ sub restrict_rule
     }    
     
 
-    # TODO: we want to check that reactants can interact here, but compartments aren't yet 
-    # supported in NFsim.  So we'll cross this bridge later.  --Justin
+    # check that reactant targets form an interacting Set (compartment check)
+    if ( @$reactants > 1 )
+    {   return undef unless ( SpeciesGraph::interactingSet(@$reactants) );   }
 
 
 	my ( $products ) = $rr->apply_operations( $matches );
