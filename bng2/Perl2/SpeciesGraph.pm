@@ -427,6 +427,16 @@ sub checkSpecies
     $err = $model->MoleculeTypesList->checkSpeciesGraph( $sg, $params );                           
 	return 0 if ($err);
 
+    # check that compartments are specified, if we're using compartments
+    if (defined $model->CompartmentList && @{$model->CompartmentList->Array}) {
+        foreach my $mol (@{$sg->Molecules}) {
+            if (!defined $mol->Compartment && !defined $sg->Compartment) {
+                # Could log an error here, but following the surrounding logic, we just return 0 to indicate not a fully-specified species
+                return 0;
+            }
+        }
+    }
+
     # check compartment validity
     ($comp, $err) = $sg->inferSpeciesCompartment();
     return 0 if ($err);
