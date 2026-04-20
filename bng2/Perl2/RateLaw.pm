@@ -562,59 +562,6 @@ sub get_deltaG_fingerprint
 ###
 
 
-sub equivalent
-{
-    my $rl1   = shift @_;
-    my $rl2   = shift @_;
-    my $plist = (@_) ? shift : undef;
-
-    my $err;
-
-    # first make sure we're dealing with defined ratelaws
-    return 0  unless (      defined $rl1  and  (ref $rl1 eq 'RateLaw') 
-                       and  defined $rl2  and  (ref $rl2 eq 'RateLaw')  );
-
-    # shortcut  return true if we're looking at the same ratelaw object
-    return 1  if ( $rl1 == $rl2 );
-
-    # compare type
-    return 0  unless ( $rl1->Type  eq  $rl2->Type );
-    # compare number of constants
-    return 0  unless ( @{$rl1->Constants} == @{$rl2->Constants} );
-    # compare factor
-    return 0  unless ( $rl1->Factor == $rl2->Factor );   
-    # compare totalrate flag
-    return 0  unless ( $rl1->TotalRate eq $rl2->TotalRate );
-    
-    if ( $rl1->Type eq 'Function' )
-    {
-        # check function equivalence: (ignore name)
-        (my $par1, $err) = $plist->lookup( $rl1->Constants->[0] );
-        if ($err) { return 0; }
-        
-        (my $par2, $err) = $plist->lookup( $rl2->Constants->[0] );
-        if ($err) { return 0; }
-
-        return 0  unless ( Function::equivalent($par1->Ref, $par2->Ref, $plist) );
-    }
-    else
-    {
-        # compare arguments (all arguments are parameter names)
-        for ( my $i = 0;  $i < @{$rl1->Constants};  ++$i )
-        {   return 0  unless ( $rl1->Constants->[$i] eq $rl2->Constants->[$i] );   }
-    }
-    # TODO: handling for FunctionProduct    
-
-    # no difference found, the ratelaws are equivalent
-    return 1;
-}
-
-
-###
-###
-###
-
-
 # write ratelaw as a string
 sub toString
 {

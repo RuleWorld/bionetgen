@@ -83,8 +83,7 @@ sub add
             if ( $rxn->Priority == $rxn2->Priority )
             {
                 # Reaction with same rate law as previous reaction is combined with it
-                # TODO: this may be obsolete after implementing ratelaw hashing..
-                if ( RateLaw::equivalent($rxn->RateLaw, $rxn2->RateLaw, $plist) )
+                if ( $rxn->RateLaw == $rxn2->RateLaw )
                 {
                 	    $rxn2->StatFactor( $rxn2->StatFactor + $rxn->StatFactor );
                 	    $add_rxn = 0;
@@ -113,28 +112,6 @@ sub add
 	                    send_warning($msg);
                 	   	}
 					
-                    # Need to delete reaction and ratelaw? 
-                    #  (if the ratelaws references are different and the rules are the same,
-                    #   then we can safely delete the extra Ratelaw copy.  This is useful
-                    #   for energy BNG where we derive new ratelaws from general rates, but often
-                    #   the same derived law works for many reactions. Deleting redundant derived laws
-                    #   allows us to save space.)
-                    if ( ($rxn->RateLaw != $rxn2->RateLaw) and ($rxn->RxnRule == $rxn2->RxnRule) )
-                    {
-                        if ( defined $plist )
-                        {
-                            # delete parameters associated with this ratelaw
-                            foreach my $const ( @{$rxn->RateLaw->Constants} )
-                            {   $plist->deleteParam( $const );   }
-                        }
-                        
-                        # undefine the ratelaw
-                        undef %{$rxn->RateLaw};
-                        
-                        # set this rxn ratelaw equal to rxn2 ratelaw
-                        #  (in practice, we don't need rxn anymore, so this is moot)
-                        $rxn->RateLaw( $rxn2->RateLaw );
-                    }
                     
                     # Exit from loop since rxn is now handled.
                     last;
