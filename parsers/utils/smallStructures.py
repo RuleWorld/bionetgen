@@ -621,9 +621,12 @@ class Component:
             self.setActiveState(state)
         #print 'LALALA',state
     def addStates(self,states,update=True):
+        # ⚡ Bolt: Use O(1) set lookups instead of O(N^2) list lookups
+        current_states = set(self.states)
         for state in states:
-            if state not in self.states:
+            if state not in current_states:
                 self.addState(state,update)
+                current_states.add(state)
         
     def addBond(self,bondName):
         if not bondName in self.bonds:

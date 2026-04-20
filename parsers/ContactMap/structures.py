@@ -444,9 +444,11 @@ class Molecule:
                 return component
                 
     def removeComponent(self,componentName):
-        x = [x for x in self.components if x.name == componentName]
-        if x != []:
-            self.components.remove(x[0])
+        # ⚡ Bolt: Fast-exit loop replaces full O(N) list comprehension and O(N) .remove()
+        for i, x in enumerate(self.components):
+            if x.name == componentName:
+                del self.components[i]
+                break
             
     def removeComponents(self,components):
         for element in components:
@@ -489,15 +491,23 @@ class Molecule:
         return self.name + '(' + self.components[0].name + ')'
 
     def extend(self,molecule):
+        # ⚡ Bolt: Use O(N) dict lookup instead of O(N^2) list comprehension per element
+        comp_dict = {}
+        for x in self.components:
+            if x.name not in comp_dict:
+                comp_dict[x.name] = x
+
         for element in molecule.components:
-            comp = [x for x in self.components if x.name == element.name]
-            if len(comp) == 0:
-                self.components.append(deepcopy(element))
+            if element.name not in comp_dict:
+                new_comp = deepcopy(element)
+                self.components.append(new_comp)
+                comp_dict[element.name] = new_comp
             else:
+                comp = comp_dict[element.name]
                 for bond in element.bonds:
-                    comp[0].addBond(bond)
+                    comp.addBond(bond)
                 for state in element.states:
-                    comp[0].addState(state)
+                    comp.addState(state)
                     
     def reset(self):
         for element in self.components:
@@ -595,9 +605,12 @@ class Component:
             self.setActiveState(state)
         #print 'LALALA',state
     def addStates(self,states,update=True):
+        # ⚡ Bolt: Use O(1) set lookups instead of O(N^2) list lookups
+        current_states = set(self.states)
         for state in states:
-            if state not in self.states:
+            if state not in current_states:
                 self.addState(state,update)
+                current_states.add(state)
         
     def addBond(self,bondName):
         if not bondName in self.bonds:
