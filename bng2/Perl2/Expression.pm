@@ -820,7 +820,7 @@ sub operate
                 }
     
                 # Look for end characters
-                elsif ( $end_chars  and  ( $$sptr =~ /^\s*${end_chars}/ ) )
+                elsif ( $end_chars  and  ( $$sptr =~ /^\s*[${end_chars}]/ ) )
                 {   # end of expression
                     last;
                 }

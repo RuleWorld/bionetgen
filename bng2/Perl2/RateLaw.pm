@@ -162,7 +162,7 @@ sub newRateLaw
 
         # extract activation energy expression
         my $actE_expr = Expression->new();
-        $err = $actE_expr->readString( \$string_left, $model->ParamList );
+        $err = $actE_expr->readString( \$string_left, $model->ParamList, '\\)' );
         if ($err) { return undef, "Unable to parse Arrhenius ratelaw (expecting activation energy string): $err"; }
         my $actE_name = $actE_expr->getName( $model->ParamList, "_AEact0_" );
         (my $actE_param, $err) = $model->ParamList->lookup($actE_name);
@@ -179,12 +179,53 @@ sub newRateLaw
     elsif ( $string_left =~ /\S+/ )
     {
         # Handle expression for rate constant of elementary reaction
+        # Split off trailing reaction-rule options so strict expression
+        # parsing does not treat them as invalid expression characters.
+        my $expr_string = $string_left;
+        my $tail_string = '';
+        {
+            my $depth = 0;
+            my $len   = length($expr_string);
+            my $cut   = -1;
+
+            for ( my $i = 0; $i < $len; ++$i )
+            {
+                my $ch = substr( $expr_string, $i, 1 );
+                if ( $ch eq '(' )
+                {   ++$depth; next; }
+                if ( $ch eq ')' )
+                {   --$depth if $depth > 0; next; }
+
+                next if $depth > 0;
+
+                if ( $ch eq ',' )
+                {   $cut = $i; last; }
+
+                if ( $ch =~ /\s/ )
+                {
+                    my $rest = substr( $expr_string, $i );
+                    if ( $rest =~ /^\s+(?:DeleteMolecules|MoveConnected|priority\s*=|exclude_\w+\(|include_\w+\()/ )
+                    {   $cut = $i; last; }
+                }
+            }
+
+            if ( $cut >= 0 )
+            {
+                $tail_string = substr( $expr_string, $cut );
+                $expr_string = substr( $expr_string, 0, $cut );
+            }
+        }
+
         # Read expression
         my $expr = Expression->new();
         $expr->setAllowForward(1);  # don't complain if expression refers to undefined parameters
-        $err = $expr->readString( \$string_left, $model->ParamList, "," );
+        $err = $expr->readString( \$expr_string, $model->ParamList );
         if ($err) { return '', $err; }
     		$expr->setAllowForward(0);
+
+        # preserve unparsed suffix (e.g. second reversible ratelaw,
+        # include/exclude options, DeleteMolecules, MoveConnected, priority)
+        $string_left = $tail_string;
 		    
         # get name for ratelaw
         my $name = $expr->getName( $model->ParamList, $basename, $force_fcn );

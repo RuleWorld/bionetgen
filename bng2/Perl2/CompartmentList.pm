@@ -175,22 +175,29 @@ sub readString
     # moved spatial dimension check to newCompartment sub in Compartment module
 
     # Read size expression (required argument, expression created on the fly)
-    my $size = Expression->new();
-    $size->setAllowForward(1);
-    $size->readString(\$string, $plist)  and return $_;
-
-    # Read outside compartment (optional argument, but compartment must be in list if specified)
+    # If a known outside compartment name appears as a trailing token,
+    # split it off before strict expression parsing.
     my $outside = undef;
-    if ( $string =~ s/^([A-Za-z_0-9]+)\s*// )
+    my $size_string = $string;
+    $size_string =~ s/^\s*//;
+
+    if ( $size_string =~ /^(.*\S)\s+([A-Za-z_]\w*)\s*$/ )
     {
-        my $cname = $1;
-        # Get compartment reference
-        $outside = $clist->Hash->{$cname}
-            ||  return("Outside compartment $cname is not in CompartmentList");
+        my ($candidate_size, $cname) = ($1, $2);
+        if ( exists $clist->Hash->{$cname} )
+        {
+            $outside = $clist->Hash->{$cname};
+            $size_string = $candidate_size;
+        }
     }
 
+    my $size = Expression->new();
+    $size->setAllowForward(1);
+    my $size_err = $size->readString(\$size_string, $plist);
+    return $size_err if ($size_err);
+
     # check for extraneous arguments
-    if ( $string =~ /\S+/ )
+    if ( $size_string =~ /\S+/ )
     {  return "Unrecognized trailing syntax in compartment specification";  }
 
     # create compartment
