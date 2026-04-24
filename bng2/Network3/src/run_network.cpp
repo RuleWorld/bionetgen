@@ -1,5 +1,5 @@
 /*
- *    run_network : river for network propagation routines,
+ *    run_network : driver for network propagation routines,
  *                    including ODE solvers and stochastic simulators.
  *
  *                  Copyright (C) 2006,2010,2012 by
