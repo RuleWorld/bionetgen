@@ -721,7 +721,7 @@ int Network3::run_PLA(double& time, double maxTime, double sampleTime,
 				delete[] pops;
 				// Print network w/ current species populations using network::print_network()
 				char buf[1000];
-				sprintf(buf, "%s_save.net", prefix);
+				snprintf(buf, sizeof(buf), "%s_save.net", prefix);
 				FILE* out = fopen(buf, "w");
 				print_network(out);
 				fclose(out);
@@ -793,7 +793,7 @@ int Network3::run_PLA(double& time, double maxTime, double sampleTime,
 				set_conc_network(pops);
 				// Print network w/ current species populations using network::print_network()
 				char buf[1000];
-				sprintf(buf, "%s_save.net", prefix);
+				snprintf(buf, sizeof(buf), "%s_save.net", prefix);
 				FILE* out = fopen(buf, "w");
 				print_network(out);
 				fclose(out);
