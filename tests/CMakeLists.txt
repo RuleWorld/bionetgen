@@ -45,3 +45,11 @@ add_executable(test_hybrid_model_generator test_hybrid_model_generator.cpp)
 target_link_libraries(test_hybrid_model_generator PRIVATE Catch2::Catch2WithMain Catch2::Catch2 bng_engine bng_ast)
 add_test(NAME test_hybrid_model_generator COMMAND test_hybrid_model_generator)
 catch_discover_tests(test_hybrid_model_generator)
+
+add_executable(test_network_generator test_network_generator.cpp)
+target_include_directories(test_network_generator PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src
+)
+target_link_libraries(test_network_generator PRIVATE Catch2::Catch2WithMain Catch2::Catch2 bng_engine bng_ast)
+add_test(NAME test_network_generator COMMAND test_network_generator)
+catch_discover_tests(test_network_generator)
