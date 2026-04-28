@@ -60,7 +60,7 @@ public class BNGParserUtility
 		try {
 			is = xmlURL.openStream();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
+			System.err.println("IOException while loading xml.stg template");
 			e.printStackTrace();
 		}
 		
