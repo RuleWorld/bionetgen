@@ -531,7 +531,7 @@ void OdeIntegrator::compile() {
             for (const auto& func : model_.getFunctions()) {
                 std::string fnameLow = func.getName();
                 std::transform(fnameLow.begin(), fnameLow.end(), fnameLow.begin(), ::tolower);
-                if (hasWordBoundaryMatch(rlLow, fnameLow)) {
+                if (hasWordBoundaryMatch(rlLow, fnameLow) || hasWordBoundaryMatch(rawRL, func.getName())) {
                     crxn.isFunctional = true;
                     // Parse the full rate law string into an expression so that
                     // compound expressions like "k * funcName()" are preserved.
