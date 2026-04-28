@@ -342,7 +342,31 @@ sub toCVodeString
     if ( $arghash->{fcn_mode} eq 'call' )
     {
         # generate the function call
-        my @args = ( @{$fcn->Args}, 'expressions', 'observables' );
+        my @args = ();
+        if ( @{$fcn->Args} )
+        {
+            if ( exists $arghash->{rrefs} and exists $arghash->{reactants} )
+            {
+                my $rrefs = $arghash->{rrefs};
+                my $reactants = $arghash->{reactants};
+                if ( ref $rrefs eq 'HASH' )
+                {
+                    foreach my $tag ( @{$fcn->Args} )
+                    {
+                        unless ( (exists $rrefs->{$tag}) and (exists $reactants->[$rrefs->{$tag}]) )
+                        {   return "could not find reactant or tag corresponding to ratelaw argument!";   }
+                        push @args, ($reactants->[$rrefs->{$tag}])->getCVodeName;
+                    }
+                }
+                else
+                {   return "ratelaw depends on tagged reactants and RRefs hash is missing!";   }
+            }
+            else
+            {
+                push @args, @{$fcn->Args};
+            }
+        }
+        push @args, 'expressions', 'observables';
         $string = $arghash->{indent} . $fcn->Name . '(' . join(',', @args) . ')';
     }
     elsif ( $arghash->{fcn_mode} eq 'declare' ) 
@@ -395,7 +419,31 @@ sub toMatlabString
     if ( $arghash->{fcn_mode} eq 'call' )
     {
         # generate the function call
-        my @args = ( @{$fcn->Args}, 'expressions', 'observables' );
+        my @args = ();
+        if ( @{$fcn->Args} )
+        {
+            if ( exists $arghash->{rrefs} and exists $arghash->{reactants} )
+            {
+                my $rrefs = $arghash->{rrefs};
+                my $reactants = $arghash->{reactants};
+                if ( ref $rrefs eq 'HASH' )
+                {
+                    foreach my $tag ( @{$fcn->Args} )
+                    {
+                        unless ( (exists $rrefs->{$tag}) and (exists $reactants->[$rrefs->{$tag}]) )
+                        {   return "could not find reactant or tag corresponding to ratelaw argument!";   }
+                        push @args, ($reactants->[$rrefs->{$tag}])->getMatlabName;
+                    }
+                }
+                else
+                {   return "ratelaw depends on tagged reactants and RRefs hash is missing!";   }
+            }
+            else
+            {
+                push @args, @{$fcn->Args};
+            }
+        }
+        push @args, 'expressions', 'observables';
         $string = $arghash->{indent} . $fcn->Name . '(' . join(',', @args) . ')';
     }
     elsif ( $arghash->{fcn_mode} eq 'declare' ) 

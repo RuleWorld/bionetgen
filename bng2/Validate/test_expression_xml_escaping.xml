@@ -1,0 +1,304 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created by BioNetGen 2.9.3  -->
+<sbml xmlns="http://www.sbml.org/sbml/level3" level="3" version="1">
+  <model id="test_expression_xml_escaping">
+    <ListOfParameters>
+      <Parameter id="k1" type="Constant" value="1" expr="1.0"/>
+      <Parameter id="k2" type="Constant" value="2" expr="2.0"/>
+      <Parameter id="A" type="Constant" value="1" expr="1.0"/>
+      <Parameter id="B" type="Constant" value="2" expr="2.0"/>
+      <Parameter id="C" type="Constant" value="3" expr="3.0"/>
+      <Parameter id="D" type="Constant" value="4" expr="4.0"/>
+    </ListOfParameters>
+    <ListOfMoleculeTypes>
+      <MoleculeType id="X">
+        <ListOfComponentTypes>
+          <ComponentType id="s">
+            <ListOfAllowedStates>
+              <AllowedState id="0"/>
+              <AllowedState id="1"/>
+              <AllowedState id="2"/>
+            </ListOfAllowedStates>
+          </ComponentType>
+        </ListOfComponentTypes>
+      </MoleculeType>
+      <MoleculeType id="Y"/>
+    </ListOfMoleculeTypes>
+    <ListOfCompartments>
+    </ListOfCompartments>
+    <ListOfSpecies>
+      <Species id="S1"  concentration="100" name="X(s~0)">
+        <ListOfMolecules>
+          <Molecule id="S1_M1" name="X">
+            <ListOfComponents>
+              <Component id="S1_M1_C1" name="s" state="0" numberOfBonds="0"/>
+            </ListOfComponents>
+          </Molecule>
+        </ListOfMolecules>
+      </Species>
+      <Species id="S2"  concentration="50" name="Y()">
+        <ListOfMolecules>
+          <Molecule id="S2_M1" name="Y"/>
+        </ListOfMolecules>
+      </Species>
+      <Species id="S3"  concentration="0" name="X(s~1)">
+        <ListOfMolecules>
+          <Molecule id="S3_M1" name="X">
+            <ListOfComponents>
+              <Component id="S3_M1_C1" name="s" state="1" numberOfBonds="0"/>
+            </ListOfComponents>
+          </Molecule>
+        </ListOfMolecules>
+      </Species>
+      <Species id="S4"  concentration="0" name="X(s~2)">
+        <ListOfMolecules>
+          <Molecule id="S4_M1" name="X">
+            <ListOfComponents>
+              <Component id="S4_M1_C1" name="s" state="2" numberOfBonds="0"/>
+            </ListOfComponents>
+          </Molecule>
+        </ListOfMolecules>
+      </Species>
+    </ListOfSpecies>
+    <ListOfReactionRules>
+      <ReactionRule id="RR1" name="_R1" symmetry_factor="1">
+        <ListOfReactantPatterns>
+          <ReactantPattern id="RR1_RP1">
+            <ListOfMolecules>
+              <Molecule id="RR1_RP1_M1" name="X">
+                <ListOfComponents>
+                  <Component id="RR1_RP1_M1_C1" name="s" state="0" numberOfBonds="0"/>
+                </ListOfComponents>
+              </Molecule>
+            </ListOfMolecules>
+          </ReactantPattern>
+        </ListOfReactantPatterns>
+        <ListOfProductPatterns>
+          <ProductPattern id="RR1_PP1">
+            <ListOfMolecules>
+              <Molecule id="RR1_PP1_M1" name="X">
+                <ListOfComponents>
+                  <Component id="RR1_PP1_M1_C1" name="s" state="1" numberOfBonds="0"/>
+                </ListOfComponents>
+              </Molecule>
+            </ListOfMolecules>
+          </ProductPattern>
+        </ListOfProductPatterns>
+        <RateLaw id="RR1_RateLaw" type="Function" name="multi_less_than" totalrate="0">
+          <ListOfArguments>
+          </ListOfArguments>
+        </RateLaw>
+        <Map>
+          <MapItem sourceID="RR1_RP1_M1" targetID="RR1_PP1_M1"/>
+          <MapItem sourceID="RR1_RP1_M1_C1" targetID="RR1_PP1_M1_C1"/>
+        </Map>
+        <ListOfOperations>
+          <StateChange site="RR1_RP1_M1_C1" finalState="1"/>
+        </ListOfOperations>
+      </ReactionRule>
+      <ReactionRule id="RR2" name="_R2" symmetry_factor="1">
+        <ListOfReactantPatterns>
+          <ReactantPattern id="RR2_RP1">
+            <ListOfMolecules>
+              <Molecule id="RR2_RP1_M1" name="X">
+                <ListOfComponents>
+                  <Component id="RR2_RP1_M1_C1" name="s" state="1" numberOfBonds="0"/>
+                </ListOfComponents>
+              </Molecule>
+            </ListOfMolecules>
+          </ReactantPattern>
+        </ListOfReactantPatterns>
+        <ListOfProductPatterns>
+          <ProductPattern id="RR2_PP1">
+            <ListOfMolecules>
+              <Molecule id="RR2_PP1_M1" name="X">
+                <ListOfComponents>
+                  <Component id="RR2_PP1_M1_C1" name="s" state="2" numberOfBonds="0"/>
+                </ListOfComponents>
+              </Molecule>
+            </ListOfMolecules>
+          </ProductPattern>
+        </ListOfProductPatterns>
+        <RateLaw id="RR2_RateLaw" type="Function" name="multi_greater_than" totalrate="0">
+          <ListOfArguments>
+          </ListOfArguments>
+        </RateLaw>
+        <Map>
+          <MapItem sourceID="RR2_RP1_M1" targetID="RR2_PP1_M1"/>
+          <MapItem sourceID="RR2_RP1_M1_C1" targetID="RR2_PP1_M1_C1"/>
+        </Map>
+        <ListOfOperations>
+          <StateChange site="RR2_RP1_M1_C1" finalState="2"/>
+        </ListOfOperations>
+      </ReactionRule>
+      <ReactionRule id="RR3" name="_R3" symmetry_factor="1">
+        <ListOfReactantPatterns>
+          <ReactantPattern id="RR3_RP1">
+            <ListOfMolecules>
+              <Molecule id="RR3_RP1_M1" name="X">
+                <ListOfComponents>
+                  <Component id="RR3_RP1_M1_C1" name="s" state="2" numberOfBonds="0"/>
+                </ListOfComponents>
+              </Molecule>
+            </ListOfMolecules>
+          </ReactantPattern>
+        </ListOfReactantPatterns>
+        <ListOfProductPatterns>
+          <ProductPattern id="RR3_PP1">
+            <ListOfMolecules>
+              <Molecule id="RR3_PP1_M1" name="X">
+                <ListOfComponents>
+                  <Component id="RR3_PP1_M1_C1" name="s" state="0" numberOfBonds="0"/>
+                </ListOfComponents>
+              </Molecule>
+            </ListOfMolecules>
+          </ProductPattern>
+        </ListOfProductPatterns>
+        <RateLaw id="RR3_RateLaw" type="Function" name="multi_or" totalrate="0">
+          <ListOfArguments>
+          </ListOfArguments>
+        </RateLaw>
+        <Map>
+          <MapItem sourceID="RR3_RP1_M1" targetID="RR3_PP1_M1"/>
+          <MapItem sourceID="RR3_RP1_M1_C1" targetID="RR3_PP1_M1_C1"/>
+        </Map>
+        <ListOfOperations>
+          <StateChange site="RR3_RP1_M1_C1" finalState="0"/>
+        </ListOfOperations>
+      </ReactionRule>
+      <ReactionRule id="RR4" name="_R4" symmetry_factor="1">
+        <ListOfReactantPatterns>
+          <ReactantPattern id="RR4_RP1">
+            <ListOfMolecules>
+              <Molecule id="RR4_RP1_M1" name="Y"/>
+            </ListOfMolecules>
+          </ReactantPattern>
+        </ListOfReactantPatterns>
+        <ListOfProductPatterns>
+          <ProductPattern id="RR4_PP1">
+            <ListOfMolecules>
+              <Molecule id="RR4_PP1_M1" name="Y"/>
+            </ListOfMolecules>
+          </ProductPattern>
+          <ProductPattern id="RR4_PP2">
+            <ListOfMolecules>
+              <Molecule id="RR4_PP2_M1" name="Y"/>
+            </ListOfMolecules>
+          </ProductPattern>
+        </ListOfProductPatterns>
+        <RateLaw id="RR4_RateLaw" type="Function" name="mixed_ops" totalrate="0">
+          <ListOfArguments>
+          </ListOfArguments>
+        </RateLaw>
+        <Map>
+          <MapItem sourceID="RR4_RP1_M1" targetID="RR4_PP1_M1"/>
+        </Map>
+        <ListOfOperations>
+          <Add id="RR4_PP2_M1"/>
+        </ListOfOperations>
+      </ReactionRule>
+    </ListOfReactionRules>
+    <ListOfObservables>
+      <Observable id="O1" name="X0" type="Molecules" output="1">
+        <ListOfPatterns>
+          <Pattern id="O1_P1">
+            <ListOfMolecules>
+              <Molecule id="O1_P1_M1" name="X">
+                <ListOfComponents>
+                  <Component id="O1_P1_M1_C1" name="s" state="0" numberOfBonds="0"/>
+                </ListOfComponents>
+              </Molecule>
+            </ListOfMolecules>
+          </Pattern>
+        </ListOfPatterns>
+      </Observable>
+      <Observable id="O2" name="X1" type="Molecules" output="1">
+        <ListOfPatterns>
+          <Pattern id="O2_P1">
+            <ListOfMolecules>
+              <Molecule id="O2_P1_M1" name="X">
+                <ListOfComponents>
+                  <Component id="O2_P1_M1_C1" name="s" state="1" numberOfBonds="0"/>
+                </ListOfComponents>
+              </Molecule>
+            </ListOfMolecules>
+          </Pattern>
+        </ListOfPatterns>
+      </Observable>
+      <Observable id="O3" name="X2" type="Molecules" output="1">
+        <ListOfPatterns>
+          <Pattern id="O3_P1">
+            <ListOfMolecules>
+              <Molecule id="O3_P1_M1" name="X">
+                <ListOfComponents>
+                  <Component id="O3_P1_M1_C1" name="s" state="2" numberOfBonds="0"/>
+                </ListOfComponents>
+              </Molecule>
+            </ListOfMolecules>
+          </Pattern>
+        </ListOfPatterns>
+      </Observable>
+      <Observable id="O4" name="Y_total" type="Molecules" output="1">
+        <ListOfPatterns>
+          <Pattern id="O4_P1">
+            <ListOfMolecules>
+              <Molecule id="O4_P1_M1" name="Y"/>
+            </ListOfMolecules>
+          </Pattern>
+        </ListOfPatterns>
+      </Observable>
+    </ListOfObservables>
+    <ListOfFunctions>
+      <Function id="multi_less_than">
+        <ListOfReferences>
+          <Reference name="k1" type="Constant"/>
+          <Reference name="X0" type="Observable"/>
+          <Reference name="X1" type="Observable"/>
+          <Reference name="X2" type="Observable"/>
+          <Reference name="Y_total" type="Observable"/>
+        </ListOfReferences>
+        <Expression> if((((X0&lt;X1)and(X1&lt;X2))and(X2&lt;Y_total)),k1,0) </Expression>
+      </Function>
+      <Function id="multi_greater_than">
+        <ListOfReferences>
+          <Reference name="k2" type="Constant"/>
+          <Reference name="X0" type="Observable"/>
+          <Reference name="X1" type="Observable"/>
+          <Reference name="X2" type="Observable"/>
+          <Reference name="Y_total" type="Observable"/>
+        </ListOfReferences>
+        <Expression> if((((Y_total&gt;X2)and(X2&gt;X1))and(X1&gt;X0)),k2,0) </Expression>
+      </Function>
+      <Function id="multi_or">
+        <ListOfReferences>
+          <Reference name="k1" type="Constant"/>
+          <Reference name="X0" type="Observable"/>
+          <Reference name="X1" type="Observable"/>
+          <Reference name="X2" type="Observable"/>
+        </ListOfReferences>
+        <Expression> if((((X0&gt;50)or(X1&gt;50))or(X2&gt;50)),(k1*2),0) </Expression>
+      </Function>
+      <Function id="mixed_ops">
+        <ListOfReferences>
+          <Reference name="A" type="Constant"/>
+          <Reference name="B" type="Constant"/>
+          <Reference name="C" type="Constant"/>
+          <Reference name="D" type="Constant"/>
+          <Reference name="k2" type="Constant"/>
+        </ListOfReferences>
+        <Expression> if(((A&lt;B)or(C&gt;D)),(k2*2),0) </Expression>
+      </Function>
+      <Function id="nested_multi">
+        <ListOfReferences>
+          <Reference name="A" type="Constant"/>
+          <Reference name="B" type="Constant"/>
+          <Reference name="C" type="Constant"/>
+          <Reference name="D" type="Constant"/>
+          <Reference name="k1" type="Constant"/>
+          <Reference name="k2" type="Constant"/>
+        </ListOfReferences>
+        <Expression> if((((A&lt;B)and(B&lt;C))and((C&lt;D)or(D&gt;C))),(k1+k2),k1) </Expression>
+      </Function>
+    </ListOfFunctions>
+  </model>
+</sbml>
