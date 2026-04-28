@@ -1,0 +1,4 @@
+## 2024-05-24 - RCE via String Eval in Console Processing
+**Vulnerability:** The BNG console evaluated dynamic method invocations directly as raw string evaluate (e.g., `eval '$model->' . $action . '(' . $options . ');'`). This introduces a critical Remote Code Execution (RCE) vector because an attacker supplying commands via the console or automated script can inject arbitrary Perl code in `$action` or `$options`.
+**Learning:** In Perl, using `eval` on concatenated strings originating from user input bypasses language safety mechanisms. Actions intended for the model should use `_invoke_model_action` and method lookups using `$model->can($method)`.
+**Prevention:** Avoid string `eval` for dynamic method calls. Use method references or helper functions such as `BNGModel::_invoke_model_action` combined with a strict regex to extract options from input text.
