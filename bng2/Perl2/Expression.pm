@@ -1941,8 +1941,10 @@ sub toCVodeString
             }
             elsif ( $fcn_param->Type eq 'Observable' )
             {
-                # TODO: if there are arguments, then we should warn the user that we can't evaluate a local
-                # observables in a CVode function!!
+                if ( @{$expr->Arglist} > 1 )
+                {
+                    warn "WARNING: Cannot evaluate a local observable with arguments in a CVode function (arguments ignored for " . $fcn_param->Name . ")\n";
+                }
                 $string = $fcn_param->getCVodeName();
             }
             else
@@ -2089,8 +2091,10 @@ sub toMatlabString
             }
             elsif ( $fcn_param->Type eq 'Observable' )
             {
-                # TODO: if there are arguments, then we should warn the user that we can't evaluate a local
-                # observables in a CVode function!!
+                if ( @{$expr->Arglist} > 1 )
+                {
+                    warn "WARNING: Cannot evaluate a local observable with arguments in a Matlab function (arguments ignored for " . $fcn_param->Name . ")\n";
+                }
                 $string = $fcn_param->getMatlabName();
             }
             else
