@@ -53,3 +53,11 @@ target_include_directories(test_network_generator PRIVATE
 target_link_libraries(test_network_generator PRIVATE Catch2::Catch2WithMain Catch2::Catch2 bng_engine bng_ast)
 add_test(NAME test_network_generator COMMAND test_network_generator)
 catch_discover_tests(test_network_generator)
+
+add_executable(test_node_operator test_node_operator.cpp)
+target_include_directories(test_node_operator PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/core
+)
+target_link_libraries(test_node_operator PRIVATE Catch2::Catch2WithMain Catch2::Catch2 bng_core)
+catch_discover_tests(test_node_operator)
