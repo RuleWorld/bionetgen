@@ -369,7 +369,8 @@ class AtomizedRule:
 			# bond patterns will require you to look outside the created/deleted molecules
 			if tr.action in ['Add','Delete']:
 				patterns = reactants+products
-				mol = [m for patt in patterns for m in patt.molecules if m.idx==choppedrule.transf_center[idx][0]][0]
+				# ⚡ Bolt: Use next() with generator instead of list comprehension + [0] for O(1) early exit
+				mol = next((m for patt in patterns for m in patt.molecules if m.idx==choppedrule.transf_center[idx][0]), None)
 				p_idx,m_idx = decompose_midx(mol.idx)
 				patt,_,_ = getPMC(patterns,p_idx,m_idx,None)
 				
@@ -452,10 +453,11 @@ def getPMC(patterns,p_idx,m_idx,c_idx):
 	If c_idx does not exist, it returns only pattern and molecule objects
 	'''
 
-	patt = [x for x in patterns if x.idx == p_idx][0]
-	mol = [x for x in patt.molecules if x.idx == m_idx][0]
+	# ⚡ Bolt: Use next() with generator instead of list comprehension + [0] for O(1) early exit
+	patt = next((x for x in patterns if x.idx == p_idx), None)
+	mol = next((x for x in patt.molecules if x.idx == m_idx), None)
 	if c_idx:
-		comp = [x for x in mol.components if x.idx == c_idx][0]
+		comp = next((x for x in mol.components if x.idx == c_idx), None)
 	else:
 		comp = None
 	#state = comp.activeState

@@ -140,28 +140,30 @@ class NameDictionary:
 
 	
 	def getIdx(self,elemtype,string):
+		# ⚡ Bolt: Use next() with generator instead of list comprehension + [0] for O(1) early exit
 		if elemtype == 'p':
-			return [idx for x,idx in self.p.items() if str(x)==string][0]
+			return next((idx for x,idx in self.p.items() if str(x)==string), None)
 		if elemtype == 't':
-			return [idx for x,idx in self.t.items() if str(x)==string][0]
+			return next((idx for x,idx in self.t.items() if str(x)==string), None)
 		if elemtype == 'tp':
-			return [idx for x,idx in self.tp.items() if str(x)==string][0]
+			return next((idx for x,idx in self.tp.items() if str(x)==string), None)
 		if elemtype == 'r':
-			return [idx for x,idx in self.r.items() if str(x)==string][0]
+			return next((idx for x,idx in self.r.items() if str(x)==string), None)
 		if elemtype == 'irr':
-			return [idx for x,idx in self.irr.items() if str(x)==string][0]
+			return next((idx for x,idx in self.irr.items() if str(x)==string), None)
 			
 	def getElement(self,elemtype,idx1):
+		# ⚡ Bolt: Use next() with generator instead of list comprehension + [0] for O(1) early exit
 		if elemtype == 'p':
-			return [x for x,idx in self.p.items() if idx==idx1][0]
+			return next((x for x,idx in self.p.items() if idx==idx1), None)
 		if elemtype == 't':
-			return [x for x,idx in self.t.items() if idx==idx1][0]
+			return next((x for x,idx in self.t.items() if idx==idx1), None)
 		if elemtype == 'tp':
-			return [x for x,idx in self.tp.items() if idx==idx1][0]
+			return next((x for x,idx in self.tp.items() if idx==idx1), None)
 		if elemtype == 'r':
-			return [x for x,idx in self.r.items() if idx==idx1][0]
+			return next((x for x,idx in self.r.items() if idx==idx1), None)
 		if elemtype == 'irr':
-			return [x for x,idx in self.irr.items() if idx==idx1][0]
+			return next((x for x,idx in self.irr.items() if idx==idx1), None)
 			
 	def getString(self,elemtype,idx1):
 		return str(self.getElement(elemtype,idx1))
@@ -659,7 +661,8 @@ def graphData(names,levels,all_maps):
 		node_list.append(dict1)
 		id_counter += 1
 	def getCounter(	elemtype,x):
-		return [node for node in node_list if node['type']==elemtype and node['idx']==x][0]['id']
+		# ⚡ Bolt: Use next() with generator instead of list comprehension + [0] for O(1) early exit
+		return next((node for node in node_list if node['type']==elemtype and node['idx']==x), None)['id']
 
 			
 	edge_list=[]
