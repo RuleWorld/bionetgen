@@ -66,12 +66,11 @@ class Species:
         if deadMolecule == None:
             return
         bondNumbers = deadMolecule.getBondNumbers()
+        bond_strs = {str(n) for n in bondNumbers}
         self.molecules.remove(deadMolecule)
         for element in self.molecules:
             for component in element.components:
-                for number in bondNumbers:
-                    if str(number) in component.bonds:
-                        component.bonds.remove(str(number))
+                component.bonds[:] = [b for b in component.bonds if b not in bond_strs]
     
     def getMolecule(self,moleculeName):
         for molecule in self.molecules:
@@ -381,7 +380,7 @@ class Molecule:
                 self.components.remove(element)
                 
     def addBond(self,componentName,bondName):
-        bondNumbers = self.getBondNumbers()
+        bondNumbers = set(self.getBondNumbers())
         while bondName in bondNumbers:
             bondName += 1
         component = self.getComponent(componentName)
