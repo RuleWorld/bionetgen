@@ -1517,11 +1517,12 @@ std::size_t ReactionRule::expandRule(
 
     std::unordered_set<std::size_t> newSpecies;
     for (std::size_t i = 0; i < std::min(speciesList.size(), speciesBoundary); ++i) {
-        const auto iter = lastProcessedInIteration_.find(i);
+        const bool hasIter = (i < lastProcessedInIteration_.size() && lastProcessedInIteration_[i] != static_cast<std::size_t>(-1));
+        const std::size_t lastIter = hasIter ? lastProcessedInIteration_[i] : 0;
+
         const bool notYetProcessed = !speciesList.get(i).rulesApplied();
-        const bool notProcessedByThisRuleInCurrentIteration =
-            (iter == lastProcessedInIteration_.end() || iter->second < currentIteration);
-        const bool neverProcessedByThisRule = (iter == lastProcessedInIteration_.end());
+        const bool notProcessedByThisRuleInCurrentIteration = (!hasIter || lastIter < currentIteration);
+        const bool neverProcessedByThisRule = !hasIter;
 
         // Unimolecular: only process species never seen by this rule before.
         // Using neverProcessedByThisRule (not just notProcessedInCurrentIteration)
@@ -1548,7 +1549,7 @@ std::size_t ReactionRule::expandRule(
         std::cerr << "[DEBUG] Rule " << ruleName_ << " iter=" << currentIteration
                   << ": newSpecies={";
         for (auto idx : newSpecies) std::cerr << idx << ",";
-        std::cerr << "} trackedCount=" << lastProcessedInIteration_.size() << "\n";
+        std::cerr << "} trackedCapacity=" << lastProcessedInIteration_.size() << "\n";
     }
     if (newSpecies.empty()) {
         return 0;
@@ -1595,12 +1596,14 @@ std::size_t ReactionRule::expandRule(
             // avoids re-enumerating already-counted combinations.
             std::stable_partition(newMatches.begin(), newMatches.end(),
                 [this](const EmbeddingResult& m) {
-                    return lastProcessedInIteration_.count(m.speciesIndex) > 0;
+                    return (m.speciesIndex < lastProcessedInIteration_.size() &&
+                            lastProcessedInIteration_[m.speciesIndex] != static_cast<std::size_t>(-1));
                 });
 
             std::size_t oldCount = 0;
             for (const auto& m : newMatches) {
-                if (lastProcessedInIteration_.count(m.speciesIndex) > 0) {
+                if (m.speciesIndex < lastProcessedInIteration_.size() &&
+                    lastProcessedInIteration_[m.speciesIndex] != static_cast<std::size_t>(-1)) {
                     ++oldCount;
                 }
             }
@@ -1629,6 +1632,9 @@ std::size_t ReactionRule::expandRule(
         lastSpeciesListCapacity_ = speciesList.capacity();
         // Mark processed even if no matches
         for (std::size_t idx : newSpecies) {
+            if (idx >= lastProcessedInIteration_.size()) {
+                lastProcessedInIteration_.resize(idx + 1, static_cast<std::size_t>(-1));
+            }
             lastProcessedInIteration_[idx] = currentIteration;
         }
         return 0;
@@ -1648,6 +1654,9 @@ std::size_t ReactionRule::expandRule(
         lastSpeciesListCapacity_ = speciesList.capacity();
         // Mark processed even if not all patterns match
         for (std::size_t idx : newSpecies) {
+            if (idx >= lastProcessedInIteration_.size()) {
+                lastProcessedInIteration_.resize(idx + 1, static_cast<std::size_t>(-1));
+            }
             lastProcessedInIteration_[idx] = currentIteration;
         }
         return 0;
@@ -1710,6 +1719,9 @@ std::size_t ReactionRule::expandRule(
 
     // Mark these species as processed by this rule in this iteration
     for (std::size_t idx : newSpecies) {
+        if (idx >= lastProcessedInIteration_.size()) {
+            lastProcessedInIteration_.resize(idx + 1, static_cast<std::size_t>(-1));
+        }
         lastProcessedInIteration_[idx] = currentIteration;
     }
 
