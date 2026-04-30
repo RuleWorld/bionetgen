@@ -2133,14 +2133,32 @@ bool ReactionRule::buildReaction(
     // graph before splitting. Uses Perl's separated_by_volume logic for surface transport.
     // Also handles peer-level transport (e.g., @Cell1 <-> @Cell2 with no parent/child).
     if (!g_compartmentDimensions.empty()) {
+        auto endIt = g_compartmentDimensions.end();
+        std::string lastCompR;
+        std::string lastCompP;
+        std::unordered_map<std::string, int>::const_iterator lastDimRIt = endIt;
+        std::unordered_map<std::string, int>::const_iterator lastDimPIt = endIt;
+
         for (std::size_t pi = 0; pi < reactantPatterns_.size() && pi < productPatterns_.size(); ++pi) {
             const auto& compR = reactantPatterns_[pi].getCompartment();
             const auto& compP = (pi < productPatterns_.size()) ? productPatterns_[pi].getCompartment() : std::string();
             if (compR.empty() || compP.empty() || compR == compP) continue;
 
-            auto dimRIt = g_compartmentDimensions.find(compR);
-            auto dimPIt = g_compartmentDimensions.find(compP);
-            if (dimRIt == g_compartmentDimensions.end() || dimPIt == g_compartmentDimensions.end()) continue;
+            auto dimRIt = lastDimRIt;
+            if (lastCompR != compR) {
+                dimRIt = g_compartmentDimensions.find(compR);
+                lastCompR = compR;
+                lastDimRIt = dimRIt;
+            }
+
+            auto dimPIt = lastDimPIt;
+            if (lastCompP != compP) {
+                dimPIt = g_compartmentDimensions.find(compP);
+                lastCompP = compP;
+                lastDimPIt = dimPIt;
+            }
+
+            if (dimRIt == endIt || dimPIt == endIt) continue;
             if (dimRIt->second != dimPIt->second) continue; // must be same dimension
 
             // Build compartment mapping based on transport type
