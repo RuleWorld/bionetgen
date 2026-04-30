@@ -526,8 +526,71 @@ sub evaluate_local
     }
     elsif ( $rl->Type eq "FunctionProduct" )
     {
-        # TODO: implement
-        die "Error in RateLaw->evaluate_local(): FunctionProduct type RateLaw is not yet supported!";
+        # get parameters corresponding to ratelaw functions
+        my $fcn_name1 = $rl->Constants->[0];
+        my $fcn_name2 = $rl->Constants->[1];
+
+        (my $rl_param1) = $model->ParamList->lookup($fcn_name1);
+        (my $rl_param2) = $model->ParamList->lookup($fcn_name2);
+
+        unless ( $rl_param1->Type eq 'Function' && $rl_param2->Type eq 'Function' )
+        {   die "Error in RateLaw->evaluate_local(): cannot find parameter for FunctionProduct RateLaw!";   }
+
+        my $fcn1 = $rl_param1->Ref;
+        my $fcn2 = $rl_param2->Ref;
+
+        my $local_dep1 = $fcn1->checkLocalDependency($model->ParamList);
+        my $local_dep2 = $fcn2->checkLocalDependency($model->ParamList);
+
+        if ( $local_dep1 || $local_dep2 )
+        {
+            my $local_expr1;
+            if ( $local_dep1 )
+            {
+                my @local_args = ( $fcn1->Name, map {$ref_map->{$_}} @{$fcn1->Args} );
+                my $expr = Expression->new(Type=>"FunctionCall", Arglist=>[@local_args]);
+                $local_expr1 = $expr->evaluate_local($model->ParamList);
+            }
+            else
+            {
+                $local_expr1 = Expression->new(Type=>"FunctionCall", Arglist=>[$fcn1->Name]);
+            }
+
+            my $local_expr2;
+            if ( $local_dep2 )
+            {
+                my @local_args = ( $fcn2->Name, map {$ref_map->{$_}} @{$fcn2->Args} );
+                my $expr = Expression->new(Type=>"FunctionCall", Arglist=>[@local_args]);
+                $local_expr2 = $expr->evaluate_local($model->ParamList);
+            }
+            else
+            {
+                $local_expr2 = Expression->new(Type=>"FunctionCall", Arglist=>[$fcn2->Name]);
+            }
+
+            my $local_expr = Expression::operate("*", [$local_expr1, $local_expr2], $model->ParamList);
+
+            my $fingerprint = $local_expr->toString($model->ParamList, 0, 2);
+
+            if ( exists $rl->LocalRatelawsHash->{$fingerprint} )
+            {
+                $local_rl = $rl->LocalRatelawsHash->{$fingerprint};
+            }
+            else
+            {
+                my $base_name = $rxn->RxnRule->Name;
+                $base_name =~ s/[^\w]+//g;
+                my $local_name = $local_expr->getName( $model->ParamList, "_${base_name}_local" );
+                (my $local_param, $err) = $model->ParamList->lookup($local_name);
+                unless (defined $local_param) { die "RateLaw::evaluate_local() - Some problem creating param name for local ratelaw ($err)"; }
+
+                my $rl_type = $local_param->Type eq "Function" ? "Function" : "Ele";
+                $local_rl = RateLaw->new( Type=>$rl_type, Constants=>[$local_name], Factor=>$rl->Factor, TotalRate=>0 );
+                ++$RateLaw::n_Ratelaw;
+
+                $rl->LocalRatelawsHash->{$fingerprint} = $local_rl;
+            }
+        }
     }
     elsif ( $rl->Type eq "Function" )
     {
