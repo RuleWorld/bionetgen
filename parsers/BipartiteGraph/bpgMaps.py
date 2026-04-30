@@ -363,6 +363,7 @@ class allMaps:
 		self.irr_ids = set(names.irr.values())
 		
 	def getFlow(self, type_vector, idx_list):
+		idx_set = set(idx_list)
 		if type_vector == ['p','t']:
 			# get transformations that contain the pattern as reactant, context or delcontext
 			idx_set = set(idx_list)
@@ -401,6 +402,7 @@ class allMaps:
 			return None
 
 	def getFlux(self,type_vector,idx_list):
+		idx_set = set(idx_list)
 		if type_vector == ['tp','p']:
 			# get patterns that are consumed or produced by a transformation pair
 			idx_set = set(idx_list)
@@ -438,6 +440,7 @@ class allMaps:
 			return [x for x in self.getFlux(['p','t'],idx_list) if x in self.irr_ids]
 			
 	def getAll(self,type_vector,idx_list):
+		idx_set = set(idx_list)
 		if type_vector == ['tp','p']:
 			# get all patterns associated with a transformation pair
 			idx_set = set(idx_list)
