@@ -1973,7 +1973,6 @@ sub LinearParameterSensitivity
     #and paramname is the bumped parameter name, and c/gdat files have meaning as normal
 
     ######################
-    # TODO: NOT IMPLEMENTED YET!!
     #Additional files are written containing the raw sensitivity coefficients
     #for each parameter bump
     #format: 'netfile_paramname_suffix.(c)(g)sc'
@@ -2128,6 +2127,10 @@ sub LinearParameterSensitivity
     {
         $param_name      = $model_param->Name;
         $param_value     = $model_param->evaluate();
+
+        # Skip parameters with zero value as bump would be zero
+        next if $param_value == 0;
+
         $new_param_value = $param_value * ( 1 + $bump / 100 );
 
         #Get fresh model and bump parameter
@@ -2193,12 +2196,12 @@ sub LinearParameterSensitivity
         foreach my $ext ("cdat", "gdat") {
             my $base_file = "${base_prefix}.${ext}";
             my $bump_file = "${bump_prefix}.${ext}";
-            my $sc_ext = ($ext eq "cdat") ? "csc" : "gsc";
+            my $sc_ext = ($ext eq 'cdat') ? 'csc' : 'gsc';
             my $out_file  = "${bump_prefix}.${sc_ext}";
 
             if (-e $base_file && -e $bump_file) {
-                open(my $bfh, "<", $base_file) or next;
-                open(my $pfh, "<", $bump_file) or do { close($bfh); next; };
+                open(my $bfh, '<', $base_file) or next;
+                open(my $pfh, '<', $bump_file) or do { close($bfh); next; };
                 open(my $ofh, ">", $out_file)  or do { close($bfh); close($pfh); next; };
 
                 my $b_head = <$bfh>;
