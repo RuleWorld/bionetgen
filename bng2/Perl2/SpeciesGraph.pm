@@ -2263,36 +2263,22 @@ sub toSBMLMultiSpeciesType
     # technically this is only necessary for symmetric stuff but its easier to just index everything
         
     if($n_mol > 1){
-        $string .= $indent . "<multi:listOfSpeciesTypeComponentIndexes>\n";
-        foreach my $molkey (keys %{$speciesIdHash_ref->{'References'}->{"ST".$id}{'Molecules'}}){
-            foreach my $entry (@{$speciesIdHash_ref->{'References'}->{"ST".$id}->{'Molecules'}->{$molkey}}){
-                #remove the cmp prefix to get the parent sbml_id. 
-                @parentEntry = split(/_/,$entry);
-                my $parentEntryStr = join('_',@parentEntry[1..$#parentEntry]);
-
-                $string .= $indent2. sprintf("<multi:speciesTypeComponentIndex multi:id=\"%s\" multi:component=\"%s\"/>\n", $entry, $parentEntryStr);
-            }
-
-        }
-
-        foreach my $compkey (keys %{$speciesIdHash_ref->{'References'}->{"ST".$id}{'Components'}}){
-            my $centry = $speciesIdHash_ref->{'References'}->{"ST".$id}{'Components'}{$compkey}{'id'};
-            my $parent = $speciesIdHash_ref->{'References'}->{"ST".$id}{'Components'}{$compkey}{'parent'};
-            my $multiref = $speciesIdHash_ref->{'References'}->{"ST".$id}{'Components'}{$compkey}{'parentMulti'};
-            $string .= $indent2. sprintf("<multi:speciesTypeComponentIndex multi:id=\"%s\" multi:component=\"%s\" multi:identifyingParent=\"%s\"/>\n", $centry, $multiref, $parent);
-        }
-
         my %rreferenceClone = %{dclone(\%{$speciesIdHash_ref->{'References'}->{"ST".$id}->{'reverseReferences'}})};
-        
+        my %needed_compkeys;
+
         my $mindex =0;
         foreach my $molecule (@{$sg->Molecules}){
             my $cindex = 0;
             foreach my $component(@{$molecule->Components}){
                 my $fullstring = sprintf("%s(%s)", $molecule->Name, $component->Name);
-                $speciesIdHash_ref->{'References'}->{"ST".$id}->{'bng2multi'}->{"$mindex.$cindex"} = $rreferenceClone{$fullstring}[0];
+                my $compkey = $rreferenceClone{$fullstring}[0];
+                $speciesIdHash_ref->{'References'}->{"ST".$id}->{'bng2multi'}->{"$mindex.$cindex"} = $compkey;
                 splice(@{$rreferenceClone{$fullstring}}, 0, 1);
 
-                #push @{$edgeHash{$edge}}, (sprintf "ST%d_M%d_C%d", $id, $mindex+1, $cindex+1);
+                if (defined $component->State && $component->State ne '') {
+                    $needed_compkeys{$compkey} = 1;
+                }
+
                 $cindex += 1;
             }
             # discard molecule references we no longer need
@@ -2302,6 +2288,41 @@ sub toSBMLMultiSpeciesType
                 }
             }
             $mindex += 1;
+        }
+
+        if ( @{$sg->Edges} ) {
+            foreach my $edge ( @{$sg->Edges} ) {
+                my ($p1, $p2) = split ' ', $edge;
+                next unless (defined $p2);
+                my $compkey1 = $speciesIdHash_ref->{'References'}->{"ST".$id}->{'bng2multi'}->{$p1};
+                my $compkey2 = $speciesIdHash_ref->{'References'}->{"ST".$id}->{'bng2multi'}->{$p2};
+                if ($compkey1) {
+                    $needed_compkeys{$compkey1} = 1;
+                }
+                if ($compkey2) {
+                    $needed_compkeys{$compkey2} = 1;
+                }
+            }
+        }
+
+        $string .= $indent . "<multi:listOfSpeciesTypeComponentIndexes>\n";
+        foreach my $molkey (keys %{$speciesIdHash_ref->{'References'}->{"ST".$id}{'Molecules'}}){
+            foreach my $entry (@{$speciesIdHash_ref->{'References'}->{"ST".$id}->{'Molecules'}->{$molkey}}){
+                #remove the cmp prefix to get the parent sbml_id.
+                @parentEntry = split(/_/,$entry);
+                my $parentEntryStr = join('_',@parentEntry[1..$#parentEntry]);
+
+                $string .= $indent2. sprintf("<multi:speciesTypeComponentIndex multi:id=\"%s\" multi:component=\"%s\"/>\n", $entry, $parentEntryStr);
+            }
+        }
+
+        foreach my $compkey (keys %{$speciesIdHash_ref->{'References'}->{"ST".$id}{'Components'}}){
+            if ($needed_compkeys{$compkey}) {
+                my $centry = $speciesIdHash_ref->{'References'}->{"ST".$id}{'Components'}{$compkey}{'id'};
+                my $parent = $speciesIdHash_ref->{'References'}->{"ST".$id}{'Components'}{$compkey}{'parent'};
+                my $multiref = $speciesIdHash_ref->{'References'}->{"ST".$id}{'Components'}{$compkey}{'parentMulti'};
+                $string .= $indent2. sprintf("<multi:speciesTypeComponentIndex multi:id=\"%s\" multi:component=\"%s\" multi:identifyingParent=\"%s\"/>\n", $centry, $multiref, $parent);
+            }
         }
         $string .= $indent . "</multi:listOfSpeciesTypeComponentIndexes>\n";
         #print $sg->toString()."\n";
