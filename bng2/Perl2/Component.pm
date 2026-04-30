@@ -346,7 +346,7 @@ sub getSBMLMultiOutwardBonds
         #sbml multi cant handle components with more than one bond. we should somehow return an error
     }    
 
-    if (! $bindingstatus eq "" )
+    if ($bindingstatus ne "" )
     {
         my $indent2 = '  ' . $indent;
         my $mindex = substr($indexArray[1], 1);

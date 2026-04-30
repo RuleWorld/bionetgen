@@ -272,7 +272,7 @@ sub toString
             if(exists $print_options->{'sbml_multi'})
             {
                 my $tmpstr .= $comp->toSBMLMultiSpeciesTypeString();
-                if(!$tmpstr eq ''){
+                if ($tmpstr ne ''){
                     $string .= $tmpstr;
                     ++$icomp;
                 }

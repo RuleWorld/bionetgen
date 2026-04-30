@@ -2185,7 +2185,7 @@ sub toSBMLMultiSpecies
     foreach my $ostr (@{$sbmlMultiSpeciesInfo{'outwardbonds'}}){
         $outbonds = $outbonds . $ostr;
     }
-    if(! $outbonds eq ""){
+    if ($outbonds ne ""){
         $ostring = $ostring . $indent2 . "<multi:listOfOutwardBindingSites>\n";
         $ostring .= $outbonds;
         $ostring = $ostring . $indent2 . "</multi:listOfOutwardBindingSites>\n";
@@ -2193,7 +2193,7 @@ sub toSBMLMultiSpecies
     foreach my $ostr (@{$sbmlMultiSpeciesInfo{'speciesFeature'}}){
         $features = $features . $ostr;
     }
-    if (! $features eq ""){
+    if ($features ne ""){
         $ostring = $ostring . $indent2 . "<multi:listOfSpeciesFeatures>\n";
         $ostring .= $features;
         $ostring = $ostring . $indent2 . "</multi:listOfSpeciesFeatures>\n";

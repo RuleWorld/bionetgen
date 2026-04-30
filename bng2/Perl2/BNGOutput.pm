@@ -715,7 +715,7 @@ sub writeSBMLMulti
             }
         }
 
-        if (! $unitstr eq ''){
+        if ($unitstr ne ''){
             $xml .= "      <listOfUnitDefinitions>\n";
             $xml .= $unitstr;
             $xml .= "      </listOfUnitDefinitions>\n";
