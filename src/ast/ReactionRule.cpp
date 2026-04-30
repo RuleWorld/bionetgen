@@ -1516,6 +1516,12 @@ std::size_t ReactionRule::expandRule(
     }
 
     std::unordered_set<std::size_t> newSpecies;
+
+    // Ensure the vector is sized appropriately
+    if (lastProcessedInIteration_.size() < speciesBoundary) {
+        lastProcessedInIteration_.resize(speciesBoundary, static_cast<std::size_t>(-1));
+    }
+
     for (std::size_t i = 0; i < std::min(speciesList.size(), speciesBoundary); ++i) {
         const bool hasIter = (i < lastProcessedInIteration_.size() && lastProcessedInIteration_[i] != static_cast<std::size_t>(-1));
         const std::size_t lastIter = hasIter ? lastProcessedInIteration_[i] : 0;
@@ -1596,8 +1602,8 @@ std::size_t ReactionRule::expandRule(
             // avoids re-enumerating already-counted combinations.
             std::stable_partition(newMatches.begin(), newMatches.end(),
                 [this](const EmbeddingResult& m) {
-                    return (m.speciesIndex < lastProcessedInIteration_.size() &&
-                            lastProcessedInIteration_[m.speciesIndex] != static_cast<std::size_t>(-1));
+                    return m.speciesIndex < lastProcessedInIteration_.size() &&
+                           lastProcessedInIteration_[m.speciesIndex] != static_cast<std::size_t>(-1);
                 });
 
             std::size_t oldCount = 0;
