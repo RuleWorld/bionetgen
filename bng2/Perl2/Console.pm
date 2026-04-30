@@ -182,7 +182,7 @@ sub BNGconsole
                     }
                     if ($err)
                     {
-                        send_warning("Problem executing action: $err.");
+                        send_warning("Problem executing action: $err");
                         last PROCESS_INPUT;
                     }
 		    	    my $t_elapsed = cpu_time($t_start);
