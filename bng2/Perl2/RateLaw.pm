@@ -1173,7 +1173,34 @@ sub validate
                 }
             }
         }
-        # TODO: verify that actE is independent of deltaG (is this possible here?)
+        if ( defined $model )
+        {
+            my ($actE_param, $err2) = $model->ParamList->lookup($rl->Constants->[1]);
+            if ( !$err2 && defined $actE_param && defined $actE_param->Expr )
+            {
+                if ( defined $model->EnergyPatterns )
+                {
+                    foreach my $epatt ( @{$model->EnergyPatterns} )
+                    {
+                        if ( defined $epatt->Gf )
+                        {
+                            my $epatt_vars = $epatt->Gf->getVariables( $model->ParamList );
+                            foreach my $type ( keys %$epatt_vars )
+                            {
+                                foreach my $varname ( keys %{$epatt_vars->{$type}} )
+                                {
+                                    my ($dep, $dep_err) = $actE_param->Expr->depends( $model->ParamList, $varname );
+                                    if ( $dep )
+                                    {
+                                        return sprintf("Arrhenius ratelaw activation energy '%s' must be independent of energy pattern parameter '%s'", $rl->Constants->[1], $varname);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
     else
     {   return sprintf("Unrecognized RateLaw type %s", $rl->Type);   }
