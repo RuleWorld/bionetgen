@@ -255,10 +255,27 @@ class TransformationMap:
 
 		self.t2p_context = list(self.t2p_context)
 		
-		self.t2p_syndelcontext = list(set( [ (dictTransformations[t],dictPatterns[p]) for r in dictRules for idx,t in enumerate(r.transformations) for p in r.syndel_context[idx] if t.isSynDel() ] ))
+		# ⚡ Bolt: Use a set and construct the mapping iteratively to avoid O(N*M) list comprehensions
+		t2p_syndelcontext_set = set()
+		t2p_syncontext_set = set()
+		t2p_delcontext_set = set()
 		
-		self.t2p_syncontext = list(set( [ (dictTransformations[t],dictPatterns[p]) for r in dictRules for idx,t in enumerate(r.transformations) for p in r.syncontext[idx] if t.action=='Add' ] ))
-		self.t2p_delcontext = list(set( [ (dictTransformations[t],dictPatterns[p]) for r in dictRules for idx,t in enumerate(r.transformations) for p in r.delcontext[idx] if t.action=='Delete' ] ))
+		for r in dictRules:
+			for idx,t in enumerate(r.transformations):
+				dt = dictTransformations[t]
+				if t.isSynDel():
+					for p in r.syndel_context[idx]:
+						t2p_syndelcontext_set.add((dt, dictPatterns[p]))
+				if t.action == 'Add':
+					for p in r.syncontext[idx]:
+						t2p_syncontext_set.add((dt, dictPatterns[p]))
+				elif t.action == 'Delete':
+					for p in r.delcontext[idx]:
+						t2p_delcontext_set.add((dt, dictPatterns[p]))
+
+		self.t2p_syndelcontext = list(t2p_syndelcontext_set)
+		self.t2p_syncontext = list(t2p_syncontext_set)
+		self.t2p_delcontext = list(t2p_delcontext_set)
 		
 class TransformationPairMap:
 	'''
@@ -276,15 +293,60 @@ class TransformationPairMap:
 		self.tp2t_forward = dict([ [dictTransformationPairs[tp], dictTransformations[tp.forward]] for tp in dictTransformationPairs ] )
 		self.tp2t_reverse = dict([ [dictTransformationPairs[tp], dictTransformations[tp.reverse]] for tp in dictTransformationPairs ] )
 
-		self.tp2p_forwardreactant = list(set( [ (tp_id,p_id) for tp_id in dictTransformationPairs.values() for t_id,p_id in tr_map.t2p_reactant if t_id==self.tp2t_forward[tp_id] ] ))
-		self.tp2p_reversereactant = list(set( [ (tp_id,p_id) for tp_id in dictTransformationPairs.values() for t_id,p_id in tr_map.t2p_reactant if t_id==self.tp2t_reverse[tp_id] ] ))
+		# ⚡ Bolt: Build reverse mappings (t_id -> p_ids) using dictionaries for O(1) lookups instead of O(N*M) nested loops
+		t_to_reactants = {}
+		for t_id, p_id in tr_map.t2p_reactant:
+			t_to_reactants.setdefault(t_id, set()).add(p_id)
 
-		self.tp2p_forwardcontext = list(set( [ (tp_id,p_id) for tp_id in dictTransformationPairs.values() for t_id,p_id in tr_map.t2p_context if t_id==self.tp2t_forward[tp_id] ] ))
-		self.tp2p_reversecontext = list(set( [ (tp_id,p_id) for tp_id in dictTransformationPairs.values() for t_id,p_id in tr_map.t2p_context if t_id==self.tp2t_reverse[tp_id] ] ))
-		
+		t_to_contexts = {}
+		for t_id, p_id in tr_map.t2p_context:
+			t_to_contexts.setdefault(t_id, set()).add(p_id)
+
+		tp2p_forwardreactant_opt = set()
+		tp2p_reversereactant_opt = set()
+		tp2p_forwardcontext_opt = set()
+		tp2p_reversecontext_opt = set()
+
+		for tp_id in dictTransformationPairs.values():
+			fwd_t_id = self.tp2t_forward.get(tp_id)
+			rev_t_id = self.tp2t_reverse.get(tp_id)
+
+			if fwd_t_id in t_to_reactants:
+				for p_id in t_to_reactants[fwd_t_id]:
+					tp2p_forwardreactant_opt.add((tp_id, p_id))
+			if rev_t_id in t_to_reactants:
+				for p_id in t_to_reactants[rev_t_id]:
+					tp2p_reversereactant_opt.add((tp_id, p_id))
+			if fwd_t_id in t_to_contexts:
+				for p_id in t_to_contexts[fwd_t_id]:
+					tp2p_forwardcontext_opt.add((tp_id, p_id))
+			if rev_t_id in t_to_contexts:
+				for p_id in t_to_contexts[rev_t_id]:
+					tp2p_reversecontext_opt.add((tp_id, p_id))
+
+		self.tp2p_forwardreactant = list(tp2p_forwardreactant_opt)
+		self.tp2p_reversereactant = list(tp2p_reversereactant_opt)
+		self.tp2p_forwardcontext = list(tp2p_forwardcontext_opt)
+		self.tp2p_reversecontext = list(tp2p_reversecontext_opt)
+
 		syndel_list = [(tp_id,t_id,dictNames.getElement('t',t_id).action) for tp_id,t_id in list(self.tp2t_forward.items())+list(self.tp2t_reverse.items()) ]
-		self.tp2p_syncontext = [ (tp_id,p_id) for tp_id,t_id,action in syndel_list for (t_id2,p_id) in tr_map.t2p_syndelcontext if t_id==t_id2 and action=='Add']
-		self.tp2p_delcontext = [ (tp_id,p_id) for tp_id,t_id,action in syndel_list for (t_id2,p_id) in tr_map.t2p_syndelcontext if t_id==t_id2 and action=='Delete']
+
+		t_to_syndel = {}
+		for t_id, p_id in tr_map.t2p_syndelcontext:
+			t_to_syndel.setdefault(t_id, set()).add(p_id)
+
+		tp2p_syncontext_opt = set()
+		tp2p_delcontext_opt = set()
+		for tp_id, t_id, action in syndel_list:
+			if t_id in t_to_syndel:
+				if action == 'Add':
+					for p_id in t_to_syndel[t_id]:
+						tp2p_syncontext_opt.add((tp_id, p_id))
+				elif action == 'Delete':
+					for p_id in t_to_syndel[t_id]:
+						tp2p_delcontext_opt.add((tp_id, p_id))
+		self.tp2p_syncontext = list(tp2p_syncontext_opt)
+		self.tp2p_delcontext = list(tp2p_delcontext_opt)
 					
 
 	
