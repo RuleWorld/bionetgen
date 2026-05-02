@@ -113,6 +113,13 @@ jobs:
           export "LDFLAGS=-arch arm64 -arch x86_64"
           export "CMAKE_OSX_ARCHITECTURES=arm64;x86_64"
           make
+          # Compile NFsim
+          if [ -d "nfsim_src" ]; then
+            python3 ../patch_nfsim.py
+            cd nfsim_src
+            make CC=clang CXX=clang++
+            cp bin/NFsim ../bin/NFsim
+          fi
       # Linux compilation
       - name: Make-Linux
         if: ${{ startsWith(matrix.config.name, 'linux') }}
@@ -120,6 +127,13 @@ jobs:
         working-directory: ./bng2
         run: |
           make
+          # Compile NFsim
+          if [ -d "nfsim_src" ]; then
+            python3 ../patch_nfsim.py
+            cd nfsim_src
+            make
+            cp bin/NFsim ../bin/NFsim
+          fi
       # Windows compilation
       - name: Make-network-windows
         if: startsWith(matrix.config.name, 'windows') 
@@ -133,6 +147,12 @@ jobs:
           make
           mkdir -p /cygdrive/d/a/bionetgen/bionetgen/bng2/bin
           cp src/run_network.exe /cygdrive/d/a/bionetgen/bionetgen/bng2/bin/run_network.exe
+          # Compile NFsim
+          cd ..
+          python3 ../patch_nfsim.py
+          cd nfsim_src
+          make
+          cp bin/NFsim.exe ../bin/NFsim.exe
 
       # now everything is compiled, we validate
       # windows validation

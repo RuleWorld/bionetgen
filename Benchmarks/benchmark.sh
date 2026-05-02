@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# BioNetGen Performance Benchmark Suite
-# Compares performance between two git references (branches, tags, commits)
-# Compatible with bash 3.2+ (macOS default)
+# BioNetGen Performance Benchmark Suite v1.3
+# Compares performance and memory between two git references
+# Compatible with bash 3.2+
 
 set -e
 
@@ -13,9 +13,21 @@ cd "$REPO_ROOT"
 DEFAULT_MODELS=(
     "bng2/Models2/egfr_net.bngl"
     "bng2/Models2/fceri_ji.bngl"
+    "bng2/Models2/FceriModels/fceri_fyn.bngl"
+    "bng2/Validate/gene_expr.bngl"
+    "bng2/Models2/simple_nfsim.bngl"
 )
+
+# Ensure models needed for --validate are in bng2/Validate
+for m in "${DEFAULT_MODELS[@]}"; do
+    dest="bng2/Validate/$(basename "$m")"
+    if [ ! -f "$dest" ]; then
+        cp "$m" "$dest"
+    fi
+done
 RUNS=3
 REBUILD_NETWORK3=auto
+VALIDATE=false
 
 # Colors for output
 GREEN='\033[0;32m'
@@ -35,15 +47,11 @@ Arguments:
 
 Options:
   --runs N          Number of runs per test (default: 3)
-  --models M1,M2    Comma-separated model list (default: egfr_net,fceri_ji)
-  --rebuild         Force rebuild of Network3 binaries
+  --models M1,M2    Comma-separated model names or paths
+  --rebuild         Force rebuild of binaries
   --no-rebuild      Skip rebuilding binaries
+  --validate        Run validation suite for benchmarked models
   -h, --help        Show this help message
-
-Examples:
-  $0 v2.8.5 master
-  $0 master develop --runs 5
-  $0 master feature-branch --models egfr_net
 
 EOF
     exit 1
@@ -67,16 +75,20 @@ while [[ $# -gt 0 ]]; do
             shift 2
             ;;
         --models)
-            IFS=',' read -ra MODELS <<< "$2"
-            # Convert relative paths to full paths
-            for i in "${!MODELS[@]}"; do
-                if [[ ! "${MODELS[$i]}" = /* ]] && [[ ! "${MODELS[$i]}" = bng2/* ]]; then
-                    MODELS[$i]="bng2/Models2/${MODELS[$i]}"
-                fi
-                # Add .bngl extension if missing
-                if [[ ! "${MODELS[$i]}" = *.bngl ]]; then
-                    MODELS[$i]="${MODELS[$i]}.bngl"
-                fi
+            IFS=',' read -ra MODELS_INPUT <<< "$2"
+            MODELS=()
+            for m in "${MODELS_INPUT[@]}"; do
+                FOUND=false
+                for try in "$m" "${m}.bngl"; do
+                    if [ -f "$try" ]; then MODELS+=("$try"); FOUND=true; break; fi
+                done
+                [ "$FOUND" = true ] && continue
+                for dir in "bng2/Models2" "bng2/Models2/FceriModels" "bng2/Validate"; do
+                    for try in "$dir/$m" "$dir/${m}.bngl"; do
+                        if [ -f "$try" ]; then MODELS+=("$try"); FOUND=true; break 2; fi
+                    done
+                done
+                if [ "$FOUND" = false ]; then MODELS+=("$m"); fi
             done
             shift 2
             ;;
@@ -86,6 +98,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --no-rebuild)
             REBUILD_NETWORK3=never
+            shift
+            ;;
+        --validate)
+            VALIDATE=true
             shift
             ;;
         -h|--help)
@@ -98,11 +114,8 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# Create results directory
 RESULTS_DIR="$SCRIPT_DIR/results"
 mkdir -p "$RESULTS_DIR"
-
-# Generate timestamp for output files
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 RESULTS_TXT="$RESULTS_DIR/benchmark_${TIMESTAMP}.txt"
 RESULTS_CSV="$RESULTS_DIR/benchmark_${TIMESTAMP}.csv"
@@ -116,23 +129,12 @@ echo "Comparison:  $COMPARISON_REF"
 echo "Runs:        $RUNS"
 echo "Models:      ${#MODELS[@]}"
 echo ""
-echo "Results will be saved to:"
-echo "  $RESULTS_TXT"
-echo "  $RESULTS_CSV"
-echo ""
 
-# Verify git refs exist
-if ! git rev-parse --verify "$BASELINE_REF" >/dev/null 2>&1; then
-    echo -e "${RED}ERROR: Invalid baseline reference: $BASELINE_REF${NC}"
-    exit 1
-fi
+# Verify git refs
+git rev-parse --verify "$BASELINE_REF" >/dev/null 2>&1
+git rev-parse --verify "$COMPARISON_REF" >/dev/null 2>&1
 
-if ! git rev-parse --verify "$COMPARISON_REF" >/dev/null 2>&1; then
-    echo -e "${RED}ERROR: Invalid comparison reference: $COMPARISON_REF${NC}"
-    exit 1
-fi
-
-# Verify models exist
+# Verify models
 for model in "${MODELS[@]}"; do
     if [ ! -f "$model" ]; then
         echo -e "${RED}ERROR: Model not found: $model${NC}"
@@ -140,10 +142,8 @@ for model in "${MODELS[@]}"; do
     fi
 done
 
-# Store original branch/commit
 ORIGINAL_REF=$(git symbolic-ref -q HEAD 2>/dev/null || git rev-parse HEAD)
 
-# Cleanup function
 cleanup() {
     echo ""
     echo "Cleaning up..."
@@ -152,31 +152,28 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# Function to check if Network3 needs rebuild
 needs_rebuild() {
-    local ref1="$1"
-    local ref2="$2"
-
-    if [ "$REBUILD_NETWORK3" = "always" ]; then
-        return 0
-    elif [ "$REBUILD_NETWORK3" = "never" ]; then
-        return 1
-    fi
-
-    # Check if any C++ files changed between refs
-    if git diff --name-only "$ref1" "$ref2" | grep -q "bng2/Network3/.*\.\(cpp\|h\|hpp\|c\)$\|bng-graph/.*\.\(cpp\|h\|hpp\)$"; then
+    if [ "$REBUILD_NETWORK3" = "always" ]; then return 0; fi
+    if [ "$REBUILD_NETWORK3" = "never" ]; then return 1; fi
+    if git diff --name-only "$1" "$2" | grep -q "bng2/Network3/.*\.\(cpp\|h\|hpp\|c\)$\|bng-graph/.*\.\(cpp\|h\|hpp\)$\|bng2/nfsim_src/.*"; then
         return 0
     else
         return 1
     fi
 }
 
-# Function to rebuild Network3 binaries
-rebuild_network3() {
-    echo -n "    Rebuilding Network3 C++ binaries... "
-    cd bng2/Network3
+rebuild_binaries() {
+    echo -n "    Rebuilding BioNetGen binaries... "
+    cd bng2
     make clean > /dev/null 2>&1 || true
     if make > /dev/null 2>&1; then
+        if [ -d "nfsim_src" ]; then
+            cd nfsim_src
+            make clean > /dev/null 2>&1 || true
+            if make > /dev/null 2>&1; then
+                cp bin/NFsim ../bin/NFsim
+            fi
+        fi
         cd "$REPO_ROOT"
         echo "done"
         return 0
@@ -187,379 +184,157 @@ rebuild_network3() {
     fi
 }
 
-# Function to run a single benchmark
 run_benchmark() {
     local model="$1"
     local log_file="$2"
+    local rss_file="${log_file}.rss"
 
-    # Run BNG2.pl and capture output to log
     local start=$(perl -MTime::HiRes -e 'print Time::HiRes::time()')
-    perl bng2/BNG2.pl "$model" > "$log_file" 2>&1
+    python3 "$SCRIPT_DIR/peak_rss.py" perl bng2/BNG2.pl "$model" > "$log_file" 2> "$rss_file"
     local end=$(perl -MTime::HiRes -e 'print Time::HiRes::time()')
 
-    # Calculate wall-clock time
     local wallclock=$(perl -e "print $end - $start")
+    local rss=$(grep "PEAK_RSS_KB" "$rss_file" | awk '{print $2}' || echo "0")
+    local generate_time=$(grep "CPU TIME: generate_network" "$log_file" | tail -n 1 | awk '{print $4}' || echo "0")
+    local simulate_time=$(grep "CPU TIME: simulate" "$log_file" | tail -n 1 | awk '{print $4}' || echo "0")
+    local total_cpu_time=$(grep "CPU TIME: total" "$log_file" | tail -n 1 | awk '{print $4}' || echo "0")
 
-    # Parse CPU times from log
-    local generate_time=$(grep "CPU TIME: generate_network" "$log_file" | awk '{print $4}' || echo "0")
-    local simulate_time=$(grep "CPU TIME: simulate" "$log_file" | awk '{print $4}' || echo "0")
-    local total_cpu_time=$(grep "CPU TIME: total" "$log_file" | awk '{print $4}' || echo "0")
+    local nf_events=$(grep "You just simulated" "$log_file" | awk '{print $4}' | head -n 1 || echo "0")
+    local nf_sim_time=$(grep "You just simulated" "$log_file" | awk '{print $7}' | head -n 1 || echo "0")
+    local events_per_sec=0
+    if [ "$nf_sim_time" != "0" ] && [ "$nf_sim_time" != "" ] && [ "$nf_events" != "0" ] && [ "$nf_events" != "" ]; then
+        events_per_sec=$(perl -e "if (\$ARGV[0] > 0) { print \$ARGV[1] / \$ARGV[0] } else { print 0 }" "$nf_sim_time" "$nf_events")
+    fi
 
-    # Return comma-separated: wallclock,generate,simulate,total_cpu
-    echo "$wallclock,$generate_time,$simulate_time,$total_cpu_time"
+    echo "$wallclock,$generate_time,$simulate_time,$total_cpu_time,$rss,$events_per_sec"
 }
 
-# Function to calculate average
 calc_average() {
-    local sum=0
-    local count=0
-    for time in "$@"; do
-        sum=$(perl -e "print $sum + $time")
-        count=$((count + 1))
-    done
-    perl -e "print $sum / $count"
+    local sum=0; local count=0
+    for val in "$@"; do sum=$(perl -e "print $sum + $val"); count=$((count + 1)); done
+    if [ "$count" -eq 0 ]; then echo "0"; else perl -e "print $sum / $count"; fi
 }
 
-# Function to calculate standard deviation
 calc_stddev() {
-    local mean="$1"
-    shift
-    local sum_sq=0
-    local count=0
-
-    for time in "$@"; do
-        sum_sq=$(perl -e "print $sum_sq + ($time - $mean) ** 2")
-        count=$((count + 1))
-    done
-
-    perl -e "print sqrt($sum_sq / $count)"
+    local mean="$1"; shift; local sum_sq=0; local count=0
+    for val in "$@"; do sum_sq=$(perl -e "print $sum_sq + ($val - $mean) ** 2"); count=$((count + 1)); done
+    if [ "$count" -eq 0 ]; then echo "0"; else perl -e "print sqrt($sum_sq / $count)"; fi
 }
 
-# Check if rebuild needed
 NEEDS_REBUILD=false
-if needs_rebuild "$BASELINE_REF" "$COMPARISON_REF"; then
-    NEEDS_REBUILD=true
-    echo -e "${YELLOW}C++ code changes detected - will rebuild binaries${NC}"
+if needs_rebuild "$BASELINE_REF" "$COMPARISON_REF"; then NEEDS_REBUILD=true; fi
 
-    # Show some specific changes for verification
-    echo ""
-    echo "Sample of changed files:"
-    git diff --name-only "$BASELINE_REF" "$COMPARISON_REF" | grep -E "\.(cpp|h|hpp|pm)$" | head -5 | sed 's/^/  - /'
-    echo ""
-else
-    echo -e "${BLUE}No C++ changes detected - using existing binaries${NC}"
-fi
-echo ""
-
-# Results storage (bash 3.2 compatible)
-results_names=()
-results_baseline_all=()
-results_comparison_all=()
-
-# Create temp directory for logs
+results_names=(); results_baseline_all=(); results_comparison_all=(); results_validation=()
 TEMP_LOG_DIR=$(mktemp -d "${TMPDIR:-/tmp}/bng_benchmark.XXXXXX")
-trap 'rm -rf "$TEMP_LOG_DIR"' EXIT
+trap 'rm -rf "$TEMP_LOG_DIR"; cleanup' EXIT
 
-echo -e "${BLUE}Running benchmarks...${NC}"
-echo ""
+for model in "${MODELS[@]}"; do results_names+=("$(basename "$model" .bngl)"); done
 
-# Build model names array
-for model in "${MODELS[@]}"; do
-    model_name=$(basename "$model" .bngl)
-    results_names+=("$model_name")
-done
-
-# ========================================
-# BENCHMARK BASELINE REF
-# ========================================
+# --- Baseline ---
 echo -e "${YELLOW}=== Benchmarking Baseline: $BASELINE_REF ===${NC}"
 git checkout "$BASELINE_REF" --quiet 2>/dev/null
-git clean -fd bng2/Models2 > /dev/null 2>&1 || true
-
-# Verify we're on the correct ref
-CURRENT_COMMIT=$(git rev-parse --short HEAD)
-echo "  Git commit: $CURRENT_COMMIT"
-
-if [ "$NEEDS_REBUILD" = true ]; then
-    if ! rebuild_network3; then
-        echo -e "${RED}ERROR: Failed to build Network3 on $BASELINE_REF${NC}"
-        exit 1
-    fi
-    # Show binary timestamp to verify it was rebuilt
-    echo "  Binary built: $(date -r bng2/bin/run_network '+%Y-%m-%d %H:%M:%S' 2>/dev/null || stat -f '%Sm' -t '%Y-%m-%d %H:%M:%S' bng2/bin/run_network 2>/dev/null || echo 'timestamp unavailable')"
-fi
+if [ "$NEEDS_REBUILD" = true ]; then rebuild_binaries; fi
 
 for model in "${MODELS[@]}"; do
     model_name=$(basename "$model" .bngl)
     echo -n "  $model_name: "
-
-    # Arrays for each timing phase
-    wallclock_times=()
-    generate_times=()
-    simulate_times=()
-    total_cpu_times=()
-
+    wc_t=(); gen_t=(); sim_t=(); cpu_t=(); rss_v=(); eps_v=()
     for run in $(seq 1 $RUNS); do
-        log_file="$TEMP_LOG_DIR/baseline_${model_name}_run${run}.log"
-        result=$(run_benchmark "$model" "$log_file")
-
-        # Parse result: wallclock,generate,simulate,total_cpu
-        IFS=',' read wc gen sim cpu <<< "$result"
-        wallclock_times+=($wc)
-        generate_times+=($gen)
-        simulate_times+=($sim)
-        total_cpu_times+=($cpu)
+        res=$(run_benchmark "$model" "$TEMP_LOG_DIR/b_${model_name}_${run}.log")
+        IFS=',' read wc gen sim cpu rss eps <<< "$res"
+        wc_t+=($wc); gen_t+=($gen); sim_t+=($sim); cpu_t+=($cpu); rss_v+=($rss); eps_v+=($eps)
         echo -n "."
     done
-
-    # Calculate averages and stddevs for each phase
-    avg_wc=$(calc_average "${wallclock_times[@]}")
-    std_wc=$(calc_stddev "$avg_wc" "${wallclock_times[@]}")
-    avg_gen=$(calc_average "${generate_times[@]}")
-    std_gen=$(calc_stddev "$avg_gen" "${generate_times[@]}")
-    avg_sim=$(calc_average "${simulate_times[@]}")
-    std_sim=$(calc_stddev "$avg_sim" "${simulate_times[@]}")
-    avg_cpu=$(calc_average "${total_cpu_times[@]}")
-    std_cpu=$(calc_stddev "$avg_cpu" "${total_cpu_times[@]}")
-
-    echo " wall=${avg_wc}s gen=${avg_gen}s sim=${avg_sim}s"
-
-    # Store all times as comma-separated string: wall,wall_std,gen,gen_std,sim,sim_std,cpu,cpu_std
-    results_baseline_all+=("$avg_wc,$std_wc,$avg_gen,$std_gen,$avg_sim,$std_sim,$avg_cpu,$std_cpu")
+    avg_wc=$(calc_average "${wc_t[@]}"); std_wc=$(calc_stddev "$avg_wc" "${wc_t[@]}")
+    avg_gen=$(calc_average "${gen_t[@]}"); std_gen=$(calc_stddev "$avg_gen" "${gen_t[@]}")
+    avg_sim=$(calc_average "${sim_t[@]}"); std_sim=$(calc_stddev "$avg_sim" "${sim_t[@]}")
+    avg_cpu=$(calc_average "${cpu_t[@]}"); std_cpu=$(calc_stddev "$avg_cpu" "${cpu_t[@]}")
+    avg_rss=$(calc_average "${rss_v[@]}"); std_rss=$(calc_stddev "$avg_rss" "${rss_v[@]}")
+    avg_eps=$(calc_average "${eps_v[@]}"); std_eps=$(calc_stddev "$avg_eps" "${eps_v[@]}")
+    echo " wall=${avg_wc}s gen=${avg_gen}s sim=${avg_sim}s rss=${avg_rss}KB"
+    results_baseline_all+=("$avg_wc,$std_wc,$avg_gen,$std_gen,$avg_sim,$std_sim,$avg_cpu,$std_cpu,$avg_rss,$std_rss,$avg_eps,$std_eps")
 done
 
-echo ""
-
-# ========================================
-# BENCHMARK COMPARISON REF
-# ========================================
+# --- Comparison ---
 echo -e "${YELLOW}=== Benchmarking Comparison: $COMPARISON_REF ===${NC}"
 git checkout "$COMPARISON_REF" --quiet 2>/dev/null
-git clean -fd bng2/Models2 > /dev/null 2>&1 || true
+if [ "$NEEDS_REBUILD" = true ]; then rebuild_binaries; fi
 
-# Verify we're on the correct ref
-CURRENT_COMMIT=$(git rev-parse --short HEAD)
-echo "  Git commit: $CURRENT_COMMIT"
-
-if [ "$NEEDS_REBUILD" = true ]; then
-    if ! rebuild_network3; then
-        echo -e "${RED}ERROR: Failed to build Network3 on $COMPARISON_REF${NC}"
-        exit 1
-    fi
-    # Show binary timestamp to verify it was rebuilt
-    echo "  Binary built: $(date -r bng2/bin/run_network '+%Y-%m-%d %H:%M:%S' 2>/dev/null || stat -f '%Sm' -t '%Y-%m-%d %H:%M:%S' bng2/bin/run_network 2>/dev/null || echo 'timestamp unavailable')"
-fi
-
-for model in "${MODELS[@]}"; do
+for i in "${!MODELS[@]}"; do
+    model="${MODELS[$i]}"
     model_name=$(basename "$model" .bngl)
     echo -n "  $model_name: "
-
-    # Arrays for each timing phase
-    wallclock_times=()
-    generate_times=()
-    simulate_times=()
-    total_cpu_times=()
-
+    wc_t=(); gen_t=(); sim_t=(); cpu_t=(); rss_v=(); eps_v=()
     for run in $(seq 1 $RUNS); do
-        log_file="$TEMP_LOG_DIR/comparison_${model_name}_run${run}.log"
-        result=$(run_benchmark "$model" "$log_file")
-
-        # Parse result: wallclock,generate,simulate,total_cpu
-        IFS=',' read wc gen sim cpu <<< "$result"
-        wallclock_times+=($wc)
-        generate_times+=($gen)
-        simulate_times+=($sim)
-        total_cpu_times+=($cpu)
+        res=$(run_benchmark "$model" "$TEMP_LOG_DIR/c_${model_name}_${run}.log")
+        IFS=',' read wc gen sim cpu rss eps <<< "$res"
+        wc_t+=($wc); gen_t+=($gen); sim_t+=($sim); cpu_t+=($cpu); rss_v+=($rss); eps_v+=($eps)
         echo -n "."
     done
+    avg_wc=$(calc_average "${wc_t[@]}"); std_wc=$(calc_stddev "$avg_wc" "${wc_t[@]}")
+    avg_gen=$(calc_average "${gen_t[@]}"); std_gen=$(calc_stddev "$avg_gen" "${gen_t[@]}")
+    avg_sim=$(calc_average "${sim_t[@]}"); std_sim=$(calc_stddev "$avg_sim" "${sim_t[@]}")
+    avg_cpu=$(calc_average "${cpu_t[@]}"); std_cpu=$(calc_stddev "$avg_cpu" "${cpu_t[@]}")
+    avg_rss=$(calc_average "${rss_v[@]}"); std_rss=$(calc_stddev "$avg_rss" "${rss_v[@]}")
+    avg_eps=$(calc_average "${eps_v[@]}"); std_eps=$(calc_stddev "$avg_eps" "${eps_v[@]}")
+    echo " wall=${avg_wc}s gen=${avg_gen}s sim=${avg_sim}s rss=${avg_rss}KB"
+    results_comparison_all+=("$avg_wc,$std_wc,$avg_gen,$std_gen,$avg_sim,$std_sim,$avg_cpu,$std_cpu,$avg_rss,$std_rss,$avg_eps,$std_eps")
 
-    # Calculate averages and stddevs for each phase
-    avg_wc=$(calc_average "${wallclock_times[@]}")
-    std_wc=$(calc_stddev "$avg_wc" "${wallclock_times[@]}")
-    avg_gen=$(calc_average "${generate_times[@]}")
-    std_gen=$(calc_stddev "$avg_gen" "${generate_times[@]}")
-    avg_sim=$(calc_average "${simulate_times[@]}")
-    std_sim=$(calc_stddev "$avg_sim" "${simulate_times[@]}")
-    avg_cpu=$(calc_average "${total_cpu_times[@]}")
-    std_cpu=$(calc_stddev "$avg_cpu" "${total_cpu_times[@]}")
-
-    echo " wall=${avg_wc}s gen=${avg_gen}s sim=${avg_sim}s"
-
-    # Store all times as comma-separated string: wall,wall_std,gen,gen_std,sim,sim_std,cpu,cpu_std
-    results_comparison_all+=("$avg_wc,$std_wc,$avg_gen,$std_gen,$avg_sim,$std_sim,$avg_cpu,$std_cpu")
+    if [ "$VALIDATE" = true ]; then
+        echo -n "    Validating... "
+        if perl bng2/Validate/validate_examples.pl "$model_name" > /dev/null 2>&1; then echo -e "${GREEN}PASSED${NC}"; results_validation+=("PASSED"); else echo -e "${RED}FAILED${NC}"; results_validation+=("FAILED"); fi
+    else results_validation+=("N/A"); fi
 done
 
-echo ""
-
-# Generate results table
-echo ""
-echo "=========================================="
-echo "RESULTS SUMMARY"
-echo "=========================================="
-echo ""
-echo "Overall Performance:"
-printf "%-20s %15s %15s %12s %12s\n" "Model" "Baseline (s)" "Comparison (s)" "Speedup" "Improvement"
-echo "------------------------------------------------------------------------------------"
-
-for i in "${!results_names[@]}"; do
-    model_name="${results_names[$i]}"
-
-    # Parse baseline results: wall,wall_std,gen,gen_std,sim,sim_std,cpu,cpu_std
-    IFS=',' read b_wall b_wall_std b_gen b_gen_std b_sim b_sim_std b_cpu b_cpu_std <<< "${results_baseline_all[$i]}"
-
-    # Parse comparison results
-    IFS=',' read c_wall c_wall_std c_gen c_gen_std c_sim c_sim_std c_cpu c_cpu_std <<< "${results_comparison_all[$i]}"
-
-    speedup=$(perl -e "print $b_wall / $c_wall")
-    improvement=$(perl -e "print (($b_wall - $c_wall) / $b_wall) * 100")
-
-    printf "%-20s %7.2f (±%.2f) %7.2f (±%.2f) %11.2fx %10.1f%%\n" \
-        "$model_name" "$b_wall" "$b_wall_std" "$c_wall" "$c_wall_std" "$speedup" "$improvement"
-done
-
-echo ""
-echo "Phase Breakdown - generate_network():"
-printf "%-20s %15s %15s %12s %12s\n" "Model" "Baseline (s)" "Comparison (s)" "Speedup" "Improvement"
-echo "------------------------------------------------------------------------------------"
-
-for i in "${!results_names[@]}"; do
-    model_name="${results_names[$i]}"
-
-    IFS=',' read b_wall b_wall_std b_gen b_gen_std b_sim b_sim_std b_cpu b_cpu_std <<< "${results_baseline_all[$i]}"
-    IFS=',' read c_wall c_wall_std c_gen c_gen_std c_sim c_sim_std c_cpu c_cpu_std <<< "${results_comparison_all[$i]}"
-
-    if [ "$(echo "$b_gen > 0" | bc 2>/dev/null || perl -e "print $b_gen > 0 ? 1 : 0")" = "1" ]; then
-        gen_speedup=$(perl -e "print $b_gen / $c_gen")
-        gen_improvement=$(perl -e "print (($b_gen - $c_gen) / $b_gen) * 100")
-        printf "%-20s %7.2f (±%.2f) %7.2f (±%.2f) %11.2fx %10.1f%%\n" \
-            "$model_name" "$b_gen" "$b_gen_std" "$c_gen" "$c_gen_std" "$gen_speedup" "$gen_improvement"
-    else
-        printf "%-20s %15s %15s %12s %12s\n" "$model_name" "N/A" "N/A" "-" "-"
-    fi
-done
-
-echo ""
-echo "Phase Breakdown - simulate():"
-printf "%-20s %15s %15s %12s %12s\n" "Model" "Baseline (s)" "Comparison (s)" "Speedup" "Improvement"
-echo "------------------------------------------------------------------------------------"
-
-for i in "${!results_names[@]}"; do
-    model_name="${results_names[$i]}"
-
-    IFS=',' read b_wall b_wall_std b_gen b_gen_std b_sim b_sim_std b_cpu b_cpu_std <<< "${results_baseline_all[$i]}"
-    IFS=',' read c_wall c_wall_std c_gen c_gen_std c_sim c_sim_std c_cpu c_cpu_std <<< "${results_comparison_all[$i]}"
-
-    if [ "$(echo "$b_sim > 0" | bc 2>/dev/null || perl -e "print $b_sim > 0 ? 1 : 0")" = "1" ]; then
-        sim_speedup=$(perl -e "print $b_sim / $c_sim")
-        sim_improvement=$(perl -e "print (($b_sim - $c_sim) / $b_sim) * 100")
-        printf "%-20s %7.2f (±%.2f) %7.2f (±%.2f) %11.2fx %10.1f%%\n" \
-            "$model_name" "$b_sim" "$b_sim_std" "$c_sim" "$c_sim_std" "$sim_speedup" "$sim_improvement"
-    else
-        printf "%-20s %15s %15s %12s %12s\n" "$model_name" "N/A" "N/A" "-" "-"
-    fi
-done
-
-echo ""
-echo -e "${GREEN}Benchmark complete!${NC}"
-echo ""
-
-# Save results to text file
+# --- Summary ---
 {
-    echo "BioNetGen Performance Benchmark"
-    echo "Date: $(date)"
-    echo "Baseline:    $BASELINE_REF ($(git rev-parse --short $BASELINE_REF))"
-    echo "Comparison:  $COMPARISON_REF ($(git rev-parse --short $COMPARISON_REF))"
-    echo "Runs per model: $RUNS"
-    echo ""
     echo "Overall Performance:"
-    printf "%-20s %15s %15s %12s %12s\n" "Model" "Baseline (s)" "Comparison (s)" "Speedup" "Improvement"
-    echo "------------------------------------------------------------------------------------"
-
+    printf "%-20s %15s %15s %12s %12s %10s\n" "Model" "Baseline (s)" "Comparison (s)" "Speedup" "Improvement" "Validation"
+    echo "------------------------------------------------------------------------------------------------"
     for i in "${!results_names[@]}"; do
-        model_name="${results_names[$i]}"
-        IFS=',' read b_wall b_wall_std b_gen b_gen_std b_sim b_sim_std b_cpu b_cpu_std <<< "${results_baseline_all[$i]}"
-        IFS=',' read c_wall c_wall_std c_gen c_gen_std c_sim c_sim_std c_cpu c_cpu_std <<< "${results_comparison_all[$i]}"
-
-        speedup=$(perl -e "print $b_wall / $c_wall")
-        improvement=$(perl -e "print (($b_wall - $c_wall) / $b_wall) * 100")
-
-        printf "%-20s %7.2f (±%.2f) %7.2f (±%.2f) %11.2fx %10.1f%%\n" \
-            "$model_name" "$b_wall" "$b_wall_std" "$c_wall" "$c_wall_std" "$speedup" "$improvement"
+        name="${results_names[$i]}"
+        IFS=',' read b_wc b_wc_s b_gen b_gen_s b_sim b_sim_s b_cpu b_cpu_s b_rss b_rss_s b_eps b_eps_s <<< "${results_baseline_all[$i]}"
+        IFS=',' read c_wc c_wc_s c_gen c_gen_s c_sim c_sim_s c_cpu c_cpu_s c_rss c_rss_s c_eps c_eps_s <<< "${results_comparison_all[$i]}"
+        speedup=$(perl -e "print $b_wc / $c_wc")
+        improvement=$(perl -e "printf '%.1f', (($b_wc - $c_wc) / $b_wc) * 100")
+        printf "%-20s %7.2f (±%.2f) %7.2f (±%.2f) %11.2fx %11s%% %10s\n" "$name" "$b_wc" "$b_wc_s" "$c_wc" "$c_wc_s" "$speedup" "$improvement" "${results_validation[$i]}"
     done
 
-    echo ""
-    echo "Phase Breakdown - generate_network():"
-    printf "%-20s %15s %15s %12s %12s\n" "Model" "Baseline (s)" "Comparison (s)" "Speedup" "Improvement"
+    echo -e "\nMemory Usage (Peak RSS):"
+    printf "%-20s %15s %15s %12s %12s\n" "Model" "Baseline (KB)" "Comparison (KB)" "Ratio" "Change"
     echo "------------------------------------------------------------------------------------"
-
     for i in "${!results_names[@]}"; do
-        model_name="${results_names[$i]}"
-        IFS=',' read b_wall b_wall_std b_gen b_gen_std b_sim b_sim_std b_cpu b_cpu_std <<< "${results_baseline_all[$i]}"
-        IFS=',' read c_wall c_wall_std c_gen c_gen_std c_sim c_sim_std c_cpu c_cpu_std <<< "${results_comparison_all[$i]}"
-
-        if [ "$(perl -e "print $b_gen > 0 ? 1 : 0")" = "1" ]; then
-            gen_speedup=$(perl -e "print $b_gen / $c_gen")
-            gen_improvement=$(perl -e "print (($b_gen - $c_gen) / $b_gen) * 100")
-            printf "%-20s %7.2f (±%.2f) %7.2f (±%.2f) %11.2fx %10.1f%%\n" \
-                "$model_name" "$b_gen" "$b_gen_std" "$c_gen" "$c_gen_std" "$gen_speedup" "$gen_improvement"
-        else
-            printf "%-20s %15s %15s %12s %12s\n" "$model_name" "N/A" "N/A" "-" "-"
-        fi
+        name="${results_names[$i]}"
+        IFS=',' read b_wc b_wc_s b_gen b_gen_s b_sim b_sim_s b_cpu b_cpu_s b_rss b_rss_s b_eps b_eps_s <<< "${results_baseline_all[$i]}"
+        IFS=',' read c_wc c_wc_s c_gen c_gen_s c_sim c_sim_s c_cpu c_cpu_s c_rss c_rss_s c_eps c_eps_s <<< "${results_comparison_all[$i]}"
+        if [ "$(perl -e "print $b_rss > 0 ? 1 : 0")" = "1" ]; then ratio=$(perl -e "print $c_rss / $b_rss"); change=$(perl -e "printf '%.1f', (($c_rss - $b_rss) / $b_rss) * 100"); printf "%-20s %7.0f (±%.0f) %7.0f (±%.0f) %11.2fx %11s%%\n" "$name" "$b_rss" "$b_rss_s" "$c_rss" "$c_rss_s" "$ratio" "$change"; fi
     done
 
-    echo ""
-    echo "Phase Breakdown - simulate():"
-    printf "%-20s %15s %15s %12s %12s\n" "Model" "Baseline (s)" "Comparison (s)" "Speedup" "Improvement"
+    echo -e "\nSimulation Throughput (NFsim events/sec):"
+    printf "%-20s %15s %15s %12s %12s\n" "Model" "Baseline" "Comparison" "Speedup" "Improvement"
     echo "------------------------------------------------------------------------------------"
-
     for i in "${!results_names[@]}"; do
-        model_name="${results_names[$i]}"
-        IFS=',' read b_wall b_wall_std b_gen b_gen_std b_sim b_sim_std b_cpu b_cpu_std <<< "${results_baseline_all[$i]}"
-        IFS=',' read c_wall c_wall_std c_gen c_gen_std c_sim c_sim_std c_cpu c_cpu_std <<< "${results_comparison_all[$i]}"
-
-        if [ "$(perl -e "print $b_sim > 0 ? 1 : 0")" = "1" ]; then
-            sim_speedup=$(perl -e "print $b_sim / $c_sim")
-            sim_improvement=$(perl -e "print (($b_sim - $c_sim) / $b_sim) * 100")
-            printf "%-20s %7.2f (±%.2f) %7.2f (±%.2f) %11.2fx %10.1f%%\n" \
-                "$model_name" "$b_sim" "$b_sim_std" "$c_sim" "$c_sim_std" "$sim_speedup" "$sim_improvement"
-        else
-            printf "%-20s %15s %15s %12s %12s\n" "$model_name" "N/A" "N/A" "-" "-"
-        fi
+        name="${results_names[$i]}"
+        IFS=',' read b_wc b_wc_s b_gen b_gen_s b_sim b_sim_s b_cpu b_cpu_s b_rss b_rss_s b_eps b_eps_s <<< "${results_baseline_all[$i]}"
+        IFS=',' read c_wc c_wc_s c_gen c_gen_s c_sim c_sim_s c_cpu c_cpu_s c_rss c_rss_s c_eps c_eps_s <<< "${results_comparison_all[$i]}"
+        if [ "$(perl -e "print $b_eps > 0 ? 1 : 0")" = "1" ]; then speedup=$(perl -e "print $c_eps / $b_eps"); improvement=$(perl -e "printf '%.1f', (($c_eps - $b_eps) / $b_eps) * 100"); printf "%-20s %7.1f (±%.1f) %7.1f (±%.1f) %11.2fx %11s%%\n" "$name" "$b_eps" "$b_eps_s" "$c_eps" "$c_eps_s" "$speedup" "$improvement"; fi
     done
-} > "$RESULTS_TXT"
+} | tee "$RESULTS_TXT"
 
-# Save results to CSV
+# Save CSV
 {
     echo "Model,Phase,Baseline_Mean,Baseline_StdDev,Comparison_Mean,Comparison_StdDev,Speedup,Improvement_Percent"
-
     for i in "${!results_names[@]}"; do
-        model_name="${results_names[$i]}"
-
-        # Parse results
-        IFS=',' read b_wall b_wall_std b_gen b_gen_std b_sim b_sim_std b_cpu b_cpu_std <<< "${results_baseline_all[$i]}"
-        IFS=',' read c_wall c_wall_std c_gen c_gen_std c_sim c_sim_std c_cpu c_cpu_std <<< "${results_comparison_all[$i]}"
-
-        # Overall (wall clock)
-        speedup=$(perl -e "print $b_wall / $c_wall")
-        improvement=$(perl -e "print (($b_wall - $c_wall) / $b_wall) * 100")
-        echo "$model_name,overall,$b_wall,$b_wall_std,$c_wall,$c_wall_std,$speedup,$improvement"
-
-        # Generate network phase
-        if [ "$(perl -e "print $b_gen > 0 ? 1 : 0")" = "1" ]; then
-            gen_speedup=$(perl -e "print $b_gen / $c_gen")
-            gen_improvement=$(perl -e "print (($b_gen - $c_gen) / $b_gen) * 100")
-            echo "$model_name,generate_network,$b_gen,$b_gen_std,$c_gen,$c_gen_std,$gen_speedup,$gen_improvement"
-        fi
-
-        # Simulate phase
-        if [ "$(perl -e "print $b_sim > 0 ? 1 : 0")" = "1" ]; then
-            sim_speedup=$(perl -e "print $b_sim / $c_sim")
-            sim_improvement=$(perl -e "print (($b_sim - $c_sim) / $b_sim) * 100")
-            echo "$model_name,simulate,$b_sim,$b_sim_std,$c_sim,$c_sim_std,$sim_speedup,$sim_improvement"
-        fi
+        name="${results_names[$i]}"
+        IFS=',' read b_wc b_wc_s b_gen b_gen_s b_sim b_sim_s b_cpu b_cpu_s b_rss b_rss_s b_eps b_eps_s <<< "${results_baseline_all[$i]}"
+        IFS=',' read c_wc c_wc_s c_gen c_gen_s c_sim c_sim_s c_cpu c_cpu_s c_rss c_rss_s c_eps c_eps_s <<< "${results_comparison_all[$i]}"
+        echo "$name,overall,$b_wc,$b_wc_s,$c_wc,$c_wc_s,$(perl -e "print $b_wc / $c_wc"),$(perl -e "printf '%.1f', (($b_wc - $c_wc) / $b_wc) * 100")"
+        if [ "$(perl -e "print $b_gen > 0 ? 1 : 0")" = "1" ] && [ "$(perl -e "print $c_gen > 0 ? 1 : 0")" = "1" ]; then echo "$name,generate_network,$b_gen,$b_gen_s,$c_gen,$c_gen_s,$(perl -e "print $b_gen / $c_gen"),$(perl -e "printf '%.1f', (($b_gen - $c_gen) / $b_gen) * 100")"; fi
+        if [ "$(perl -e "print $b_sim > 0 ? 1 : 0")" = "1" ] && [ "$(perl -e "print $c_sim > 0 ? 1 : 0")" = "1" ]; then echo "$name,simulate,$b_sim,$b_sim_s,$c_sim,$c_sim_s,$(perl -e "print $b_sim / $c_sim"),$(perl -e "printf '%.1f', (($b_sim - $c_sim) / $b_sim) * 100")"; fi
+        if [ "$(perl -e "print $b_rss > 0 ? 1 : 0")" = "1" ]; then echo "$name,peak_rss,$b_rss,$b_rss_s,$c_rss,$c_rss_s,$(perl -e "print $c_rss / $b_rss"),$(perl -e "printf '%.1f', (($c_rss - $b_rss) / $b_rss) * 100")"; fi
+        if [ "$(perl -e "print $b_eps > 0 ? 1 : 0")" = "1" ]; then echo "$name,nfsim_eps,$b_eps,$b_eps_s,$c_eps,$c_eps_s,$(perl -e "print $c_eps / $b_eps"),$(perl -e "printf '%.1f', (($c_eps - $b_eps) / $b_eps) * 100")"; fi
     done
 } > "$RESULTS_CSV"
 
-echo "Results saved to:"
-echo "  $RESULTS_TXT"
-echo "  $RESULTS_CSV"
+echo -e "\n${GREEN}Benchmark complete!${NC}"
+echo "Results saved to: $RESULTS_TXT and $RESULTS_CSV"

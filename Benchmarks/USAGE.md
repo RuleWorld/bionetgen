@@ -19,7 +19,7 @@ cd Benchmarks
 ### 3. Full benchmark with custom options
 ```bash
 cd Benchmarks
-./benchmark.sh BioNetGen-2.9.3 master --runs 5
+./benchmark.sh BioNetGen-2.9.3 master --runs 5 --validate
 ```
 
 ## Common Use Cases
@@ -70,10 +70,19 @@ egfr_net                9.50 (±0.12)      6.10 (±0.08)      1.56x        35.8%
 fceri_ji                4.10 (±0.05)      2.40 (±0.03)      1.71x        41.5%
 ```
 
-- **Baseline**: Time for the reference version (with standard deviation)
-- **Comparison**: Time for the new version (with standard deviation)
-- **Speedup**: How many times faster (>1.0 means improvement)
-- **Improvement**: Percentage faster (positive means improvement)
+- **Baseline**: Metric value for the reference version (with standard deviation)
+- **Comparison**: Metric value for the new version (with standard deviation)
+- **Speedup**: How many times better (>1.0 means improvement)
+- **Improvement**: Percentage better (positive means improvement)
+- **Validation**: Result of BioNetGen validation suite
+
+### Tracked Metrics
+
+- **Overall**: Total wall-clock time
+- **Peak RSS**: Maximum memory usage (in KB)
+- **generate_network()**: Time spent in Perl network generation
+- **simulate()**: Time spent in C++ simulation
+- **NFsim events/sec**: Simulation throughput (specifically for NFsim models)
 
 ### Statistical Confidence
 
@@ -174,10 +183,11 @@ Use CSV files to plot performance trends across releases.
 
 ### "Model not found" error
 
-Model paths are resolved relative to `bng2/Models2/`. Use:
+Models are automatically searched in common BioNetGen directories. You can use names or paths:
 ```bash
---models egfr_net          # Will use bng2/Models2/egfr_net.bngl
---models bng2/Models2/custom/my_model.bngl  # Use full path
+--models egfr_net          # Found in bng2/Models2/
+--models fceri_fyn         # Found in bng2/Models2/FceriModels/
+--models gene_expr         # Found in bng2/Validate/
 ```
 
 ### "Failed to build Network3" error
