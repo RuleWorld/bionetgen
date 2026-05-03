@@ -96,7 +96,7 @@ private:
     std::vector<EmbeddingResult> findEmbeddingsForSpecies(
         std::size_t patternIndex,
         const SpeciesList& speciesList,
-        const std::unordered_set<std::size_t>& candidateSpecies,
+        const std::vector<std::size_t>& candidateSpecies,
         const Model* model = nullptr) const;
 
     bool buildReaction(

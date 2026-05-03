@@ -1210,9 +1210,9 @@ void ReactionRule::initialize() {
 std::vector<ReactionRule::EmbeddingResult> ReactionRule::findEmbeddings(
     std::size_t patternIndex,
     const SpeciesList& speciesList) const {
-    std::unordered_set<std::size_t> allSpecies;
+    std::vector<std::size_t> allSpecies;
     for (std::size_t speciesIndex = 0; speciesIndex < speciesList.size(); ++speciesIndex) {
-        allSpecies.insert(speciesIndex);
+        allSpecies.push_back(speciesIndex);
     }
     return findEmbeddingsForSpecies(patternIndex, speciesList, allSpecies);
 }
@@ -1220,7 +1220,7 @@ std::vector<ReactionRule::EmbeddingResult> ReactionRule::findEmbeddings(
 std::vector<ReactionRule::EmbeddingResult> ReactionRule::findEmbeddingsForSpecies(
     std::size_t patternIndex,
     const SpeciesList& speciesList,
-    const std::unordered_set<std::size_t>& candidateSpecies,
+    const std::vector<std::size_t>& candidateSpecies,
     const Model* model) const {
     std::vector<EmbeddingResult> results;
     const auto& pattern = reactantPatterns_.at(patternIndex).getGraph();
@@ -1244,10 +1244,7 @@ std::vector<ReactionRule::EmbeddingResult> ReactionRule::findEmbeddingsForSpecie
         }
     }
 
-    for (std::size_t speciesIndex = 0; speciesIndex < speciesList.size(); ++speciesIndex) {
-        if (candidateSpecies.find(speciesIndex) == candidateSpecies.end()) {
-            continue;
-        }
+    for (std::size_t speciesIndex : candidateSpecies) {
         // Skip species that have already been searched in previous iterations
         if (alreadySearchedSpecies.count(speciesIndex) > 0) {
             continue;
@@ -1515,7 +1512,7 @@ std::size_t ReactionRule::expandRule(
         }
     }
 
-    std::unordered_set<std::size_t> newSpecies;
+    std::vector<std::size_t> newSpecies;
 
     // Ensure the vector is sized appropriately
     if (lastProcessedInIteration_.size() < speciesBoundary) {
@@ -1539,15 +1536,15 @@ std::size_t ReactionRule::expandRule(
         if (!isBimolecular) {
             // Unimolecular: process only never-before-seen species
             if (neverProcessedByThisRule && notYetProcessed) {
-                newSpecies.insert(i);
+                newSpecies.push_back(i);
             }
         } else {
             // Bimolecular: process new species or old species for cross-matching
             if (notYetProcessed && notProcessedByThisRuleInCurrentIteration) {
-                newSpecies.insert(i);
+                newSpecies.push_back(i);
             } else if (hasTrulyNewSpecies && speciesList.get(i).rulesApplied() &&
                        notProcessedByThisRuleInCurrentIteration) {
-                newSpecies.insert(i);
+                newSpecies.push_back(i);
             }
         }
     }
@@ -1582,10 +1579,10 @@ std::size_t ReactionRule::expandRule(
 
     // Phase 1: Update all pattern caches
     for (std::size_t patternIndex = nPatterns; patternIndex-- > 0;) {
-        std::unordered_set<std::size_t> searchSet;
+        std::vector<std::size_t> searchSet;
         if (cacheNeedsRebuild) {
             for (std::size_t i = 0; i < std::min(speciesList.size(), speciesBoundary); ++i) {
-                searchSet.insert(i);
+                searchSet.push_back(i);
             }
         } else {
             searchSet = newSpecies;
