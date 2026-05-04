@@ -446,7 +446,7 @@ class allMaps:
 			return list(res)
 		elif type_vector == ['p','irr']:
 			return [x for x in self.getFlow(['p','t'],idx_list) if x in self.irr_ids]
-		
+
 		elif type_vector == ['t','p']:
 			res = self._lookup(self._t2p_product, idx_list)
 			for t_id in idx_list:
@@ -575,6 +575,7 @@ class Trace:
 	def __init__(self,trace,tracetype):
 		self.trace = trace
 		self.type = tracetype
+		self._set = set(trace)
 		
 	def __str__(self):
 		return "->".join([str(x) for x in self.trace])
@@ -586,10 +587,12 @@ class Trace:
 		return self.trace[-1]
 		
 	def has(self,item):
-		return item in self.trace
+		# ⚡ Bolt: O(1) membership check using a set instead of O(N) list scan
+		return item in self._set
 		
 	def extend(self,item):
 		self.trace.append(item)
+		self._set.add(item)
 		
 	def flip(self):
 		return Trace(list(reversed(self.trace)),self.type)
@@ -649,6 +652,11 @@ def getTraces(start,end,triplets,elemtype,names):
 	valid_traces =TraceStack([],elemtype)
 	invalid_traces =TraceStack([],elemtype)
 
+	# ⚡ Bolt: Pre-group triplets by x to avoid O(N) list scans on every trace extension
+	triplets_by_x = {}
+	for x, y, z in triplets:
+		triplets_by_x.setdefault(x, []).append(z)
+
 	# start with a stack of traces
 	# pick the top of the stack
 	# check if it is a trace that ends the way we want it, i.e. with an element in the end-list
@@ -664,7 +672,7 @@ def getTraces(start,end,triplets,elemtype,names):
 		if trace.getLast() in end:
 			valid_traces.addTrace(trace)
 		else:
-			next_candidates = [z for x,y,z in triplets if x==trace.getLast() and not trace.has(z)] 
+			next_candidates = [z for z in triplets_by_x.get(trace.getLast(), []) if not trace.has(z)]
 			if len(next_candidates) == 0:
 				invalid_traces.addTrace(trace)
 			for item in next_candidates:

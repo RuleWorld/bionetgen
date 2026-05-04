@@ -344,10 +344,12 @@ class Molecule:
         if not overlap:
             self.components.append(component)
         else:
-            if not component.name in [x.name for x in self.components]:
+            # ⚡ Bolt: Use getComponent directly to combine existence check and retrieval,
+            # avoiding an O(N) list comprehension.
+            compo = self.getComponent(component.name)
+            if compo is None:
                 self.components.append(component)
             else:
-                compo = self.getComponent(component.name)
                 for state in component.states:
                     compo.addState(state)
     
@@ -364,7 +366,8 @@ class Molecule:
         
     def getComponent(self,componentName):
         for component in self.components:
-            if componentName == component.getName():
+            # ⚡ Bolt: Direct attribute access is faster than method call overhead
+            if componentName == component.name:
                 return component
                 
     def removeComponent(self,componentName):
