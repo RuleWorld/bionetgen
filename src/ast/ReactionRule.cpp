@@ -1274,16 +1274,16 @@ std::vector<ReactionRule::EmbeddingResult> ReactionRule::findEmbeddingsForSpecie
         // enough molecules of the required types (avoids expensive Ullmann call)
         const auto& targetGraph = speciesList.get(speciesIndex).getSpeciesGraph().getGraph();
         if (!patternMoleculeTypes.empty() && !targetGraph.empty()) {
-            std::unordered_map<std::string, std::size_t> targetMolTypes;
-            for (auto tIter = targetGraph.begin(); tIter != targetGraph.end(); ++tIter) {
-                if (isMoleculeNode(**tIter)) {
-                    targetMolTypes[(*tIter)->get_type().get_type_name()]++;
-                }
-            }
             bool compatible = true;
             for (const auto& [molType, needed] : patternMoleculeTypes) {
-                auto it = targetMolTypes.find(molType);
-                if (it == targetMolTypes.end() || it->second < needed) {
+                std::size_t count = 0;
+                for (auto tIter = targetGraph.begin(); tIter != targetGraph.end(); ++tIter) {
+                    if (isMoleculeNode(**tIter) && (*tIter)->get_type().get_type_name() == molType) {
+                        count++;
+                        if (count >= needed) break;
+                    }
+                }
+                if (count < needed) {
                     compatible = false;
                     break;
                 }
