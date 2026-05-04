@@ -1244,7 +1244,12 @@ std::vector<ReactionRule::EmbeddingResult> ReactionRule::findEmbeddingsForSpecie
         }
     }
 
-    for (std::size_t speciesIndex : candidateSpecies) {
+    std::vector<std::size_t> sortedCandidates(candidateSpecies.begin(), candidateSpecies.end());
+    std::sort(sortedCandidates.begin(), sortedCandidates.end());
+
+    for (std::size_t speciesIndex : sortedCandidates) {
+        if (speciesIndex >= speciesList.size()) continue;
+
         // Skip species that have already been searched in previous iterations
         if (alreadySearchedSpecies.count(speciesIndex) > 0) {
             continue;
@@ -1567,9 +1572,7 @@ std::size_t ReactionRule::expandRule(
                   << " cacheNeedsRebuild=" << cacheNeedsRebuild << "\n";
     }
 
-    // =============================================
     // Two-phase: update all caches, then enumerate
-    // =============================================
     // Phase 1: Find new embeddings for ALL patterns and update caches.
     // Phase 2: For each pattern with new matches, enumerate combinations
     //          with that pattern as trigger.
