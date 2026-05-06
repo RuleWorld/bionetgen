@@ -156,7 +156,8 @@ def parseComponent(component):
     return comp
     
 def parseXML(xmlFile):
-    doc = etree.parse(xmlFile)
+    parser = etree.XMLParser(resolve_entities=False, no_network=True)
+    doc = etree.parse(xmlFile, parser)
     molecules = doc.findall('.//{http://www.sbml.org/sbml/level3}MoleculeType')
     rules = doc.findall('.//{http://www.sbml.org/sbml/level3}ReactionRule')
     ruleDescription = []
@@ -180,11 +181,12 @@ def parseXML(xmlFile):
     return moleculeList, ruleDescription,parameterDict
         
 def getNumObservablesXML(xmlFile):
-    doc = etree.parse(xmlFile)
+    parser = etree.XMLParser(resolve_entities=False, no_network=True)
+    doc = etree.parse(xmlFile, parser)
     observables = doc.findall('.//{http://www.sbml.org/sbml/level3}Observable')
     return len(observables)
     
 if __name__ == "__main__":
     #mol,rule,par = parseXML("output19.xml")
     #print [str(x) for x in mol]
-    print getNumObservablesXML('output19.xml')
+    print(getNumObservablesXML('output19.xml'))

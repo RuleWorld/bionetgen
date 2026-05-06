@@ -40,6 +40,9 @@ comparison_results
 
 .claude
 artifacts/
+.jules
+__pycache__/
+*.pyc
 
 # temporary
 testing
@@ -67,6 +70,6 @@ Isuses/Help with pyBNG/*.xml
 bng2/Network3/CMakeFiles/
 bng2/Network3/CMakeCache.txt
 bng2/Network3/cmake_install.cmake
-.jules/
 statfactor_*.txt
 bng2/Network3/run_network
+*.o

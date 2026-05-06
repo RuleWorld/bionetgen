@@ -28,6 +28,14 @@ sub process_val_express{
     return($expr->evaluate($plist));
 }
 
+sub _validate_no_option_injection {
+    my ($name, $value) = @_;
+    return "Parameter '$name' is undefined." unless defined $value;
+    return "Security Error: Parameter injection detected. '$name' cannot start with '-'"
+        if $value =~ /^-/;
+    return undef;
+}
+
 sub simulate_protocol
 {
     my $model = shift @_;
@@ -49,11 +57,11 @@ sub simulate_protocol
 
         if(index($action,"simulate") != -1)
         {
-            # SECURITY: Use Safe->reval instead of eval to prevent arbitrary code execution
-            my $cpt = Safe->new;
-            $cpt->permit(qw(:base_core :base_math :base_mem entereval));
-            my $hash_opts_ref = $cpt->reval($options);
-            if ($@) { die "Error parsing simulate options: $@"; }
+            my ($args_ref, $parse_err) = _parse_action_args($options);
+            if ($parse_err) { die "Error parsing simulate options: $parse_err"; }
+            my $hash_opts_ref = @$args_ref ? $args_ref->[0] : {};
+            die "Error parsing simulate options: expected a hash reference."
+                unless ref($hash_opts_ref) eq 'HASH';
             #modifying hash with local prefix
             $hash_opts_ref->{prefix} = $params->{prefix};
             #deleting suffix
@@ -63,12 +71,14 @@ sub simulate_protocol
         }
         else
         {
-            $modified_options = $options;
-            my $command = sprintf "\$model->%s(%s);", $action, $modified_options;
             my $t_start = cpu_time(0);
-            $err = eval $command;
-            #if ($@)   { $err = errgen($@);    goto EXIT; }
-            #if ($err) { $err = errgen($err);  goto EXIT; }
+            if ($model->can($action)) {
+                my $eval_err;
+                ($err, $eval_err) = _invoke_model_action($model, $action, $options);
+                die $eval_err if $eval_err;
+            } else {
+                $err = "Method $action does not exist on model.";
+            }
             my $t_elapsed = cpu_time($t_start);
             printf "CPU TIME: %s %.2f s.\n", $action, $t_elapsed;
         }
@@ -161,6 +171,10 @@ sub simulate
     my $argfile = defined $params->{argfile} ? $params->{argfile} : undef;
     if ($argfile)
     {
+        $argfile = File::Spec->canonpath($argfile);
+        if ($argfile =~ /(?:^|[\/\\])\.\.(?:[\/\\]|$)/)
+        {   return "argfile path traversal detected in '$argfile'.";   }
+
         print "Reading simulation arguments from $argfile.\n";
         open(ARGS, "<", $argfile) or return "Could not open argfile '$argfile'.";
         my $lineCounter = 0;
@@ -188,12 +202,8 @@ sub simulate
                 else
                 {   # Special handling for sample_times array
                     print "$args[0] => $args[1]\n";
-                    # evaluate sample_times string to get array ref (hopefully)
-                    # SECURITY: Use Safe->reval instead of eval to prevent arbitrary code execution
-                    my $cpt = Safe->new;
-                    $cpt->permit(qw(:base_core :base_math :base_mem entereval));
-                    my $sample_times = $cpt->reval($args[1]);
-                    if ($@)
+                    my ($sample_times, $eval_err) = _safe_reval_literal($args[1]);
+                    if ($eval_err or ref($sample_times) ne 'ARRAY')
                     {    return "Problem parsing 'sample_times': Sample times must be comma-separated (no spaces) ints or floats "
                              . "(exponential format ok) enclosed in square brackets, e.g., [5e-1,1,5.0,1E1].";
                     }
@@ -256,6 +266,8 @@ sub simulate
     # check method
     unless ( $method )
     {  return "simulate() requires 'method' parameter (ode, ssa, pla, psa, nf).";  }
+    if ($method =~ /^-/)
+    {  return "Security Error: Parameter injection detected. 'method' cannot start with '-'";  }
     if ($method =~ /^ode$/){  $method = 'cvode';  } # Support 'ode' as a valid method
     unless ( exists $METHODS->{$method} )
     {  return "Simulation method '$method' is not a valid option.";  }
@@ -339,6 +351,8 @@ sub simulate
     my @command = ($program);
 
     # add output prefix
+    if (my $inj_err = _validate_no_option_injection('prefix', $prefix))
+    {   return $inj_err;   }
     push @command, "-o", "$prefix";
     
     # add method to command
@@ -351,9 +365,13 @@ sub simulate
         		$params->{pla_config} = "fEuler|pre-neg:sb|eps=0.03";
         		send_warning("'pla_config' not defined, using default: $params->{pla_config}");
         }
+        if (my $inj_err = _validate_no_option_injection('pla_config', $params->{pla_config}))
+        {   return $inj_err;   }
         push @command, $params->{pla_config};
         if (defined $params->{pla_output}){
-        		push @command, "--pla_output", $params->{pla_output};
+			if (my $inj_err = _validate_no_option_injection('pla_output', $params->{pla_output}))
+			{   return $inj_err;   }
+			push @command, "--pla_output", $params->{pla_output};
         }
     }
 
@@ -364,8 +382,14 @@ sub simulate
             $params->{poplevel} = "100";
             send_warning("'poplevel' not defined, using default scaling targert: $params->{poplevel}");
         }
+        if ($params->{poplevel} =~ /^-/) {
+            return "Security Error: Parameter injection detected. 'poplevel' cannot start with '-'";
+        }
         push @command, "--poplevel", $params->{poplevel};
         if (exists $params->{check_product_scale}) {
+            if ($params->{check_product_scale} =~ /^-/) {
+                return "Security Error: Parameter injection detected. 'check_product_scale' cannot start with '-'";
+            }
             push @command, "--check_product_scale", $params->{check_product_scale};
         }
     }
@@ -472,6 +496,9 @@ sub simulate
       # To preserve backward compatibility: only output start time if != 0
     unless ( $t_start == 0.0 )
     {  push @command, "-i", "$t_start";  }
+
+    if (my $inj_err = _validate_no_option_injection('netfile', $netfile))
+    {   return $inj_err;   }
 
     # Use program to compute observables
     push @command, "-g", $netfile;
@@ -593,10 +620,8 @@ sub simulate
             # remember that we've attempted On-the-fly!
             $otf = 1;
 
-            unless ( $model->SpeciesList )
+            unless ( $model->SpeciesList and @{$model->SpeciesList->Array} > 0 and $model->RxnRules and @{$model->RxnRules} )
             {   # Can't generate new species if running from netfile
-                # TODO: I don't think it's sufficient to check if SpeciesList is defined.
-                #  It's possible that it exists but the Network generation infrastructure is missing --Justin
                 ++$edge_warning;
                 print Writer "continue\n";
                 next;
@@ -720,9 +745,8 @@ sub simulate
     
     # At this point, the simulation seems to be ok.
     #  Go ahead and print out final netfile (if there are new reactions or species)
-    if ( $otf  and  $model->SpeciesList )
-    {   # TODO: I don't think it's sufficient to check if SpeciesList is defined.
-        #  It's possible that it exists but the Network generation infrastructure is missing --Justin
+    if ( $otf  and  $model->SpeciesList and @{$model->SpeciesList->Array} > 0 and $model->RxnRules and @{$model->RxnRules} )
+    {
         $err = $model->writeNetwork({include_model=>0, overwrite=>1, prefix=>"$netpre"});
         if ($err) { return $err; }
     }
@@ -743,8 +767,8 @@ sub simulate
     }
 
     # If there are no errors or flags so far, let's load output concentrations
-    if ( !($model->RxnList) )
-    {   # TODO: what does this accomplish? --Justin
+    if ( !($model->SpeciesList and @{$model->SpeciesList->Array} > 0) )
+    {
         send_warning("Not updating species concentrations because no model has been read.");
     }
     elsif ( -e "$prefix.cdat" )
@@ -886,7 +910,9 @@ sub simulate_nf
     $model->writeXML( {'prefix'=>$prefix} );
 
     # Define command line
-    push @command, "-xml", "${prefix}.xml", "-o", "${prefix}.gdat";
+    # properly delimit file paths to prevent parameter injection
+    my $safe_prefix = ($prefix =~ /^-/) ? "./$prefix" : $prefix;
+    push @command, "-xml", "${safe_prefix}.xml", "-o", "${safe_prefix}.gdat";
 
     # Append the run time and output intervals
     my $t_start;
@@ -1171,8 +1197,9 @@ sub generate_hybrid_model
     foreach my $opt (keys %$user_options)
     {
         my $val = $user_options->{$opt};
+
         if ($opt eq "exact")
-        {   # TODO: temporary patch to allow the old "exact" option
+        {
             send_warning("The 'exact' option has been renamed 'safe', please use this in the future.");
             $opt = "safe";
         }
@@ -1542,9 +1569,27 @@ sub generate_hybrid_model
         my $errors = [];
         foreach my $action ( @{$options->{actions}} )
         {
-            my $action_string = "\$hybrid_model->$action";
-            my $err = eval "$action_string";
-            if ($@)   {  warn $@;  }
+            my $err;
+            if ( $action =~ /^\s*([A-Za-z_]\w*)\s*(?:\(\s*(.*)\s*\))?\s*$/ )
+            {
+                my $method = $1;
+                my $opts = $2 // '';
+                if ( $hybrid_model->can($method) )
+                {
+                    my $eval_err;
+                    ($err, $eval_err) = BNGModel::_invoke_model_action($hybrid_model, $method, $opts);
+                    if ($eval_err) { warn $eval_err; }
+                }
+                else
+                {
+                    $err = "Method $method does not exist on hybrid model.";
+                }
+            }
+            else
+            {
+                $err = "Could not parse action string: $action";
+            }
+
             if ($err) {  push @$errors, $err;  }
         }
         $BNGModel::GLOBAL_MODEL = $model;
@@ -1928,7 +1973,6 @@ sub LinearParameterSensitivity
     #and paramname is the bumped parameter name, and c/gdat files have meaning as normal
 
     ######################
-    # TODO: NOT IMPLEMENTED YET!!
     #Additional files are written containing the raw sensitivity coefficients
     #for each parameter bump
     #format: 'netfile_paramname_suffix.(c)(g)sc'
@@ -1972,6 +2016,7 @@ sub LinearParameterSensitivity
     my %simodeinputs;
     my $simname;
     my $basemodel = BNGModel->new();
+    $basemodel->initialize();
     my $plist;
     my $param_name;
     my $param_value;
@@ -1983,6 +2028,7 @@ sub LinearParameterSensitivity
 #    my $pert_names;
 #    my $pert_values;
     my $newbumpmodel = BNGModel->new();
+    $newbumpmodel->initialize();
     my $foo;
     my $i;
 
@@ -2081,6 +2127,10 @@ sub LinearParameterSensitivity
     {
         $param_name      = $model_param->Name;
         $param_value     = $model_param->evaluate();
+
+        # Skip parameters with zero value as bump would be zero
+        next if $param_value == 0;
+
         $new_param_value = $param_value * ( 1 + $bump / 100 );
 
         #Get fresh model and bump parameter
@@ -2139,9 +2189,75 @@ sub LinearParameterSensitivity
         $newbumpmodel->simulate_ode( \%simodeinputs );
 
         #Evaluate sensitivities and write to file
+        my $dp = $new_param_value - $param_value;
+        my $base_prefix = "$net_file\_basecase_$suffix";
+        my $bump_prefix = "${net_file}_${simname}_${suffix}";
+
+        foreach my $ext ("cdat", "gdat") {
+            my $base_file = "${base_prefix}.${ext}";
+            my $bump_file = "${bump_prefix}.${ext}";
+            my $sc_ext = ($ext eq 'cdat') ? 'csc' : 'gsc';
+            my $out_file  = "${bump_prefix}.${sc_ext}";
+
+            if (-e $base_file && -e $bump_file) {
+                open(my $bfh, '<', $base_file) or next;
+                open(my $pfh, '<', $bump_file) or do { close($bfh); next; };
+                open(my $ofh, ">", $out_file)  or do { close($bfh); close($pfh); next; };
+
+                my $b_head = <$bfh>;
+                my $p_head = <$pfh>;
+
+                chomp $b_head;
+                $b_head =~ s/^\s*#\s*//;
+                my @cols = split(/\s+/, $b_head);
+
+                my @times;
+                my @base_data;
+                my @bump_data;
+
+                while(my $b_line = <$bfh>) {
+                    chomp $b_line;
+                    my $p_line = <$pfh>;
+                    chomp $p_line;
+
+                    $b_line =~ s/^\s+//;
+                    $p_line =~ s/^\s+//;
+
+                    my @b_vals = split(/\s+/, $b_line);
+                    my @p_vals = split(/\s+/, $p_line);
+
+                    push @times, $b_vals[0];
+                    push @base_data, \@b_vals;
+                    push @bump_data, \@p_vals;
+                }
+                close($bfh);
+                close($pfh);
+
+                # Write header: first row is time
+                print $ofh sprintf("%16s", "# time");
+                foreach my $t (@times) {
+                    print $ofh sprintf(" %16.8e", $t);
+                }
+                print $ofh "\n";
+
+                # Write rows for each species/observable
+                # columns are 1 to $#cols
+                for my $c (1 .. $#cols) {
+                    print $ofh sprintf("%16s", $cols[$c]);
+                    for my $r (0 .. $#times) {
+                        my $diff = $bump_data[$r]->[$c] - $base_data[$r]->[$c];
+                        my $sens = $dp != 0 ? $diff / $dp : 0;
+                        print $ofh sprintf(" %16.8e", $sens);
+                    }
+                    print $ofh "\n";
+                }
+                close($ofh);
+            }
+        }
 
         #Get ready for next bump
         $newbumpmodel = BNGModel->new();
+        $newbumpmodel->initialize();
     }
 
   

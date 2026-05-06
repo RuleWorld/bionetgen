@@ -39,6 +39,19 @@ sub writeXML
     return $model->writeFile( \%params );
 }
 
+sub _validate_output_prefix
+{
+    my ($model, $params) = @_;
+    my $user_prefix = defined $params->{prefix} ? $params->{prefix} : $model->Name;
+
+    if ($user_prefix =~ /(?:^|[\/\\])\.\.(?:[\/\\]|$)/) {
+        die "Path traversal detected in model metadata or prefix: $user_prefix\n";
+    }
+    if (File::Spec->file_name_is_absolute($user_prefix) && !defined $params->{prefix}) {
+        die "Absolute paths are not permitted in model metadata: $user_prefix\n";
+    }
+}
+
 # code for writeMDL starts here
 sub writeMDL
 {
@@ -76,7 +89,9 @@ sub writeMDL
 	my $suffix = ( defined $params->{suffix} ) ? $params->{suffix} : undef;
 	if ( $suffix )
 	{   $prefix .= "_${suffix}";   }
-		
+
+    _validate_output_prefix($model, $params);
+
     # split prefix into volume, path and filebase
     my ($vol, $path, $filebase) = File::Spec->splitpath($prefix);
 
@@ -536,10 +551,10 @@ sub toXML
 		my $do_print = 0;
 		if ( $param->Type =~ /^Constant/ )
 		{
-			$value = ($evaluate_expressions) ? sprintf "%.8g", $param->evaluate([], $plist) : $param->toString($plist);
+			$value = ($evaluate_expressions) ? sprintf "%.8g", $param->evaluate([], $plist) : $param->toXML($plist);
 			$value =~ s/(e[+-])0+(\d+)/$1$2/; # strip any leading zeros in exponent (improves cross-platform portability)
 			$type  = ($evaluate_expressions) ? "Constant" : $param->Type;
-      $expr = $param->toString($plist);
+      $expr = $param->toXML($plist);
 			$do_print = 1;
 		}
 		next unless $do_print;
@@ -654,10 +669,10 @@ sub writeSBMLMulti
     # Strip prefixed path
     my $prefix = defined $params->{prefix} ? $model->getOutputPrefix( $params->{prefix} ) : $model->getOutputPrefix();
     my $suffix = ( defined $params->{suffix} ) ? $params->{suffix} : 'sbml';
-#   unless ( $suffix eq '' )
-#    {   
+    unless ( $suffix eq '' )
+    {
         $prefix .= "_${suffix}";   
-#    }
+    }
 
     # define file name
     my $file = "${prefix}_sbmlmulti.xml";
@@ -700,7 +715,7 @@ sub writeSBMLMulti
             }
         }
 
-        if (! $unitstr eq ''){
+        if ($unitstr ne ''){
             $xml .= "      <listOfUnitDefinitions>\n";
             $xml .= $unitstr;
             $xml .= "      </listOfUnitDefinitions>\n";
@@ -942,10 +957,10 @@ sub writeSBML
 	# Strip prefixed path
 	my $prefix = defined $params->{prefix} ? $model->getOutputPrefix( $params->{prefix} ) : $model->getOutputPrefix();
 	my $suffix = ( defined $params->{suffix} ) ? $params->{suffix} : 'sbml';
-#	unless ( $suffix eq '' )
-#    {   
+	unless ( $suffix eq '' )
+    {
     	$prefix .= "_${suffix}";   
-#    }
+    }
 
     # define file name
 	my $file = "${prefix}.xml";
@@ -1422,6 +1437,8 @@ sub writeMfile
 	my $suffix = ( defined $params->{suffix} ) ? $params->{suffix} : undef;
 	if ( $suffix )
 	{   $prefix .= "_${suffix}";   }
+
+    _validate_output_prefix($model, $params);
 
     # split prefix into volume, path and filebase
     my ($vol, $path, $filebase) = File::Spec->splitpath($prefix);
@@ -1904,7 +1921,9 @@ sub writeMexfile
 	my $suffix = ( defined $params->{suffix} ) ? $params->{suffix} : undef;
 	if ( $suffix )
 	{   $prefix .= "_${suffix}";   }
-	
+
+    _validate_output_prefix($model, $params);
+
     # split prefix into volume, path and filebase
     my ($vol, $path, $filebase) = File::Spec->splitpath($prefix);
 
@@ -2722,7 +2741,9 @@ sub writeCPPfile
 	my $suffix = ( defined $params->{suffix} ) ? $params->{suffix} : undef;
 	if ( $suffix )
 	{   $prefix .= "_${suffix}";   }
-	
+
+    _validate_output_prefix($model, $params);
+
     # split prefix into volume, path and filebase
     my ($vol, $path, $filebase) = File::Spec->splitpath($prefix);
 
@@ -3301,7 +3322,9 @@ sub writeCPYfile
 	my $suffix = ( defined $params->{suffix} ) ? $params->{suffix} : undef;
 	if ( $suffix )
 	{   $prefix .= "_${suffix}";   }
-	
+
+    _validate_output_prefix($model, $params);
+
     # split prefix into volume, path and filebase
     my ($vol, $path, $filebase) = File::Spec->splitpath($prefix);
 
@@ -4227,6 +4250,8 @@ sub writeMfile_all
 	my $suffix = ( defined $params->{suffix} ) ? $params->{suffix} : undef;
 	if ( $suffix )
 	{   $prefix .= "_${suffix}";   }
+
+    _validate_output_prefix($model, $params);
 
     # split prefix into volume, path and filebase
     my ($vol, $path, $filebase) = File::Spec->splitpath($prefix);

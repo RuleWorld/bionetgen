@@ -30,7 +30,7 @@ def bngl2xml(bnglFile,timeout=60):
         bngconsole.expect('BNG>')
         bngconsole.close() 
     except pexpect.TIMEOUT:
-        subprocess.call(['killall','bngdev'])        
+        subprocess.call(['/usr/bin/killall', 'bngdev'], shell=False)
 
 def bngl2sbml(bnglFile,timeout=60):
     try:
@@ -44,7 +44,7 @@ def bngl2sbml(bnglFile,timeout=60):
         bngconsole.expect('BNG>')
         bngconsole.close() 
     except pexpect.TIMEOUT:
-        subprocess.call(['killall','bngdev'])        
+        subprocess.call(['/usr/bin/killall', 'bngdev'], shell=False)
     
 def correctness(bnglFile):
     bngconsole = pexpect.spawn('{0} --console'.format(getBngExecutable()))

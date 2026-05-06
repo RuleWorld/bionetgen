@@ -272,7 +272,7 @@ sub toString
             if(exists $print_options->{'sbml_multi'})
             {
                 my $tmpstr .= $comp->toSBMLMultiSpeciesTypeString();
-                if(!$tmpstr eq ''){
+                if ($tmpstr ne ''){
                     $string .= $tmpstr;
                     ++$icomp;
                 }
@@ -515,6 +515,9 @@ sub getSBMLMultiSpeciesFields
     my $mtype = $mtlist->MolTypes->{$mol->Name};
     my @visitedComponents = ();
     my %componentCopy = %{dclone(\%{$speciesIdHash_ref->{'Components'}})};
+
+    my @midArray = split(/_/, $mid);
+    my $mindex = substr($midArray[1], 1);
     foreach my $ctype (@{$mtype->Components}){
         my $componentFlag = 0;
         if(@{$mol->Components}){
@@ -529,9 +532,9 @@ sub getSBMLMultiSpeciesFields
                         my $outwardbonds = '';
 
                         if(exists $speciesIdHash_ref->{'BindingInformation'}{$mol->Name}{$comp->Name}){
-                            $outwardbonds = $comp->getSBMLMultiOutwardBonds( '  ' . $indent, $mol->Name,$mid."_C". $cindex, \%componentCopy, $multiComponentHash_ref );
+                            $outwardbonds = $comp->getSBMLMultiOutwardBonds( '  ' . $indent, $mol->Name,$mid."_C". $cindex, \%componentCopy, $multiComponentHash_ref, $stid );
                         }
-                        my $speciesfeatures = $comp->getSBMLMultiSpeciesFeature( '  ' . $indent, $mol->Name,$mid."_C". $cindex, \%componentCopy, $multiComponentHash_ref, () );
+                        my $speciesfeatures = $comp->getSBMLMultiSpeciesFeature( '  ' . $indent, $mol->Name,$mid."_C". $cindex, \%componentCopy, $multiComponentHash_ref, $stid );
                         if(not $outwardbonds eq ''){
                             push @{$sbmlMultiSpeciesInfo_ref->{'outwardbonds'}}, $outwardbonds;
                         }
@@ -564,9 +567,9 @@ sub getSBMLMultiSpeciesFields
 
             my $outwardbonds = '';
             if(exists $speciesIdHash_ref->{'BindingInformation'}{$mtype->Name}{$cnew->Name}){
-                $outwardbonds = $cnew->getSBMLMultiOutwardBonds( '  ' . $indent, $mtype->Name,$mid."_C". $cindex, \%componentCopy, $multiComponentHash_ref );
+                $outwardbonds = $cnew->getSBMLMultiOutwardBonds( '  ' . $indent, $mtype->Name,$mid."_C". $cindex, \%componentCopy, $multiComponentHash_ref, $stid );
             }
-            my $speciesfeatures = $cnew->getSBMLMultiSpeciesFeature( '  ' . $indent, $mtype->Name,$mid."_C". $cindex, \%componentCopy, $multiComponentHash_ref );
+            my $speciesfeatures = $cnew->getSBMLMultiSpeciesFeature( '  ' . $indent, $mtype->Name,$mid."_C". $cindex, \%componentCopy, $multiComponentHash_ref, $stid );
             if(not $outwardbonds eq ''){
                 push @{$sbmlMultiSpeciesInfo_ref->{'outwardbonds'}}, $outwardbonds;
             }

@@ -130,19 +130,6 @@ Node::find_out_edge ( Node * node ) const
 }
 
 
-// node equal operator (compares type and state only).
-bool
-Node::operator== ( const Node & node2 ) const
-{
-    // check type
-    if ( get_type()  != node2.get_type()  )  return false;
-    // check state (wildcards allowed)
-    if ( get_state() != node2.get_state() )  return false;
-    // at this point the nodes are locally equivalent
-    return  true;
-}
-
-
 // "less than" method for sorting nodes before canonical labeling.
 // This function is static because sort algorithms require this prototype.
 bool

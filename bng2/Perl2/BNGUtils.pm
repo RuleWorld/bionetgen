@@ -1,5 +1,6 @@
 package BNGUtils;
-# TODO use strict;
+use strict;
+use warnings;
 
 # Perl Modules
 use FindBin;
@@ -229,7 +230,7 @@ sub verify_pattern{
   my $is_spec= shift;
   my $mol_ncomp= shift;
   
-  $patt=$pattern;
+  my $patt=$pattern;
   # remove valid termination characters
   $patt=~s/\.\*$//;
   $patt=~s/\*$//;
@@ -256,7 +257,7 @@ sub verify_pattern{
       # Check that each component is valid
       for my $comp (@components){
 	if ($comp=~/[^0-9\*]/){
-	  return(1, "Invalid component state $comp: May only use integers or wildcard.",$entry);
+	  return(1, "Invalid component state $comp: May only use integers or wildcard.");
 	}
 #	if ($comp=~/[^A-Za-z0-9_\-\*]/){
 #	  return(1, "Invalid component state $comp in pattern $pattern: May only use alphanumeric characters, '-','_', or '*'.");
@@ -379,8 +380,8 @@ sub line_warning
 
 sub expand_object{
     my $name= shift;
-    my @lengths=@{$t=shift};
-    my @equiv=@{$t=shift};
+    my @lengths=@{shift()};
+    my @equiv=@{shift()};
     my @olist=("");
 
     for my $i (0..$#lengths){
@@ -389,18 +390,18 @@ sub expand_object{
 	# array of earlier indices that are equivalent to index $i
 	my @eq=();
 	if (my $class= $equiv[$i]){
-	    for $j (0..$i-1){
+	    for my $j (0..$i-1){
 		($equiv[$j]==$class) && push @eq,$j;
 	    }
 	}
-	for $state (0..($lengths[$i]-1)){
+	for my $state (0..($lengths[$i]-1)){
 	  OBJ:
-	    for $obj (@olist){
+	    for my $obj (@olist){
 		# Skip this object if the current state is greater
     	        # than the state of index equivalent to the current one.
 		if (@eq){
 		    my @states=split(',',$obj);
-		    for $j (@eq){
+		    for my $j (@eq){
 			($state>$states[$j]) && next OBJ;
 		    }
 		}
@@ -411,7 +412,7 @@ sub expand_object{
     }
 
     # Enclose indices in parentheses and prepend spcies name
-    for $obj (@olist){
+    for my $obj (@olist){
 	$obj= $name."(".$obj.")";
     }
 
@@ -427,7 +428,7 @@ sub expand_object{
 ##---------------------------------------------------------------------------
 
 sub make_aggregates{
-    my @a= @{$t= shift};
+    my @a= @{shift()};
 
     my $idepth=0;
     my $max_depth=$#a;
@@ -435,7 +436,8 @@ sub make_aggregates{
     my @agg=();
     my %agg_hash=();
 
-    for $i (0..$#a){$iptrs[$i]=0;}
+    my @iptrs;
+    for my $i (0..$#a){$iptrs[$i]=0;}
     push @olist, $a[0][0];
     
     while(1){
@@ -451,7 +453,7 @@ sub make_aggregates{
 	# loop over ptrs at lowest depth
 	my @obj_low= @{$a[$max_depth]};
 #	my $eq=$equiv[$idepth];
-	for $obj (@obj_low){
+	for my $obj (@obj_low){
 	    push @olist, $obj;
 	    my $new_agg= join(".", sort by_obj @olist);
 	    my $new_agg_sort= join(".", sort by_obj @olist);
@@ -468,7 +470,7 @@ sub make_aggregates{
 	    --$idepth;
 	    last if ($idepth<0);
 	    pop @olist;
-	    if (($iptr=++$iptrs[$idepth])<=$#{$a[$idepth]}){
+	    if ((my $iptr=++$iptrs[$idepth])<=$#{$a[$idepth]}){
 		push @olist, $a[$idepth][$iptr];
 		last;
 	    }
@@ -512,6 +514,7 @@ sub average_runs{
   my $nfile=0;
   my @t=();
   my $ng;
+  my @y;
   for my $file (@_){
     open(IN, $file);
     my $i_t=0;
@@ -533,7 +536,7 @@ sub average_runs{
 
   # Write results to outfile
   open(OUT,">$outfile");
-    for $j (0..$ng){
+    for my $j (0..$ng){
       for my $i (0..$#t){
 	print OUT $t[$i];
 	my ($sig, $avg)= &stddev(@{$y[$i][$j]});
@@ -548,8 +551,8 @@ sub average_runs{
 
 sub average{
     return -1 unless $#_>=0;
-    local($sum)=0.0;
-    foreach $val (@_){
+    my $sum=0.0;
+    foreach my $val (@_){
         $sum+=$val;
     }
     return $sum/($#_+1);
@@ -557,9 +560,9 @@ sub average{
 
 sub stddev{
     return -1 unless $#_>=0;
-    local($sum)=0.0;
-    local($average)= &average(@_);
-    foreach $val (@_){
+    my $sum=0.0;
+    my $average= &average(@_);
+    foreach my $val (@_){
         $sum+=SQR($val-$average);
     }
     return (sqrt($sum/$#_), $average); # This is the correct formula for the 
@@ -569,7 +572,7 @@ sub stddev{
 # Basic utilities
 
 sub SQR{
-    local($x)=shift;
+    my $x=shift;
     return ($x*$x);
 }
 

@@ -957,8 +957,13 @@ ReactionRule::get_elementary_rules ( RuleContainerType & elem_rules )
         
         // construct simplified rule
         new_transformations.deposit_back( new_operation );
-        // TODO: figure out how to handle different number of products?
-        elem_rules.deposit_back(  new ReactionRule ( &new_patterns, &new_transformations, n_products )  );
+
+        // determine correct number of products for this elementary rule dynamically
+        // by creating a temporary rule (safe constructor) which applies the transformation
+        ReactionRule temp_rule( new_patterns, new_transformations, 0 );
+        size_t elem_n_products = temp_rule.product_patterns.size();
+
+        elem_rules.deposit_back(  new ReactionRule ( &new_patterns, &new_transformations, elem_n_products )  );
     }
     
     return elem_rules.size();

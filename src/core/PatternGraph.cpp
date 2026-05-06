@@ -8,6 +8,7 @@
 #include "BNGcore.hpp"
 #include "Ullmann.hpp"
 #include "nausparse.h"  /* which includes nauty.h */
+#include <set>
 using namespace BNGcore;
 
 
@@ -229,48 +230,62 @@ PatternGraph::is_canonical ( ) const
 
 
 
-// gather descendents of a node
-void
-PatternGraph::gather_subtree ( Node * curr_node, node_container_t & visited, node_container_t & bonds )
+// Helper for gather_subtree
+void gather_subtree_impl( Node * curr_node, node_container_t & visited_vec, node_container_t & bonds_vec, std::set<Node*> & visited_set, std::set<Node*> & bonds_set )
 {
-    node_iter_t  node_iter;
-    
-    // if current node is an entity, add to "visited" and continue gathering children
     if ( curr_node->get_type() < ENTITY_NODE_TYPE )
     {
-        if ( std::find( visited.begin(), visited.end(), curr_node ) == visited.end() )
+        if ( visited_set.find( curr_node ) == visited_set.end() )
         {
-            visited.push_back( curr_node );
-            for ( node_const_iter = curr_node->edges_out_begin();  node_const_iter != curr_node->edges_out_end();  ++node_const_iter )
-                gather_subtree ( *node_iter, visited, bonds );
+            visited_set.insert( curr_node );
+            visited_vec.push_back( curr_node );
+            for ( auto node_const_iter = curr_node->edges_out_begin();  node_const_iter != curr_node->edges_out_end();  ++node_const_iter )
+                gather_subtree_impl ( *node_const_iter, visited_vec, bonds_vec, visited_set, bonds_set );
         }
     } 
-    
-    // if current node is a bond, add to "bonds" container and terminate this search branch.
     else if ( curr_node->get_type() < LINK_NODE_TYPE )
     {
-        if ( std::find( bonds.begin(), bonds.end(), curr_node ) == bonds.end())
+        if ( bonds_set.find( curr_node ) == bonds_set.end() )
         {
-            bonds.push_back( curr_node );
+            bonds_set.insert( curr_node );
+            bonds_vec.push_back( curr_node );
         }
     }    
 }
 
+// gather descendents of a node
+void
+PatternGraph::gather_subtree ( Node * curr_node, node_container_t & visited, node_container_t & bonds )
+{
+    std::set<Node*> visited_set(visited.begin(), visited.end());
+    std::set<Node*> bonds_set(bonds.begin(), bonds.end());
+    gather_subtree_impl(curr_node, visited, bonds, visited_set, bonds_set);
+}
+
+
+// Helper to perform the actual gather recursively, tracking visited in a set.
+void gather_connected_impl( Node * curr_node, node_container_t & visited_vec, std::set<Node*> & visited_set )
+{
+    if ( visited_set.find( curr_node ) == visited_set.end() )
+    {
+        visited_set.insert( curr_node );
+        visited_vec.push_back( curr_node );
+
+        for ( auto node_const_iter = curr_node->edges_in_begin();  node_const_iter != curr_node->edges_in_end();  ++node_const_iter )
+            gather_connected_impl ( *node_const_iter, visited_vec, visited_set );
+
+        for ( auto node_const_iter = curr_node->edges_out_begin();  node_const_iter != curr_node->edges_out_end();  ++node_const_iter )
+            gather_connected_impl ( *node_const_iter, visited_vec, visited_set );
+    }
+}
 
 // gather nodes connected to a node by any path (forward of reverse)
 void
 PatternGraph::gather_connected ( Node * curr_node, node_container_t & visited )
 {
-    if ( std::find( visited.begin(), visited.end(), curr_node ) == visited.end() )
-    {
-        visited.push_back( curr_node );
-
-        for ( node_const_iter = curr_node->edges_in_begin();  node_const_iter != curr_node->edges_in_end();  ++node_const_iter )
-            gather_connected ( *node_iter, visited );
-
-        for ( node_const_iter = curr_node->edges_out_begin();  node_const_iter != curr_node->edges_out_end();  ++node_const_iter )
-            gather_connected ( *node_iter, visited );
-    }  
+    // O(N) setup, but prevents O(N^2) traversal behavior for highly-connected or large components.
+    std::set<Node*> visited_set(visited.begin(), visited.end());
+    gather_connected_impl(curr_node, visited, visited_set);
 }
 
 

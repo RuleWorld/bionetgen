@@ -102,7 +102,7 @@ int main(int argc, char *argv[]){
 	fprintf(stdout, "run_network %s\n", RUN_NETWORK_VERSION);
 	fflush(stdout);
 	// Variables //
-	register int i/*, j*/;
+	int i/*, j*/;
     char *netfile_name, *network_name;
     char *group_input_file_name = NULL;
     char *save_file_name;
@@ -530,7 +530,7 @@ int main(int argc, char *argv[]){
 	/* Save network to file */
 	if (save_file) {
 		if (outpre) {
-			sprintf(buf, "%s.net", outpre);
+			snprintf(buf, sizeof(buf), "%s.net", outpre);
 			save_file_name = strdup(buf);
 		}
 		else {
@@ -1005,8 +1005,8 @@ int main(int argc, char *argv[]){
 					print_flux_network(flux_file,t,discrete);
 				}
 				if (print_save_net){
-					if (outpre) sprintf(buf, "%s_save.net", outpre);
-					else sprintf(buf, "save.net");
+					if (outpre) snprintf(buf, sizeof(buf), "%s_save.net", outpre);
+					else snprintf(buf, sizeof(buf), "save.net");
 					out = fopen(buf, "w");
 					print_network(out);
 					fclose(out);
@@ -1042,7 +1042,7 @@ int main(int argc, char *argv[]){
 			if (n == outtime) {
 				char buf[1000];
 				FILE *outfile;
-				sprintf(buf, "%s.m", outpre);
+				snprintf(buf, sizeof(buf), "%s.m", outpre);
 				outfile = fopen(buf, "w");
 				init_sparse_matlab_file(outfile);
 				sparse_jac_matlab(outfile);
@@ -1079,8 +1079,8 @@ int main(int argc, char *argv[]){
 
 	/* Print final concentrations in species list */
 	if (print_end_net){
-		if (outpre) sprintf(buf, "%s_end.net", outpre);
-		else sprintf(buf, "end.net");
+		if (outpre) snprintf(buf, sizeof(buf), "%s_end.net", outpre);
+		else snprintf(buf, sizeof(buf), "end.net");
 		out = fopen(buf, "w");
 		print_network(out);
 		fclose(out);

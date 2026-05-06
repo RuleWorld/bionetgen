@@ -66,12 +66,11 @@ class Species:
         if deadMolecule == None:
             return
         bondNumbers = deadMolecule.getBondNumbers()
+        bond_strs = {str(n) for n in bondNumbers}
         self.molecules.remove(deadMolecule)
         for element in self.molecules:
             for component in element.components:
-                for number in bondNumbers:
-                    if str(number) in component.bonds:
-                        component.bonds.remove(str(number))
+                component.bonds[:] = [b for b in component.bonds if b not in bond_strs]
     
     def getMolecule(self,moleculeName):
         for molecule in self.molecules:
@@ -122,25 +121,30 @@ class Species:
     def extend(self,species,update=True):
         if(len(self.molecules) == len(species.molecules)):
             for (selement,oelement) in zip(self.molecules,species.molecules):
+                selement_component_names = {x.name for x in selement.components}
                 for component in oelement.components:
-                    if component.name not in [x.name for x in selement.components]:
+                    if component.name not in selement_component_names:
                         selement.components.append(component)
+                        selement_component_names.add(component.name)
                     else:
                         for element in selement.components:
                             if element.name == component.name:
                                 element.addStates(component.states,update)
                                 
         else:
+            self_molecule_names = {x.name for x in self.molecules}
             for element in species.molecules:
-                if element.name not in [x.name for x in self.molecules]:
-                    
+                if element.name not in self_molecule_names:
                     self.addMolecule(deepcopy(element),update)
+                    self_molecule_names.add(element.name)
                 else:
                     for molecule in self.molecules:
                         if molecule.name == element.name:
+                            molecule_component_names = {x.name for x in molecule.components}
                             for component in element.components:
-                                if component.name not in [x.name for x in molecule.components]:
+                                if component.name not in molecule_component_names:
                                     molecule.addComponent(deepcopy(component),update)
+                                    molecule_component_names.add(component.name)
                                 else:
                                     comp = molecule.getComponent(component.name)
                                     for state in component.states:
@@ -340,10 +344,12 @@ class Molecule:
         if not overlap:
             self.components.append(component)
         else:
-            if not component.name in [x.name for x in self.components]:
+            # ⚡ Bolt: Use getComponent directly to combine existence check and retrieval,
+            # avoiding an O(N) list comprehension.
+            compo = self.getComponent(component.name)
+            if compo is None:
                 self.components.append(component)
             else:
-                compo = self.getComponent(component.name)
                 for state in component.states:
                     compo.addState(state)
     
@@ -360,13 +366,16 @@ class Molecule:
         
     def getComponent(self,componentName):
         for component in self.components:
-            if componentName == component.getName():
+            # ⚡ Bolt: Direct attribute access is faster than method call overhead
+            if componentName == component.name:
                 return component
                 
     def removeComponent(self,componentName):
-        x = [x for x in self.components if x.name == componentName]
-        if x != []:
-            self.components.remove(x[0])
+        # ⚡ Bolt: Fast-exit loop replaces full O(N) list comprehension and O(N) .remove()
+        for i, x in enumerate(self.components):
+            if x.name == componentName:
+                del self.components[i]
+                break
             
     def removeComponents(self,components):
         for element in components:
@@ -374,7 +383,7 @@ class Molecule:
                 self.components.remove(element)
                 
     def addBond(self,componentName,bondName):
-        bondNumbers = self.getBondNumbers()
+        bondNumbers = set(self.getBondNumbers())
         while bondName in bondNumbers:
             bondName += 1
         component = self.getComponent(componentName)
@@ -384,7 +393,7 @@ class Molecule:
         return [x for x in self.components if x.bonds != []]
         
     def contains(self,componentName):
-        return componentName in [x.name for x in self.components]
+        return any(componentName == x.name for x in self.components)
         
     def __str__(self):
         return self.name + '(' + ','.join(sorted([str(x) for x in self.components])) + ')' + self.compartment
@@ -397,24 +406,34 @@ class Molecule:
         return self.name + '(' + ','.join([x.str2() for x in self.components]) + ')'
         
     def extend(self,molecule):
+        # ⚡ Bolt: Use O(N) dict lookup instead of O(N^2) list comprehension per element
+        comp_dict = {}
+        for x in self.components:
+            if x.name not in comp_dict:
+                comp_dict[x.name] = x
+
         for element in molecule.components:
-            comp = [x for x in self.components if x.name == element.name]
-            if len(comp) == 0:
-                self.components.append(deepcopy(element))
+            if element.name not in comp_dict:
+                new_comp = deepcopy(element)
+                self.components.append(new_comp)
+                comp_dict[element.name] = new_comp
             else:
+                comp = comp_dict[element.name]
                 for bond in element.bonds:
-                    comp[0].addBond(bond)
+                    comp.addBond(bond)
                 for state in element.states:
-                    comp[0].addState(state)
+                    comp.addState(state)
                     
     def reset(self):
         for element in self.components:
             element.reset()
             
     def update(self,molecule):
+        self_component_names = set(x.name for x in self.components)
         for comp in molecule.components:
-            if comp.name not in [x.name for x in self.components]:
+            if comp.name not in self_component_names:
                 self.components.append(deepcopy(comp))
+                self_component_names.add(comp.name)
                 
     def graphVizGraph(self,graph,identifier,components=None,flag=False):
         moleculeDictionary = {}
@@ -466,9 +485,12 @@ class Component:
             self.setActiveState(state)
         #print 'LALALA',state
     def addStates(self,states,update=True):
+        # ⚡ Bolt: Use O(1) set lookups instead of O(N^2) list lookups
+        current_states = set(self.states)
         for state in states:
-            if state not in self.states:
+            if state not in current_states:
                 self.addState(state,update)
+                current_states.add(state)
         
     def addBond(self,bondName):
         if not bondName in self.bonds:

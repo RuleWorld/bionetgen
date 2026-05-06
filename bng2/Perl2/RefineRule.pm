@@ -493,8 +493,9 @@ sub restrict_rule
     }    
     
 
-    # TODO: we want to check that reactants can interact here, but compartments aren't yet 
-    # supported in NFsim.  So we'll cross this bridge later.  --Justin
+    # check that reactant targets form an interacting Set (compartment check)
+    if ( @$reactants > 1 )
+    {   return undef unless ( SpeciesGraph::interactingSet(@$reactants) );   }
 
 
 	my ( $products ) = $rr->apply_operations( $matches );
@@ -735,8 +736,13 @@ sub restrict_rule
     }
 
 
-    # TODO: determine if we need to make any changes to handle MultScale
-    $child_rule->RateLaw->Factor( 1 );
+    # Account for differences in symmetry between the parent rule and the expanded child rule
+    my $mult_factor = 1.0;
+    if ( defined $rr->MultScale && defined $child_rule->MultScale )
+    {
+        $mult_factor = $rr->MultScale / $child_rule->MultScale;
+    }
+    $child_rule->RateLaw->Factor( $mult_factor );
       
     # add this child rule to RxnLabels
     $rr->RxnLabels->{$stringID} = $child_rule;
