@@ -2831,8 +2831,8 @@ sub findMap
         my $iR = 0;
         while ( $iR < @context_rgs )
         {
-            # TODO: make sure isomorphicTo works correctly on patterns!
-            if ( $crg->isomorphicTo($context_rgs[$iR]) )
+            if ( $crg->isomorphicToSubgraph($context_rgs[$iR]) &&
+                 $context_rgs[$iR]->isomorphicToSubgraph($crg) )
             {   # toss out this graph and increment instances
                 splice @context_rgs, $iR, 1;
                 ++$instances;
@@ -3333,14 +3333,13 @@ sub build_reaction
 		}
 
 		# Add the product Species
-	    unless ($iprod == -1)
-	    {   # TODO: the Fixed product feature will be depreacted in a future release
-	        unless ($rr->Products->[$iprod]->Fixed)
-	        {   push @$product_species, $spec;   }
-	    }
-	    else
-	    {   push @$product_species, $spec;   }
-
+		unless ($iprod == -1)
+		{   # Preserve deprecated behavior for fixed products to avoid silent model changes.
+			unless ($rr->Products->[$iprod]->Fixed)
+			{   push @$product_species, $spec;   }
+		}
+		else
+		{   push @$product_species, $spec;   }
 	}
 
     

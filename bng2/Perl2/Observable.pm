@@ -541,11 +541,11 @@ sub toXML
     {
         $string .= " type=\"" . $obs->Type . "\"";
     }
-    ## output flag (TODO: disable for now)
-    #if (defined $obs->Output)
-    #{
-    #    $string .= " output=\"" . $obs->Output . "\"";
-    #}
+    ## output flag
+    if (defined $obs->Output)
+    {
+        $string .= " output=\"" . $obs->Output . "\"";
+    }
         
 
     # Objects contained

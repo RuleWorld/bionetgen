@@ -39,7 +39,6 @@ int main(int argc, char* argv[]){
     char* fileName = "test.bngb";
     char* inFileAppend = ".bngb";
     char* outFileAppend = ".bngl";
-    char* cstrTemp;
     bool readRules();
     bool readSpecies();
     bool readMethod();
@@ -50,60 +49,55 @@ int main(int argc, char* argv[]){
 		cout << "File not found\n";
 		return 1;
 	}
-	if(strstr(fileName, inFileAppend) != NULL){
-	    cstrTemp = new char[strlen(fileName) - strlen(inFileAppend + 1)];
-        for(size_t i = 0; i < strlen(fileName) - strlen(inFileAppend + 1); i++)
-            cstrTemp[i] = fileName[i];
-        strncat(cstrTemp, outFileAppend + 1, strlen(outFileAppend));
-	}
-    else{
-        cstrTemp = new char[strlen(fileName) + strlen(outFileAppend) - 1];
-        strcpy(cstrTemp, fileName);
-        strcat(cstrTemp, outFileAppend);
+    string outFileName;
+    string sFileName = fileName;
+    size_t pos = sFileName.find(inFileAppend);
+    if (pos != string::npos) {
+        outFileName = sFileName.substr(0, pos) + outFileAppend;
+    } else {
+        outFileName = sFileName + outFileAppend;
     }
 
-    outfile.open(cstrTemp);
+    outfile.open(outFileName.c_str());
 	if(!outfile.is_open()){
 		cout << "Cannot create outfile\n";
 		return 1;
 	}
 
-    delete cstrTemp;
-
     c = infile.get();
     while(true){
-    	if(!infile.eof())
-    		if(c == '#'){
-    			c = infile.get();
-    			while(isspace(c)) // skip spaces
+	if(!infile.eof())
+		if(c == '#'){
+			c = infile.get();
+			while(isspace(c)) // skip spaces
                     c = infile.get();
-    			while(isalpha(c)){
-    				strHold += c;
-    				c = infile.get();
-    			}
-    			if(strHold == "species"){
-    			    strHold.resize(0);
-    				if(!readSpecies())
+			while(isalpha(c)){
+				strHold += c;
+				c = infile.get();
+			}
+			if(strHold == "species"){
+			    strHold.resize(0);
+				if(!readSpecies())
                         return 1;
-    			}
-    			else if(strHold == "rules"){
-    			    strHold.resize(0);
-    				if(!readRules())
+			}
+			else if(strHold == "rules"){
+			    strHold.resize(0);
+				if(!readRules())
                         return 1;
                     cout << "!"; // ***********************************************************
-    			}
-    			else if(strHold == "method"){
-    			    strHold.resize(0);
-    				if(!readMethod())
+			}
+			else if(strHold == "method"){
+			    strHold.resize(0);
+				if(!readMethod())
 						return 1;
-    			}
-    			else{
-    			    cout << "Invalid header on line " << lineCount << endl;
-    			    return 1;
-    			}
-    		}
-    	else
-    		break;
+			}
+			else{
+			    cout << "Invalid header on line " << lineCount << endl;
+			    return 1;
+			}
+		}
+	else
+		break;
     }
 
     writeOut();
@@ -179,14 +173,14 @@ bool readRules(){
     strHold.resize(0);
     while(true) // skip ', :, and =; if not there, error
         if(!isalnum(c) and c != '_' and c != '(' and c != '!'){
-        	strHold += c;
-        	c = infile.get();
+		strHold += c;
+		c = infile.get();
         }
         else
-        	break;
+		break;
     if(strHold != "': = "){
-    	cout << "Invalid formatting on line " << lineCount << endl;
-    	return false;
+	cout << "Invalid formatting on line " << lineCount << endl;
+	return false;
     }
     strHold.resize(0);
     for(int i = 0; i < 2; i++){ // do 2x, once for yes, once for not
@@ -197,7 +191,7 @@ bool readRules(){
                     c = infile.get();
                 }
                 else
-                	break;
+			break;
         }
         else if(i == 1)
             strHold = "!(" + strHold + ')';

@@ -488,7 +488,7 @@ sub toSBMLMultiSpeciesType
             $counter += 1;
             
         }
-      if(! $featuretypes eq ''){
+      if ($featuretypes ne ''){
         $st_string .= $indent. "<multi:listOfSpeciesFeatureTypes>\n";
         $st_string .= $featuretypes;
         $st_string .= $indent. "</multi:listOfSpeciesFeatureTypes>\n";

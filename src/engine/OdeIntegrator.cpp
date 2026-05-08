@@ -97,6 +97,27 @@ double evaluateRateString(const std::string& rateStr,
     return resolve(s);
 }
 
+// Checks if 'target' exists in 'text' bounded by non-word characters
+// Word characters are defined as alphanumeric or underscore.
+bool hasWordBoundaryMatch(const std::string& text, const std::string& target) {
+    if (target.empty() || text.length() < target.length()) {
+        return false;
+    }
+
+    std::size_t pos = text.find(target);
+    while (pos != std::string::npos) {
+        bool leftBoundary = (pos == 0) || (!std::isalnum(static_cast<unsigned char>(text[pos - 1])) && text[pos - 1] != '_');
+        bool rightBoundary = (pos + target.length() == text.length()) ||
+                             (!std::isalnum(static_cast<unsigned char>(text[pos + target.length()])) && text[pos + target.length()] != '_');
+
+        if (leftBoundary && rightBoundary) {
+            return true;
+        }
+        pos = text.find(target, pos + 1);
+    }
+    return false;
+}
+
 } // anonymous namespace
 
 
@@ -300,22 +321,31 @@ void OdeIntegrator::compile() {
         // Format in .net: "Sat kcat Km" or "MM kcat Km" or "Hill Vmax Kh n"
         bool isSatMMHill = false;
         bool isMM = false;  // True when rate law is MM (Michaelis-Menten), not Sat
+        std::size_t kwLen = 0;
         {
             std::string rlLower = rawRateLaw;
             std::transform(rlLower.begin(), rlLower.end(), rlLower.begin(), ::tolower);
             // Trim leading whitespace
-            auto start = rlLower.find_first_not_of(" \t");
+            auto start = rlLower.find_first_not_of(" \t\r\n");
             if (start != std::string::npos) rlLower = rlLower.substr(start);
 
-            if (rlLower.rfind("sat(", 0) == 0 || rlLower.rfind("sat ", 0) == 0 || rlLower.rfind("sat\t", 0) == 0) {
+            auto isWordPrefix = [](const std::string& str, const std::string& kw) {
+                if (str.rfind(kw, 0) != 0) return false;
+                if (str.size() == kw.size()) return true;
+                char nextC = str[kw.size()];
+                return nextC == ' ' || nextC == '\t' || nextC == '\r' || nextC == '\n' || nextC == '(';
+            };
+
+            if (isWordPrefix(rlLower, "sat")) {
                 isSatMMHill = true;
-            }
-            if (rlLower.rfind("mm(", 0) == 0 || rlLower.rfind("mm ", 0) == 0 || rlLower.rfind("mm\t", 0) == 0) {
+                kwLen = 3;
+            } else if (isWordPrefix(rlLower, "mm")) {
                 isSatMMHill = true;
                 isMM = true;
-            }
-            if (rlLower.rfind("hill(", 0) == 0 || rlLower.rfind("hill ", 0) == 0 || rlLower.rfind("hill\t", 0) == 0) {
+                kwLen = 2;
+            } else if (isWordPrefix(rlLower, "hill")) {
                 isSatMMHill = true;
+                kwLen = 4;
             }
         }
 
@@ -332,28 +362,42 @@ void OdeIntegrator::compile() {
             std::vector<std::string> paramNames;
             {
                 std::string cleaned = rawRateLaw;
-                // Strip function call syntax: Sat(kcat,Km) → kcat Km
-                auto paren = cleaned.find('(');
-                if (paren != std::string::npos) {
-                    cleaned = cleaned.substr(paren + 1);
-                    auto cparen = cleaned.rfind(')');
-                    if (cparen != std::string::npos) cleaned = cleaned.substr(0, cparen);
-                    // Split by comma
+
+                // Trim leading whitespace
+                auto startP = cleaned.find_first_not_of(" \t\r\n");
+                if (startP != std::string::npos) cleaned = cleaned.substr(startP);
+                else cleaned.clear();
+
+                // Trim trailing whitespace
+                auto endP = cleaned.find_last_not_of(" \t\r\n");
+                if (endP != std::string::npos) cleaned = cleaned.substr(0, endP + 1);
+
+                // Remove keyword
+                cleaned = cleaned.substr(kwLen);
+
+                // Trim leading whitespace again
+                startP = cleaned.find_first_not_of(" \t\r\n");
+                if (startP != std::string::npos) cleaned = cleaned.substr(startP);
+                else cleaned.clear();
+
+                if (!cleaned.empty() && cleaned.front() == '(' && cleaned.back() == ')') {
+                    cleaned = cleaned.substr(1, cleaned.size() - 2);
                     std::istringstream css(cleaned);
                     std::string tok;
                     while (std::getline(css, tok, ',')) {
-                        // Trim whitespace
-                        tok.erase(0, tok.find_first_not_of(" \t"));
-                        tok.erase(tok.find_last_not_of(" \t") + 1);
-                        if (!tok.empty()) paramNames.push_back(tok);
+                        auto f = tok.find_first_not_of(" \t\r\n");
+                        if (f != std::string::npos) {
+                            tok.erase(0, f);
+                            tok.erase(tok.find_last_not_of(" \t\r\n") + 1);
+                            paramNames.push_back(tok);
+                        }
                     }
                 } else {
-                    // Space-separated: "Sat kcat Km"
                     std::istringstream rlStream(cleaned);
-                    std::string typeName;
-                    rlStream >> typeName;  // skip "Sat"/"MM"/"Hill"
                     std::string tok;
-                    while (rlStream >> tok) paramNames.push_back(tok);
+                    while (rlStream >> tok) {
+                        paramNames.push_back(tok);
+                    }
                 }
             }
 
@@ -447,8 +491,8 @@ void OdeIntegrator::compile() {
                     const auto& fname = func.getName();
                     std::string fnameLower = fname;
                     std::transform(fnameLower.begin(), fnameLower.end(), fnameLower.begin(), ::tolower);
-                    if (rateLawLower.find(fnameLower) != std::string::npos ||
-                        rawRL.find(fname) != std::string::npos) {
+                    if (hasWordBoundaryMatch(rateLawLower, fnameLower) ||
+                        hasWordBoundaryMatch(rawRL, fname)) {
                         isFunctional = true;
                         matchedFuncName = fname;
                         break;
@@ -487,7 +531,7 @@ void OdeIntegrator::compile() {
             for (const auto& func : model_.getFunctions()) {
                 std::string fnameLow = func.getName();
                 std::transform(fnameLow.begin(), fnameLow.end(), fnameLow.begin(), ::tolower);
-                if (rlLow.find(fnameLow) != std::string::npos) {
+                if (hasWordBoundaryMatch(rlLow, fnameLow) || hasWordBoundaryMatch(rawRL, func.getName())) {
                     crxn.isFunctional = true;
                     // Parse the full rate law string into an expression so that
                     // compound expressions like "k * funcName()" are preserved.
@@ -552,7 +596,7 @@ void OdeIntegrator::compile() {
                     // name is not a built-in).
                     if (!needsRuntime && str.find('(') != std::string::npos) {
                         for (const auto& func : model_.getFunctions()) {
-                            if (str.find(func.getName()) != std::string::npos) {
+                            if (hasWordBoundaryMatch(str, func.getName())) {
                                 needsRuntime = true;
                                 break;
                             }

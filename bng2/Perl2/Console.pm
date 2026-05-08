@@ -142,10 +142,10 @@ sub BNGconsole
                 }
                    
                 my ($action, $options); 
-			    if ( $linein =~ /^\s*(\w+)\s*\((.*)\);?\s*$/ )
-			    {   # syntax:  "action(options)"
+			    if ( $linein =~ /^\s*([A-Za-z_]\w*)\s*(?:\(\s*(.*)\s*\))?\s*;?\s*$/ )
+			    {   # syntax:  "action(options)" or "action"
                     $action = $1;
-                    $options = $2;
+                    $options = defined $2 ? $2 : "";
                 }
                 else
                 {
@@ -153,8 +153,12 @@ sub BNGconsole
                     last PROCESS_INPUT;
                 }
 		    	
-                # define action
-                my $command = '$model->' . $action . '(' . $options . ');';
+                # check if action is valid
+                if (!$model->can($action))
+                {
+                    send_warning( "Problem executing action: Invalid action: $action." );
+                    last PROCESS_INPUT;
+                }
                 print "Begin action $action\n";
     
 	            # Perform self-consistency checks before operations are performed on model
@@ -170,15 +174,15 @@ sub BNGconsole
                 # execute action
                 my $t_start = cpu_time(0);
                 {
-		    	    my $err = eval $command;
-                    if ($@)
+                    my ($err, $eval_err) = BNGModel::_invoke_model_action($model, $action, $options);
+                    if ($eval_err)
                     {
-                        send_warning("Problem executing action: $@.");
+                        send_warning("Problem executing action: $eval_err.");
                         last PROCESS_INPUT;
                     }
                     if ($err)
                     {
-                        send_warning("Problem executing action: $err.");
+                        send_warning("Problem executing action: $err");
                         last PROCESS_INPUT;
                     }
 		    	    my $t_elapsed = cpu_time($t_start);

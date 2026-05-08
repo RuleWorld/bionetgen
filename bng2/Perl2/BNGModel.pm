@@ -29,6 +29,7 @@ package BNGModel;
 # pragmas
 use strict;
 use warnings;
+use Safe;
 no warnings 'redefine';
 
 # Perl Modules
@@ -40,6 +41,7 @@ use File::Spec::Win32;
 use POSIX ("floor", "ceil");
 use Scalar::Util ("looks_like_number");
 use Config;
+use Safe;
 
 use Cwd;
 
@@ -152,6 +154,203 @@ sub readModel
 }
 
 
+# Split a comma-separated expression at top level only (outside quotes/brackets).
+sub _split_top_level_commas
+{
+    my $text = shift;
+    my @parts = ();
+    my $buf = '';
+    my @stack = ();
+    my $in_single = 0;
+    my $in_double = 0;
+    my $escaped = 0;
+
+    foreach my $ch (split //, $text)
+    {
+        if ($escaped)
+        {
+            $buf .= $ch;
+            $escaped = 0;
+            next;
+        }
+
+        if ($ch eq '\\')
+        {
+            $buf .= $ch;
+            $escaped = 1;
+            next;
+        }
+
+        if ($in_single)
+        {
+            $buf .= $ch;
+            $in_single = 0 if ($ch eq "'");
+            next;
+        }
+        if ($in_double)
+        {
+            $buf .= $ch;
+            $in_double = 0 if ($ch eq '"');
+            next;
+        }
+
+        if ($ch eq "'")
+        {
+            $buf .= $ch;
+            $in_single = 1;
+            next;
+        }
+        if ($ch eq '"')
+        {
+            $buf .= $ch;
+            $in_double = 1;
+            next;
+        }
+
+        if ($ch eq '{' or $ch eq '[' or $ch eq '(')
+        {
+            push @stack, $ch;
+            $buf .= $ch;
+            next;
+        }
+        if ($ch eq '}' or $ch eq ']' or $ch eq ')')
+        {
+            pop @stack;
+            $buf .= $ch;
+            next;
+        }
+
+        if ($ch eq ',' and !@stack)
+        {
+            push @parts, $buf;
+            $buf = '';
+            next;
+        }
+
+        $buf .= $ch;
+    }
+
+    push @parts, $buf if (length $buf);
+    return @parts;
+}
+
+
+# Validate action option syntax without evaluating Perl code.
+sub _validate_action_options_syntax
+{
+    my $options = shift;
+
+    return '' unless defined $options;
+    return '' if ($options =~ /^\s*$/s);
+
+    # Block statement separators and command-substitution chars.
+    if ($options =~ /[;`]/)
+    {
+        return "Options contain forbidden characters.";
+    }
+
+    # Check delimiter/quote balance.
+    my @stack = ();
+    my $in_single = 0;
+    my $in_double = 0;
+    my $escaped = 0;
+    foreach my $ch (split //, $options)
+    {
+        if ($escaped) { $escaped = 0; next; }
+        if ($ch eq '\\') { $escaped = 1; next; }
+
+        if ($in_single) { $in_single = 0 if ($ch eq "'"); next; }
+        if ($in_double) { $in_double = 0 if ($ch eq '"'); next; }
+
+        if ($ch eq "'") { $in_single = 1; next; }
+        if ($ch eq '"') { $in_double = 1; next; }
+
+        if ($ch eq '{' or $ch eq '[' or $ch eq '(') { push @stack, $ch; next; }
+        if ($ch eq '}' or $ch eq ']' or $ch eq ')')
+        {
+            return "Unmatched closing delimiter in options." unless @stack;
+            my $open = pop @stack;
+            return "Mismatched delimiters in options." if (
+                ($open eq '{' and $ch ne '}') or
+                ($open eq '[' and $ch ne ']') or
+                ($open eq '(' and $ch ne ')')
+            );
+        }
+    }
+    return "Unterminated quoted string in options." if ($in_single or $in_double);
+    return "Unmatched opening delimiter in options." if (@stack);
+
+    my $expr = $options;
+    $expr =~ s/^\s+|\s+$//g;
+    if ($expr =~ /^\{(.*)\}$/s)
+    {
+        $expr = $1;
+    }
+
+    return '' if ($expr =~ /^\s*$/s);
+
+    my @items = _split_top_level_commas($expr);
+    foreach my $item (@items)
+    {
+        $item =~ s/^\s+|\s+$//g;
+        next if ($item eq '');
+        # Accept both legacy positional arguments and key=>value pairs.
+        # If a token uses '=>', enforce a key=>value shape.
+        if ($item =~ /=>/ and $item !~ /^(?:[A-Za-z_]\w*|'[^']+'|"[^"]+")\s*=>\s*.+$/s)
+        {
+            return "Invalid option element '$item'. Expected key=>value syntax.";
+        }
+    }
+
+    return '';
+}
+
+
+sub _safe_reval_literal
+{
+    my ($expr) = @_;
+
+    my $cpt = Safe->new;
+    $cpt->permit(qw(:base_core :base_math :base_mem));
+
+    local $@;
+    my $value = $cpt->reval($expr);
+    my $eval_err = $@;
+
+    return ($value, $eval_err);
+}
+
+
+sub _parse_action_args
+{
+    my ($options) = @_;
+
+    return ([], '') unless defined $options and $options =~ /\S/;
+
+    my ($args_ref, $eval_err) = _safe_reval_literal("[$options]");
+    return (undef, $eval_err) if $eval_err;
+    return (undef, "Action options did not parse to an argument list.")
+        unless ref($args_ref) eq 'ARRAY';
+
+    return ($args_ref, '');
+}
+
+
+sub _invoke_model_action
+{
+    my ($model, $action, $options) = @_;
+
+    my ($args_ref, $parse_err) = _parse_action_args($options);
+    return ('', $parse_err) if $parse_err;
+
+    local $@;
+    my $result = eval { $model->$action(@$args_ref) };
+    my $eval_err = $@;
+
+    return ($result, $eval_err);
+}
+
+
 # read Network from file
 # $err = $model->readModel({file=>FILENAME}) 
 sub readNetwork
@@ -195,7 +394,8 @@ sub readSBML
     my $bindir = File::Spec->catpath($vol, $dir);
 
     # Begin writing command: start with 'program'
-    my @cmd = ($program, '-i', $filepath, '-o', $outfile);
+    # Convert filepaths to absolute paths to prevent argument injection if the path starts with a hyphen
+    my @cmd = ($program, '-i', File::Spec->rel2abs($filepath), '-o', File::Spec->rel2abs($outfile));
     if ($args{"atomize"}){
         push @cmd, '-a';
     }
@@ -943,8 +1143,17 @@ sub readSBML
                                 $err = errgen( $err, $lno );
                             }
     
-                            # TODO: validate action                        
-                            # TODO: validate option syntax
+                            unless ($model->can($action))
+                            {
+                                $err = errgen( "Invalid action: $action", $lno );
+                                goto EXIT;
+                            }
+
+                            if (my $syntax_err = _validate_action_options_syntax($options))
+                            {
+                                $err = errgen( "Invalid option syntax: $syntax_err", $lno );
+                                goto EXIT;
+                            }
     
                             # Perform self-consistency checks before operations are performed on model
                             if ( $err = $model->ParamList->check() )
@@ -953,11 +1162,11 @@ sub readSBML
                                 goto EXIT;
                             }
     
-                            # execute action        
-                            my $command = sprintf "\$model->%s(%s);", $action, $options;
+                            # Execute the action without string eval after validating the option syntax.
                             my $t_start = cpu_time(0);
-                            $err = eval $command;
-                            if ($@)   { $err = errgen($@);    goto EXIT; }
+                            my $eval_err;
+                            ($err, $eval_err) = _invoke_model_action($model, $action, $options);
+                            if ($eval_err) { $err = errgen($eval_err); goto EXIT; }
                             if ($err) { $err = errgen($err);  goto EXIT; }
                             my $t_elapsed = cpu_time($t_start);
                             printf "CPU TIME: %s %.2f s.\n", $action, $t_elapsed;
@@ -1032,9 +1241,12 @@ sub readSBML
                     {  $err = errgen($err);  goto EXIT;  }
     
                     # call to methods associated with $model
-                    my $command = '$model->' . $action . '(' . $options . ');';
-                    $err = eval $command;
-                    if ($@)   {  $err = errgen($@);    goto EXIT;  }
+                    if (my $syntax_err = _validate_action_options_syntax($options))
+                    {  $err = errgen( "Invalid option syntax: $syntax_err" );  goto EXIT;  }
+
+                    my $eval_err;
+                    ($err, $eval_err) = _invoke_model_action($model, $action, $options);
+                    if ($eval_err)   {  $err = errgen($eval_err);    goto EXIT;  }
                     if ($err) {  $err = errgen($err);  goto EXIT;  }
                 }
     
@@ -1064,6 +1276,18 @@ sub readSBML
                         {   send_warning( errgen("Skipping actions") );   }
                         next;
                     }
+
+                    unless ($model->can($action))
+                    {
+                        $err = errgen( "Invalid action: $action" );
+                        goto EXIT;
+                    }
+
+                    if (my $syntax_err = _validate_action_options_syntax($options))
+                    {
+                        $err = errgen( "Invalid option syntax: $syntax_err" );
+                        goto EXIT;
+                    }
     
                     # Perform self-consistency checks before operations are performed on model
                     if ( $err = $model->ParamList->check() )
@@ -1072,12 +1296,11 @@ sub readSBML
                         goto EXIT;
                     }
     
-                    # execute action
-                    my $command = sprintf "\$model->%s(%s);", $action, $options;
-    
-                     my $t_start = cpu_time(0);                    
-                    $err = eval $command;
-                    if ($@)   { $err = errgen($@);    goto EXIT; }
+                    # Execute the action without string eval after validating the option syntax.
+                    my $t_start = cpu_time(0);
+                    my $eval_err;
+                    ($err, $eval_err) = _invoke_model_action($model, $action, $options);
+                    if ($eval_err) { $err = errgen($eval_err); goto EXIT; }
                     if ($err) { $err = errgen($err);  goto EXIT; }
                     my $t_elapsed = cpu_time($t_start);
                     printf "CPU TIME: %s %.2f s.\n", $action, $t_elapsed;
@@ -1376,7 +1599,7 @@ sub writeFile
     );
 
     # change this to a constant?
-    my %allowed_formats = ( 'net'=>1, 'bngl'=>1, 'sbml'=>0, 'xml'=>1, 'ssc'=>0 );
+    my %allowed_formats = ( 'net'=>1, 'bngl'=>1, 'sbml'=>1, 'xml'=>1, 'ssc'=>1 );
 
     # copy user_params into params and pass_params structures
     foreach my $key ( keys %$user_params )
@@ -1414,11 +1637,14 @@ sub writeFile
     return undef if $NO_EXEC;
 
     ## Execute the Action ##
+    my %extensions = ( 'net'=>'net', 'bngl'=>'bngl', 'sbml'=>'xml', 'xml'=>'xml', 'ssc'=>'rxn' );
+    my $ext = $extensions{$params{'format'}} || $params{'format'};
+
     # first, build output filename
     my $file = $params{prefix};
     unless ( $params{suffix} eq '' )
     {   $file .= "_$params{suffix}";   }
-    $file .= ".$params{format}";
+    $file .= ".$ext";
 
     # now check if we're overwriting an existing file
     if ( -e $file )
@@ -1454,12 +1680,23 @@ sub writeFile
     {   # write XML format
         $file_string = $model->toXML( \%params );
     }
+    elsif ( $params{'format'} eq 'sbml' )
+    {
+        return $model->writeSBML( \%params );
+    }
+    elsif ( $params{'format'} eq 'ssc' )
+    {
+        return $model->writeSSC( \%params );
+    }
 
-    # write the string to file
-    my $FH;
-    open($FH, '>', $file)  or  return "Couldn't write to $file: $!\n";
-    print $FH $file_string;
-    close $FH;
+    if ( defined $file_string )
+    {
+        # write the string to file
+        my $FH;
+        open($FH, '>', $file)  or  return "Couldn't write to $file: $!\n";
+        print $FH $file_string;
+        close $FH;
+    }
 
     # all done
     print sprintf( "Wrote %s in %s format to %s.\n", $output, $params{'format'}, $file);
@@ -1683,7 +1920,8 @@ sub setOption
         unless (@_) { return "No value specified for option $arg"; }
         my $val = shift @_;
         
-        # TODO: print arg and val to user?
+        my $val_str = defined $val ? $val : 'undef';
+        print "Setting option $arg => $val_str\n";
 
         if ( $arg eq "SpeciesLabel" )
         {
@@ -1702,8 +1940,17 @@ sub setOption
         }
         elsif ( $arg eq "NumberPerQuantityUnit" )
         {   # set conversion from quantity units to pure numbers
-            # TODO: allow this to be a parameter?
-            $model->Options->{$arg} = $val;
+            require Scalar::Util;
+            if ( Scalar::Util::looks_like_number($val) )
+            {   $model->Options->{$arg} = $val;   }
+            else
+            {
+                my ( $param, $err ) = $model->ParamList->lookup($val);
+                if ( defined $param )
+                {   $model->Options->{$arg} = $val;   }
+                else
+                {   return "Invalid value or parameter for $arg: $val";   }
+            }
         }
         elsif ( $arg eq "MoleculesObservables" )
         {   # set molecules observables mode

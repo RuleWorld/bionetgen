@@ -3560,7 +3560,7 @@ void sparse_jac_matlab(FILE* outfile) {
 		exit(1);
 	}
 
-	sprintf(matname, "jac");
+	snprintf(matname, sizeof(matname), "jac");
 	fprintf(outfile, "%s = sparse([%d], [%d], [0]);\n", matname, n_species,
 			n_species);
 
@@ -4028,7 +4028,7 @@ FILE *init_print_concentrations_network(char* prefix, int append){
 	if (append) mode = (char*)"a";
 	else mode = (char*)"w";
 
-	sprintf(buf, "%s.cdat", prefix);
+	snprintf(buf, sizeof(buf), "%s.cdat", prefix);
 	if (!(out = fopen(buf, mode))) {
 		++error;
 		fprintf(stderr, "Couldn't open file %s.\n", buf);
@@ -4111,7 +4111,7 @@ FILE* init_print_group_concentrations_network(char* prefix, int append, bool no_
 		out = NULL;
 		return (out); // exit
 	}*/
-        sprintf(buf, "%s.gdat", prefix);
+        snprintf(buf, sizeof(buf), "%s.gdat", prefix);
 
 	if (!(out = fopen(buf, mode))) {
 		++error;
@@ -4292,7 +4292,7 @@ FILE* init_print_species_stats(char* prefix, int append) {
 	else
 		mode = (char*)"w";
 
-	sprintf(buf, "%s.jdat", prefix);
+	snprintf(buf, sizeof(buf), "%s.jdat", prefix);
 	if (!(out = fopen(buf, mode))) {
 		++error;
 		fprintf(stderr, "Couldn't open file %s.\n", buf);
@@ -4354,7 +4354,7 @@ FILE* init_print_flux_network(char* prefix) {
 	int error = 0;
 	char buf[1000];
 
-	sprintf(buf, "%s.fdat", prefix);
+	snprintf(buf, sizeof(buf), "%s.fdat", prefix);
 	printf("Writing fluxes to file %s.\n", buf);
 	if (!(out = fopen(buf, "w"))) {
 		++error;

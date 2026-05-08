@@ -150,7 +150,7 @@ public class ReactionAction {
 													tempBonds.put(label[counter], new ArrayList<String>());
 													tempBonds.get(label[counter]).add("DeleteBond");
 												}
-													tempBonds.get(label[counter]).add(species2.getName() + "_C" + (j+1));
+													tempBonds.get(label[counter]).add(species1.getName() + "_C" + (i+1));
 											}
 												
 										}
@@ -162,7 +162,7 @@ public class ReactionAction {
 													tempBonds.put(label[counter], new ArrayList<String>());
 													tempBonds.get(label[counter]).add("AddBond");
 												}
-												tempBonds.get(label[counter]).add(species1.getName() + "_C" + (i+1));
+												tempBonds.get(label[counter]).add(species2.getName() + "_C" + (j+1));
 											}
 										}
 										species2.getComponents()[j] = "";	

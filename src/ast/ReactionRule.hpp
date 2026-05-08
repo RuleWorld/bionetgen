@@ -96,7 +96,7 @@ private:
     std::vector<EmbeddingResult> findEmbeddingsForSpecies(
         std::size_t patternIndex,
         const SpeciesList& speciesList,
-        const std::unordered_set<std::size_t>& candidateSpecies,
+        const std::vector<std::size_t>& candidateSpecies,
         const Model* model = nullptr) const;
 
     bool buildReaction(
@@ -122,7 +122,7 @@ private:
     mutable bool synthesisApplied_ = false;
     mutable std::size_t lastSpeciesListCapacity_ = 0;
     mutable std::unique_ptr<ReactionRule> reverseRule_;
-    mutable std::map<std::size_t, std::size_t> lastProcessedInIteration_;
+    mutable std::vector<std::size_t> lastProcessedInIteration_;
     bool hasScopePrefix_ = false;  // true if rule uses %x:: scope prefix syntax
 
     // Tag-based component mapping: product ComponentRef → reactant ComponentRef

@@ -133,45 +133,6 @@ sub checkLocalDependency
     return  $fcn->Expr->checkLocalDependency( $plist, $level+1 );
 }
 
-
-###
-###
-###
-
-
-# check function equivalence
-sub equivalent
-{
-    my $fcn1 = shift;
-    my $fcn2 = shift;
-    my $plist = (@_) ? shift : undef;
-    
-    # make sure we have defined expressions!
-    return 0  unless ( defined $fcn1  and  ref $fcn1 eq 'Function' );
-    return 0  unless ( defined $fcn2  and  ref $fcn2 eq 'Function' );
-    
-    # check if this is the same function object!
-    return 0  if ( $fcn1 == $fcn2 );
-    
-    # don't compare names!!!
-    
-    # check for same number of arguments
-    return 0  unless ( @{$fcn1->Args} == @{$fcn2->Args} );
-    
-    # compare arguments
-    for ( my $i = 0;  $i < @{$fcn1->Args};  ++$i )
-    {
-        return 0 unless ( $fcn1->Args->[$i] eq $fcn2->Args->[$i] );
-    }
-    
-    # check Expr equivalence
-    return 0  unless ( Expression::equivalent($fcn1->Expr, $fcn2->Expr, $plist) );
-
-    # no differences found, return true!  
-    return 1;
-}
-
-
 ###
 ###
 ###
@@ -381,7 +342,31 @@ sub toCVodeString
     if ( $arghash->{fcn_mode} eq 'call' )
     {
         # generate the function call
-        my @args = ( @{$fcn->Args}, 'expressions', 'observables' );
+        my @args = ();
+        if ( @{$fcn->Args} )
+        {
+            if ( exists $arghash->{rrefs} and exists $arghash->{reactants} )
+            {
+                my $rrefs = $arghash->{rrefs};
+                my $reactants = $arghash->{reactants};
+                if ( ref $rrefs eq 'HASH' )
+                {
+                    foreach my $tag ( @{$fcn->Args} )
+                    {
+                        unless ( (exists $rrefs->{$tag}) and (exists $reactants->[$rrefs->{$tag}]) )
+                        {   return "could not find reactant or tag corresponding to ratelaw argument!";   }
+                        push @args, ($reactants->[$rrefs->{$tag}])->getCVodeName;
+                    }
+                }
+                else
+                {   return "ratelaw depends on tagged reactants and RRefs hash is missing!";   }
+            }
+            else
+            {
+                push @args, @{$fcn->Args};
+            }
+        }
+        push @args, 'expressions', 'observables';
         $string = $arghash->{indent} . $fcn->Name . '(' . join(',', @args) . ')';
     }
     elsif ( $arghash->{fcn_mode} eq 'declare' ) 
@@ -434,7 +419,31 @@ sub toMatlabString
     if ( $arghash->{fcn_mode} eq 'call' )
     {
         # generate the function call
-        my @args = ( @{$fcn->Args}, 'expressions', 'observables' );
+        my @args = ();
+        if ( @{$fcn->Args} )
+        {
+            if ( exists $arghash->{rrefs} and exists $arghash->{reactants} )
+            {
+                my $rrefs = $arghash->{rrefs};
+                my $reactants = $arghash->{reactants};
+                if ( ref $rrefs eq 'HASH' )
+                {
+                    foreach my $tag ( @{$fcn->Args} )
+                    {
+                        unless ( (exists $rrefs->{$tag}) and (exists $reactants->[$rrefs->{$tag}]) )
+                        {   return "could not find reactant or tag corresponding to ratelaw argument!";   }
+                        push @args, ($reactants->[$rrefs->{$tag}])->getMatlabName;
+                    }
+                }
+                else
+                {   return "ratelaw depends on tagged reactants and RRefs hash is missing!";   }
+            }
+            else
+            {
+                push @args, @{$fcn->Args};
+            }
+        }
+        push @args, 'expressions', 'observables';
         $string = $arghash->{indent} . $fcn->Name . '(' . join(',', @args) . ')';
     }
     elsif ( $arghash->{fcn_mode} eq 'declare' ) 

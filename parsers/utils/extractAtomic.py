@@ -59,7 +59,8 @@ def solveWildcards(atomicArray):
 def getMapping(mapp, site):
     for mapping in mapp:
         if site in mapping:
-            return [ x for x in mapping if x != site ][0]
+            # ⚡ Bolt: Use next() with generator instead of list comprehension + [0] for O(1) best-case early exit
+            return next((x for x in mapping if x != site), None)
 
 
 def extractTransformations(rules):

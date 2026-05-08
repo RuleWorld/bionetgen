@@ -5,7 +5,8 @@ import java.io.IOException;
 import java.io.FileWriter;
 
 import org.antlr.runtime.*;
-import org.antlr.stringtemplate.*;
+import org.antlr.stringtemplate.StringTemplate;
+import org.antlr.stringtemplate.StringTemplateGroup;
 import org.antlr.stringtemplate.language.*;
 
 
@@ -34,10 +35,10 @@ public class ParserCommands
 			//ast = getASTForFileName(fileName);
 			writeXMlTranslationForFileName(fileName);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
+			System.err.println("IOException while processing file: " + fileName);
 			e.printStackTrace();
 		} catch (RecognitionException e) {
-			// TODO Auto-generated catch block
+			System.err.println("RecognitionException while parsing file: " + fileName);
 			e.printStackTrace();
 		}
 		

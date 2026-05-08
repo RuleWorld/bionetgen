@@ -169,6 +169,7 @@ unless (@mandatory_args==5)
 
 # get mandatory arguments
 my ($file, $var, $var_min, $var_max, $n_pts) = @mandatory_args;
+$file = File::Spec->rel2abs($file);
 
 
 # Automatic assignment of prefix if unset
@@ -201,15 +202,15 @@ else{
 }
 
 # Read file 
-open(IN, $file) or die "Couldn't open file $file: $?\n";
+open(my $in_fh, "<", $file) or die "Couldn't open file $file: $!\n";
 my $script = "";
-while ( my $line = <IN> )
+while ( my $line = <$in_fh> )
 {
     $script .= $line;
     # Skip actions
     last if ($line =~ /^\s*end\s+model/);
 }
-close(IN);
+close($in_fh);
 
 # Require 'end model' directive
 if (!($script =~ /\n\s*end\s+model/)){
@@ -234,10 +235,10 @@ else
 my $scanmodel = File::Spec->catfile( ${prefix}, "${prefix}.bngl" );
 my $logfile   = File::Spec->catfile( ${prefix}, "${prefix}.log" );
 
-open(BNGL,">", $scanmodel) or die "Couldn't open $scanmodel for output";
-print BNGL $script;
-print BNGL "\n";
-print BNGL "generate_network({overwrite=>1})\n";
+open(my $bngl_fh, ">", $scanmodel) or die "Couldn't open $scanmodel for output";
+print $bngl_fh $script;
+print $bngl_fh "\n";
+print $bngl_fh "generate_network({overwrite=>1})\n";
 
 {
     my $val = $var_min;
@@ -245,11 +246,11 @@ print BNGL "generate_network({overwrite=>1})\n";
     {
         my $srun = sprintf "%05d", $run;
         if ($run > 1){
-            print BNGL "resetConcentrations()\n";
+            print $bngl_fh "resetConcentrations()\n";
         }
         my $x= $val;
         if ($log){ $x = exp($val);}
-        printf BNGL "setParameter(\"$var\",%.12g)\n", $x;
+        printf $bngl_fh "setParameter(\"$var\",%.12g)\n", $x;
         
         my $opt = "method=>$method";
         if ($pla_output){
@@ -262,12 +263,12 @@ print BNGL "generate_network({overwrite=>1})\n";
         if ($verbose){
         	$opt .= ",verbose=>1";
         }
-        printf BNGL "simulate({$opt})\n"; #"simulate_ode({$opt})\n";
+        printf $bngl_fh "simulate({$opt})\n"; #"simulate_ode({$opt})\n";
 
         $val += $delta;
     }  
 }
-close(BNGL);
+close($bngl_fh);
 
 
 
@@ -275,7 +276,9 @@ close(BNGL);
 
 # Run BioNetGen on ScanModel file
 print "Running BioNetGen on $scanmodel\n";
-my @command = ($perlbin, $bngexec, "--outdir", $prefix, $scanmodel);
+my $abs_prefix = File::Spec->rel2abs($prefix);
+my $abs_scanmodel = File::Spec->rel2abs($scanmodel);
+my @command = ($perlbin, $bngexec, "--outdir", $abs_prefix, $abs_scanmodel);
 
 # open logfile
 open( my $logFH, ">", $logfile ) or die $!;
@@ -321,7 +324,7 @@ $::CHILD_PID = undef;
 
 # Process output
 my $outfile = "${prefix}.scan";
-open(OUT,">", $outfile) or die "Couldn't open $outfile for output ($!)";
+open(my $out_fh, ">", $outfile) or die "Couldn't open $outfile for output ($!)";
 {
     my $val = $var_min;
     foreach my $run (1..$n_pts)
@@ -329,37 +332,37 @@ open(OUT,">", $outfile) or die "Couldn't open $outfile for output ($!)";
         # Get data from gdat file
         my $gdat_file = File::Spec->catfile( $prefix, sprintf("${prefix}_%05d.gdat", $run) );
         print "Extracting data from $gdat_file\n";
-        open(IN, "<", $gdat_file) or die "Couldn't open $gdat_file for input ($!)";
+        open(my $in_fh2, "<", $gdat_file) or die "Couldn't open $gdat_file for input ($!)";
         if ($run==1)
         {
-            my $head = <IN>;
+            my $head = <$in_fh2>;
             $head =~ s/^\s*\#//;
             my @heads = split(' ',$head);
             shift @heads;
-            printf OUT "# %+14s", $var;
+            printf $out_fh "# %+14s", $var;
             foreach my $head (@heads)
             {
-                printf OUT " %+16s", $head;
+                printf $out_fh " %+16s", $head;
             }
-            print OUT "\n";
+            print $out_fh "\n";
         }
         my $last;
-        while (my $line = <IN>) { $last = $line };
+        while (my $line = <$in_fh2>) { $last = $line };
         my @dat = split(' ',$last);
         my $time = shift @dat;
         my $x = $log ? exp($val) : $val;
-#        printf OUT "%16.8e %s\n", $x, join(' ',@dat);
-        printf OUT "%16.8e", $x;
+#        printf $out_fh "%16.8e %s\n", $x, join(' ',@dat);
+        printf $out_fh "%16.8e", $x;
         foreach my $data ( @dat )
         {
-            printf OUT " %16.8e", $data;
+            printf $out_fh " %16.8e", $data;
         }
-        print OUT "\n";
-        close(IN);
+        print $out_fh "\n";
+        close($in_fh2);
         $val += $delta;
     }
 }
-close(OUT);
+close($out_fh);
 print "Final state data printed to $outfile\n";
 exit 0;
 

@@ -61,22 +61,22 @@ class Annotation:
 		linesplit = line.split(':')
 		assert len(linesplit)==2,"Bad annotation. Use element: annotation format."
 		if annot_type in ['transformations','irreversibles']:
-			assert linesplit[0] in  [str(x) for x in names.t.keys()],"Cannot find transformation:"+linesplit[0]
+			assert linesplit[0] in  [str(x) for x in names.t],"Cannot find transformation:"+linesplit[0]
 			relevant_t = names.getIdx('t',linesplit[0])
 			self.t[relevant_t]=linesplit[1].strip()
 		
 		if annot_type in ['transformationpairs']:
-			assert linesplit[0] in  [str(x) for x in names.tp.keys()],"Cannot find transformation pair:"+linesplit[0]
+			assert linesplit[0] in  [str(x) for x in names.tp],"Cannot find transformation pair:"+linesplit[0]
 			relevant_tp = names.getIdx('tp',linesplit[0])
 			self.tp[relevant_tp]=linesplit[1].strip()
 		
 		if annot_type in ['patterns']:
-			assert linesplit[0] in  [str(x) for x in names.p.keys()],"Cannot find pattern:"+linesplit[0]
+			assert linesplit[0] in  [str(x) for x in names.p],"Cannot find pattern:"+linesplit[0]
 			relevant_p = names.getIdx('p',linesplit[0])
 			self.p[relevant_p]=linesplit[1].strip()
 
 		if annot_type in ['reactionrules']:
-			assert linesplit[0] in  [str(x) for x in names.r.keys()],"Cannot find reaction rule:"+linesplit[0]
+			assert linesplit[0] in  [str(x) for x in names.r],"Cannot find reaction rule:"+linesplit[0]
 			relevant_r = names.getIdx('r',linesplit[0])
 			self.r[relevant_r]=linesplit[1].strip()
 			

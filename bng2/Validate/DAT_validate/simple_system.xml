@@ -273,7 +273,7 @@
       </ReactionRule>
     </ListOfReactionRules>
     <ListOfObservables>
-      <Observable id="O1" name="X_free" type="Molecules">
+      <Observable id="O1" name="X_free" type="Molecules" output="1">
         <ListOfPatterns>
           <Pattern id="O1_P1">
             <ListOfMolecules>
@@ -287,7 +287,7 @@
           </Pattern>
         </ListOfPatterns>
       </Observable>
-      <Observable id="O2" name="X_p_total" type="Molecules">
+      <Observable id="O2" name="X_p_total" type="Molecules" output="1">
         <ListOfPatterns>
           <Pattern id="O2_P1">
             <ListOfMolecules>
@@ -300,7 +300,7 @@
           </Pattern>
         </ListOfPatterns>
       </Observable>
-      <Observable id="O3" name="Xp_free" type="Molecules">
+      <Observable id="O3" name="Xp_free" type="Molecules" output="1">
         <ListOfPatterns>
           <Pattern id="O3_P1">
             <ListOfMolecules>
@@ -314,7 +314,7 @@
           </Pattern>
         </ListOfPatterns>
       </Observable>
-      <Observable id="O4" name="XY" type="Molecules">
+      <Observable id="O4" name="XY" type="Molecules" output="1">
         <ListOfPatterns>
           <Pattern id="O4_P1">
             <ListOfMolecules>
@@ -335,7 +335,7 @@
           </Pattern>
         </ListOfPatterns>
       </Observable>
-      <Observable id="O5" name="Ytotal" type="Molecules">
+      <Observable id="O5" name="Ytotal" type="Molecules" output="1">
         <ListOfPatterns>
           <Pattern id="O5_P1">
             <ListOfMolecules>
@@ -344,7 +344,7 @@
           </Pattern>
         </ListOfPatterns>
       </Observable>
-      <Observable id="O6" name="Xtotal" type="Molecules">
+      <Observable id="O6" name="Xtotal" type="Molecules" output="1">
         <ListOfPatterns>
           <Pattern id="O6_P1">
             <ListOfMolecules>

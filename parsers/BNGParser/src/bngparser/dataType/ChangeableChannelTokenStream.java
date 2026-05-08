@@ -50,9 +50,27 @@ public class ChangeableChannelTokenStream extends CommonTokenStream
     	channels.remove(ch);
     }
     
-   // @Override
-	/*public int skipOffTokenChannels(int i) {
-    	// TODO Auto-generated method stub
-    	return super.skipOffTokenChannels(i);
-    }*/
+    @Override
+    protected int skipOffTokenChannels(int i) {
+        sync(i);
+        while (!channels.contains(((Token)tokens.get(i)).getChannel())) {
+            if (((Token)tokens.get(i)).getType() == Token.EOF) {
+                break;
+            }
+            i++;
+            sync(i);
+        }
+        return i;
+    }
+
+    @Override
+    protected int skipOffTokenChannelsReverse(int i) {
+        while (i >= 0 && !channels.contains(((Token)tokens.get(i)).getChannel())) {
+            if (((Token)tokens.get(i)).getType() == Token.EOF) {
+                break;
+            }
+            i--;
+        }
+        return i;
+    }
 }

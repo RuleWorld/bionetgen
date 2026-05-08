@@ -422,17 +422,17 @@ if (defined $bindir)
     }
 
     print "Current working directory is now: \n";
-    system("pwd");
+    print getcwd() . "\n";
     chdir $dist_name;
     chdir "Network3";
     print "Current working directory is now: \n";
-    system("pwd");
+    print getcwd() . "\n";
 
-    system(" make clean ");
+    system($sys_make, "clean");
     chdir "..";
     chdir "..";
     print "Current working directory is now: \n";
-    system("pwd");
+    print getcwd() . "\n";
 
     if ($validate)
     {

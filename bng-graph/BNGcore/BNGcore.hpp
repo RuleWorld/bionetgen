@@ -447,8 +447,15 @@ namespace BNGcore
             bool  delete_edge_out ( Node * node );
             
             // check two nodes for local equivalence (checks type and state)
-            bool  operator== ( const Node & node2 ) const;                  
-            // TODO: implement comparison operator  
+            bool  operator== ( const Node & node2 ) const
+            {
+                // check type
+                if ( get_type()  != node2.get_type()  )  return false;
+                // check state (wildcards allowed)
+                if ( get_state() != node2.get_state() )  return false;
+                // at this point the nodes are locally equivalent
+                return  true;
+            }
   
             // compare nodes for canonical sorting (compares type, state, and index)
             static bool  less ( const Node * node1, const Node * node2 );

@@ -47,12 +47,13 @@ scope{
     {
       reactionRules.add($reaction_rule_def.st);
       StringTemplate sInvert = null;
-      //TODO: crashes when handling an error in a bidirectional reaction
       if($reaction_rule_def.numReactions == 2){
         sInvert = InvertBidirectional.invert($reaction_rule_def.st.toString(),
                                            $reaction_rules_block::reactionCounter+1);
       }
-      reactionRules.add(sInvert);
+      if(sInvert != null) {
+        reactionRules.add(sInvert);
+      }
       $reaction_rules_block::reactionCounter+= $reaction_rule_def.numReactions;
     }
     LB+)* 
@@ -117,11 +118,17 @@ scope{
   //(rate_function modif_command* DELETEMOLECULES? MOVECONNECTED? LB) => 
   bi=rate_list[$reaction_rule_def::rateList,$reaction_def.bidirectional]
   {
-    //TODO: add a try catch exception to check that if a bidirectional reaction is required it asks for two reaction rates
-    if($numReactions == 2 && $reaction_rule_def::rateList.size() > 1)
-      $secondRate=$reaction_rule_def::rateList.get(1);
-    else
+    if($numReactions == 2) {
+      if($reaction_rule_def::rateList.size() > 1) {
+        $secondRate=$reaction_rule_def::rateList.get(1);
+      } else {
+        String msg = getErrorMessage2((Token)bi.getStart(),"Missing reverse rate for bidirectional reaction");
+        System.err.println(msg);
+        $secondRate="0";
+      }
+    } else {
       $secondRate="0";
+    }
     $reaction_rule_def::text += " " + StringEscapeUtils.escapeXml($rate_list.text);
   }
   (modif_command)* (opt_modifiers)* 

@@ -1376,7 +1376,7 @@
       </ReactionRule>
     </ListOfReactionRules>
     <ListOfObservables>
-      <Observable id="O1" name="R0" type="Molecules">
+      <Observable id="O1" name="R0" type="Molecules" output="1">
         <ListOfPatterns>
           <Pattern id="O1_P1">
             <ListOfMolecules>
@@ -1389,7 +1389,7 @@
           </Pattern>
         </ListOfPatterns>
       </Observable>
-      <Observable id="O2" name="R1" type="Molecules">
+      <Observable id="O2" name="R1" type="Molecules" output="1">
         <ListOfPatterns>
           <Pattern id="O2_P1">
             <ListOfMolecules>
@@ -1402,7 +1402,7 @@
           </Pattern>
         </ListOfPatterns>
       </Observable>
-      <Observable id="O3" name="R2" type="Molecules">
+      <Observable id="O3" name="R2" type="Molecules" output="1">
         <ListOfPatterns>
           <Pattern id="O3_P1">
             <ListOfMolecules>
@@ -1415,7 +1415,7 @@
           </Pattern>
         </ListOfPatterns>
       </Observable>
-      <Observable id="O4" name="R3" type="Molecules">
+      <Observable id="O4" name="R3" type="Molecules" output="1">
         <ListOfPatterns>
           <Pattern id="O4_P1">
             <ListOfMolecules>
@@ -1428,7 +1428,7 @@
           </Pattern>
         </ListOfPatterns>
       </Observable>
-      <Observable id="O5" name="R4" type="Molecules">
+      <Observable id="O5" name="R4" type="Molecules" output="1">
         <ListOfPatterns>
           <Pattern id="O5_P1">
             <ListOfMolecules>
@@ -1441,7 +1441,7 @@
           </Pattern>
         </ListOfPatterns>
       </Observable>
-      <Observable id="O6" name="R5" type="Molecules">
+      <Observable id="O6" name="R5" type="Molecules" output="1">
         <ListOfPatterns>
           <Pattern id="O6_P1">
             <ListOfMolecules>
@@ -1454,7 +1454,7 @@
           </Pattern>
         </ListOfPatterns>
       </Observable>
-      <Observable id="O7" name="R6" type="Molecules">
+      <Observable id="O7" name="R6" type="Molecules" output="1">
         <ListOfPatterns>
           <Pattern id="O7_P1">
             <ListOfMolecules>
@@ -1467,7 +1467,7 @@
           </Pattern>
         </ListOfPatterns>
       </Observable>
-      <Observable id="O8" name="R7" type="Molecules">
+      <Observable id="O8" name="R7" type="Molecules" output="1">
         <ListOfPatterns>
           <Pattern id="O8_P1">
             <ListOfMolecules>
@@ -1480,7 +1480,7 @@
           </Pattern>
         </ListOfPatterns>
       </Observable>
-      <Observable id="O9" name="R8" type="Molecules">
+      <Observable id="O9" name="R8" type="Molecules" output="1">
         <ListOfPatterns>
           <Pattern id="O9_P1">
             <ListOfMolecules>
@@ -1493,7 +1493,7 @@
           </Pattern>
         </ListOfPatterns>
       </Observable>
-      <Observable id="O10" name="RDtot" type="Molecules">
+      <Observable id="O10" name="RDtot" type="Molecules" output="1">
         <ListOfPatterns>
           <Pattern id="O10_P1">
             <ListOfMolecules>
@@ -1502,7 +1502,7 @@
           </Pattern>
         </ListOfPatterns>
       </Observable>
-      <Observable id="O11" name="RD_R" type="Molecules">
+      <Observable id="O11" name="RD_R" type="Molecules" output="1">
         <ListOfPatterns>
           <Pattern id="O11_P1">
             <ListOfMolecules>
@@ -1523,7 +1523,7 @@
           </Pattern>
         </ListOfPatterns>
       </Observable>
-      <Observable id="O12" name="RD_B" type="Molecules">
+      <Observable id="O12" name="RD_B" type="Molecules" output="1">
         <ListOfPatterns>
           <Pattern id="O12_P1">
             <ListOfMolecules>

@@ -1,0 +1,51 @@
+--- parsers/utils/smallStructures.py
++++ parsers/utils/smallStructures.py
+@@ -141,11 +141,12 @@
+                 deadMolecule = element
+         if deadMolecule == None:
+             return
+-        bondNumbers = set(deadMolecule.getBondNumbers())
++        bondNumbers = deadMolecule.getBondNumbers()
++        bond_strs = {str(n) for n in bondNumbers}
+         self.molecules.remove(deadMolecule)
+         for element in self.molecules:
+             for component in element.components:
+-                component.bonds = [b for b in component.bonds if b == '+' or int(b) not in bondNumbers]
++                component.bonds[:] = [b for b in component.bonds if b not in bond_strs]
+
+     def getMolecule(self,moleculeName):
+         for molecule in self.molecules:
+--- parsers/ContactMap/structures.py
++++ parsers/ContactMap/structures.py
+@@ -136,11 +136,12 @@
+                 deadMolecule = element
+         if deadMolecule == None:
+             return
+-        bondNumbers = set(deadMolecule.getBondNumbers())
++        bondNumbers = deadMolecule.getBondNumbers()
++        bond_strs = {str(n) for n in bondNumbers}
+         self.molecules.remove(deadMolecule)
+         for element in self.molecules:
+             for component in element.components:
+-                component.bonds = [b for b in component.bonds if b == '+' or int(b) not in bondNumbers]
++                component.bonds[:] = [b for b in component.bonds if b not in bond_strs]
+
+     def getMolecule(self,moleculeName):
+         for molecule in self.molecules:
+--- parsers/BipartiteGraph/structures.py
++++ parsers/BipartiteGraph/structures.py
+@@ -65,11 +65,12 @@
+                 deadMolecule = element
+         if deadMolecule == None:
+             return
+-        bondNumbers = set(deadMolecule.getBondNumbers())
++        bondNumbers = deadMolecule.getBondNumbers()
++        bond_strs = {str(n) for n in bondNumbers}
+         self.molecules.remove(deadMolecule)
+         for element in self.molecules:
+             for component in element.components:
+-                component.bonds = [b for b in component.bonds if b == '+' or int(b) not in bondNumbers]
++                component.bonds[:] = [b for b in component.bonds if b not in bond_strs]
+
+     def getMolecule(self,moleculeName):
+         for molecule in self.molecules:

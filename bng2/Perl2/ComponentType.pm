@@ -186,7 +186,7 @@ sub toSBMLMultiSpeciesTypeBinding
       $ststring = sprintf("<multi:bindingSiteSpeciesType multi:id=\"%s\" multi:name=\"%s\">\n", $cid, $ctype->Name);
       my $featuretypes .= $ctype->toSBMLMultiSpeciesTypeFeatures($cid."_ft",$mName,$sbmlMultiSpeciesInfo_ref,$speciesIdHash_ref,$indent);
 
-      if(! $featuretypes eq ''){
+      if ($featuretypes ne ''){
         $ststring .= $indent. "<multi:listOfSpeciesFeatureTypes>\n";
         $ststring .= $featuretypes;
         $ststring .= $indent. "</multi:listOfSpeciesFeatureTypes>\n";

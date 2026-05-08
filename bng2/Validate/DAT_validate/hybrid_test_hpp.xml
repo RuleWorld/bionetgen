@@ -523,7 +523,7 @@
       </ReactionRule>
     </ListOfReactionRules>
     <ListOfObservables>
-      <Observable id="O1" name="Rfree" type="Molecules">
+      <Observable id="O1" name="Rfree" type="Molecules" output="1">
         <ListOfPatterns>
           <Pattern id="O1_P1">
             <ListOfMolecules>
@@ -547,7 +547,7 @@
           </Pattern>
         </ListOfPatterns>
       </Observable>
-      <Observable id="O2" name="Lfree" type="Molecules">
+      <Observable id="O2" name="Lfree" type="Molecules" output="1">
         <ListOfPatterns>
           <Pattern id="O2_P1">
             <ListOfMolecules>
@@ -592,7 +592,7 @@
           </Pattern>
         </ListOfPatterns>
       </Observable>
-      <Observable id="O3" name="Rtot" type="Molecules">
+      <Observable id="O3" name="Rtot" type="Molecules" output="1">
         <ListOfPatterns>
           <Pattern id="O3_P1">
             <ListOfMolecules>
@@ -606,7 +606,7 @@
           </Pattern>
         </ListOfPatterns>
       </Observable>
-      <Observable id="O4" name="Ltot" type="Molecules">
+      <Observable id="O4" name="Ltot" type="Molecules" output="1">
         <ListOfPatterns>
           <Pattern id="O4_P1">
             <ListOfMolecules>
@@ -620,7 +620,7 @@
           </Pattern>
         </ListOfPatterns>
       </Observable>
-      <Observable id="O5" name="LRmotif" type="Molecules">
+      <Observable id="O5" name="LRmotif" type="Molecules" output="1">
         <ListOfPatterns>
           <Pattern id="O5_P1">
             <ListOfMolecules>
@@ -641,7 +641,7 @@
           </Pattern>
         </ListOfPatterns>
       </Observable>
-      <Observable id="O6" name="R2" type="Species">
+      <Observable id="O6" name="R2" type="Species" output="1">
         <ListOfPatterns>
           <Pattern id="O6_P1" relation="==" quantity="2">
             <ListOfMolecules>
@@ -650,7 +650,7 @@
           </Pattern>
         </ListOfPatterns>
       </Observable>
-      <Observable id="O7" name="R3" type="Species">
+      <Observable id="O7" name="R3" type="Species" output="1">
         <ListOfPatterns>
           <Pattern id="O7_P1" relation="==" quantity="3">
             <ListOfMolecules>
@@ -659,7 +659,7 @@
           </Pattern>
         </ListOfPatterns>
       </Observable>
-      <Observable id="O8" name="R4" type="Species">
+      <Observable id="O8" name="R4" type="Species" output="1">
         <ListOfPatterns>
           <Pattern id="O8_P1" relation="==" quantity="4">
             <ListOfMolecules>
@@ -668,7 +668,7 @@
           </Pattern>
         </ListOfPatterns>
       </Observable>
-      <Observable id="O9" name="R5" type="Species">
+      <Observable id="O9" name="R5" type="Species" output="1">
         <ListOfPatterns>
           <Pattern id="O9_P1" relation=">" quantity="4">
             <ListOfMolecules>

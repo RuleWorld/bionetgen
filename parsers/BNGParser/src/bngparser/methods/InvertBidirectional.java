@@ -29,19 +29,30 @@ public class InvertBidirectional {
 			return null;
 		
 		Matcher matches2 = pattern2.matcher(original);
-		matches2.find();
-		String match2 = new String(matches2.group());
+		String match2;
+		if(matches2.find()) {
+			match2 = new String(matches2.group());
+		} else {
+			return null;
+		}
 		
 		Matcher matches3 = pattern3.matcher(original);
-		matches3.find();
-		String match3 = new String(matches3.group());
+		String match3;
+		if(matches3.find()) {
+			match3 = new String(matches3.group());
+		} else {
+			return null;
+		}
 		
 		
 		String[] splitted = pattern.split(original);
+		if(splitted.length < 2) return null;
 		String[] splitted2 = pattern2.split(splitted[1]);
+		if(splitted2.length < 2) return null;
 		
 		
 		String[] splitted3 = pattern3.split(splitted2[1]);
+		if(splitted3.length < 2) return null;
 
 		
 		

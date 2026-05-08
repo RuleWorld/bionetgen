@@ -85,8 +85,8 @@ def parseRule(rule):
         tag = operation.tag
         tag = tag.replace('{http://www.sbml.org/sbml/level3}','')
         if tag in ['Add','Delete']:
-		action.setAction(tag,operation.get('id'),None)
-	elif 'Bond' in tag:
+                action.setAction(tag,operation.get('id'),None)
+        elif 'Bond' in tag:
             action.setAction(tag, operation.get('site1'), operation.get('site2'))
         else:
             action.setAction(tag, operation.get('site'), None)
@@ -113,7 +113,8 @@ def parseMolecules(molecules):
         
 
 def parseXML(xmlFile):
-    doc = etree.parse(xmlFile)
+    parser = etree.XMLParser(resolve_entities=False, no_network=True)
+    doc = etree.parse(xmlFile, parser)
     molecules = doc.findall('.//{http://www.sbml.org/sbml/level3}MoleculeType')
     rules = doc.findall('.//{http://www.sbml.org/sbml/level3}ReactionRule')
     ruleDescription = []

@@ -12,6 +12,8 @@ import subprocess
 import createGraph
 import pexpect
 import xmlrpclib
+import glob
+import os
 # Restrict to a particular path.
 class RequestHandler(SimpleXMLRPCRequestHandler):
     rpc_paths = ('/RPC2',)
@@ -50,7 +52,11 @@ class BipartiteServer:
             dot = f.read()
         with open('temp{0}.xml.png'.format(counter),'rb') as f:
             png = f.read()
-        subprocess.call(['rm','temp{0}*'.format(counter)])
+        for f in glob.glob('temp{0}*'.format(counter)):
+            try:
+                os.remove(f)
+            except OSError:
+                pass
         if returnType == 'dot':
             data = xmlrpclib.Binary(dot)
         else:

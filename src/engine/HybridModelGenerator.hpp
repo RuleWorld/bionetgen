@@ -75,6 +75,8 @@ public:
      */
     GenerateResult generate(const std::filesystem::path& sourcePath, const Options& opts);
 
+    friend class HybridModelGeneratorTest;
+
 private:
     /**
      * Check if two species patterns are isomorphic.

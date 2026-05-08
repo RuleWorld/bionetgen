@@ -23,10 +23,10 @@ my $bngexec;
 
 
 # get all BNGL files
-my @files = <*.bngl>;
+my @files = map { "./$_" } <*.bngl>;
 
 # run BNG on all files
-my @command = ($perlbin, $bngexec, "--log", @files);
+my @command = ($perlbin, $bngexec, "--log", "--", @files);
 print join( " ", @command ), "\n";
 system(@command)==0 or die "Some problem running BioNetGen";
 
