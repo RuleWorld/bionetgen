@@ -135,7 +135,7 @@ class Species:
             self_molecule_names = {x.name for x in self.molecules}
             for element in species.molecules:
                 if element.name not in self_molecule_names:
-                    self.addMolecule(deepcopy(element),update)
+                    self.addMolecule(element.copy(),update)
                     self_molecule_names.add(element.name)
                 else:
                     for molecule in self.molecules:
@@ -143,7 +143,7 @@ class Species:
                             molecule_component_names = {x.name for x in molecule.components}
                             for component in element.components:
                                 if component.name not in molecule_component_names:
-                                    molecule.addComponent(deepcopy(component),update)
+                                    molecule.addComponent(component.copy(),update)
                                     molecule_component_names.add(component.name)
                                 else:
                                     comp = molecule.getComponent(component.name)
@@ -414,7 +414,7 @@ class Molecule:
 
         for element in molecule.components:
             if element.name not in comp_dict:
-                new_comp = deepcopy(element)
+                new_comp = element.copy()
                 self.components.append(new_comp)
                 comp_dict[element.name] = new_comp
             else:
@@ -432,7 +432,7 @@ class Molecule:
         self_component_names = set(x.name for x in self.components)
         for comp in molecule.components:
             if comp.name not in self_component_names:
-                self.components.append(deepcopy(comp))
+                self.components.append(comp.copy())
                 self_component_names.add(comp.name)
                 
     def graphVizGraph(self,graph,identifier,components=None,flag=False):
