@@ -9,6 +9,7 @@ Created on Wed Nov 21 16:56:19 2012
 from readBNGXML import parseXML
 import pygraphviz as pgv
 import subprocess
+import shutil
 import pexpect
 
 
@@ -268,7 +269,8 @@ ranksep='1.5',rankdir='LR',compound='true')
     #graph = pgv.AGraph('%s.dot' % fileName)
     #graph.layout(prog='fdp')
     #graph.draw('%s.png' % fileName)
-    subprocess.call(['dot', '-Tsvg', '{0}.dot'.format(fileName),'-o{0}.svg'.format(fileName)])
+    dot_path = shutil.which('dot') or 'dot'
+    subprocess.call([dot_path, '-Tsvg', './{0}.dot'.format(fileName), '-o', './{0}.svg'.format(fileName)], shell=False)
     
 
 def addAnnotations(fileName):

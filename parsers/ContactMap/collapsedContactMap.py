@@ -1,7 +1,6 @@
 from readBNGXML import parseXML
 import networkx as nx
 
-
 def extractMolecules(action,site1,site2,chemicalArray):
     '''
     this method goes through the chemicals in a given array 'chemicalArray'
@@ -165,7 +164,8 @@ def createCollapsedContact(rules,species,transformations,fileName):
     #graph = pgv.AGraph('%s.dot' % fileName)
     #graph.layout(prog='fdp')
     #graph.draw('%s.png' % fileName)
-    #subprocess.call(['dot', '-Tsvg', '{0}.dot'.format(fileName),'-o{0}.svg'.format(fileName)])
+    #dot_path = shutil.which('dot') or 'dot'
+    #subprocess.call([dot_path, '-Tsvg', './{0}.dot'.format(fileName), '-o', './{0}.svg'.format(fileName)], shell=False)
 
 
 def main(fileName,outputfilename):
