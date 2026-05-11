@@ -809,7 +809,6 @@ sub inferSpeciesCompartment
 # if the Compartment cannot be inferred or is invalid.  Sets err=1 if Species
 # Compartment is invalid and err=0 otherwise.
 #
-# TODO: There is no check for bond validity here!  SHould be added in future.
 # TODO: What about verifying that all compartments are specified?
 {
 	my $sg = shift;
@@ -820,6 +819,7 @@ sub inferSpeciesCompartment
 	my $err = '';  # return error (set string if species compartment is invalid)
 
 	# Gather molecule compartments
+	my %mol_comps = ();
 	foreach my $mol ( @{ $sg->Molecules } )
 	{
 		my $comp = $mol->Compartment;
@@ -829,6 +829,7 @@ sub inferSpeciesCompartment
 			$comp = $sg->Compartment;
 		}
 
+		$mol_comps{$mol} = $comp;
 		next unless ( defined $comp );
 
 		if    ( $comp->SpatialDimensions == 2 ) { $surfaces{$comp} = $comp; }
@@ -894,6 +895,34 @@ sub inferSpeciesCompartment
 	if ( defined $sg->Compartment and !( defined $inferred_comp ) )
 	{
 		$inferred_comp = $sg->Compartment;
+	}
+
+	# Check bond validity based on compartments
+	my %bonds = ();
+	foreach my $mol ( @{$sg->Molecules} )
+	{
+		foreach my $component ( @{$mol->Components} )
+		{
+			foreach my $edge_idx ( @{$component->Edges} )
+			{   push @{ $bonds{$edge_idx} }, $mol;   }
+		}
+	}
+
+	foreach my $bond ( values %bonds )
+	{
+		next if (@$bond != 2);
+
+		my $comp0 = $mol_comps{$bond->[0]};
+		my $comp1 = $mol_comps{$bond->[1]};
+
+		if (defined $comp0 and defined $comp1)
+		{
+			unless ( $comp0 == $comp1 or $comp0->adjacent($comp1) )
+			{
+				$err = sprintf "Molecule Compartments of %s define invalid Species Compartment.", $sg->toString();
+				return ( undef, $err );
+			}
+		}
 	}
 
 	# return inferred compartment
