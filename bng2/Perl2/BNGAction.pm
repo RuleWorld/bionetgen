@@ -2207,13 +2207,33 @@ sub LinearParameterSensitivity
                 my $b_head = <$bfh>;
                 my $p_head = <$pfh>;
 
-                chomp $b_head;
-                $b_head =~ s/^\s*#\s*//;
-                my @cols = split(/\s+/, $b_head);
-
                 my @times;
                 my @base_data;
                 my @bump_data;
+                my @cols;
+
+                # Check if it has a header
+                if ($b_head =~ /^\s*#/) {
+                    chomp $b_head;
+                    $b_head =~ s/^\s*#\s*//;
+                    @cols = split(/\s+/, $b_head);
+                    # p_head is skipped
+                } else {
+                    # No header, first line is data
+                    chomp $b_head;
+                    chomp $p_head;
+                    $b_head =~ s/^\s+//;
+                    $p_head =~ s/^\s+//;
+                    my @b_vals = split(/\s+/, $b_head);
+                    my @p_vals = split(/\s+/, $p_head);
+
+                    push @cols, "time";
+                    for my $i (1 .. $#b_vals) { push @cols, "$i"; }
+
+                    push @times, $b_vals[0];
+                    push @base_data, \@b_vals;
+                    push @bump_data, \@p_vals;
+                }
 
                 while(my $b_line = <$bfh>) {
                     chomp $b_line;
