@@ -29,6 +29,7 @@ struct DerivedRateInfo {
 class NetWriter {
 public:
     static void write(const std::filesystem::path& outputPath, ast::Model& model, const engine::GeneratedNetwork& network);
+    static void write(std::ostream& out, ast::Model& model, const engine::GeneratedNetwork& network);
     static std::unordered_map<std::string, DerivedRateInfo> buildDerivedRateParams(
         const ast::Model& model,
         const engine::GeneratedNetwork& network);

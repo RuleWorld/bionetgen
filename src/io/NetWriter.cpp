@@ -1162,6 +1162,10 @@ void NetWriter::write(const std::filesystem::path& outputPath, ast::Model& model
     if (!out) {
         throw std::runtime_error("Could not open output file: " + outputPath.string());
     }
+    write(out, model, network);
+}
+
+void NetWriter::write(std::ostream& out, ast::Model& model, const engine::GeneratedNetwork& network) {
 
     out << "# Created by bng_cpp\n";
     if (!model.getVersion().empty()) {
