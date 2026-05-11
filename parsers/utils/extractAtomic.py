@@ -45,13 +45,16 @@ def solveWildcards(atomicArray):
     to go through the list of atomic elements and find which patterns the '+'
     can potentially resolve to
     """
+    name_to_atomics = {}
+    for a in [x for x in atomicArray if '+' not in x and len(atomicArray[x].molecules) > 1]:
+        for name in set(m.name for m in atomicArray[a].molecules):
+            name_to_atomics.setdefault(name, []).append(atomicArray[a])
+
     standinArray = {}
-    for wildcard in [ x for x in atomicArray if '+' in x ]:
-        for atomic in [ x for x in atomicArray if '+' not in x and len(atomicArray[x].molecules) > 1 ]:
-            if atomicArray[wildcard].molecules[0].name in [ x.name for x in atomicArray[atomic].molecules ]:
-                if wildcard not in standinArray:
-                    standinArray[wildcard] = []
-                standinArray[wildcard].append(atomicArray[atomic])
+    for w in [x for x in atomicArray if '+' in x]:
+        w_name = atomicArray[w].molecules[0].name
+        if w_name in name_to_atomics:
+            standinArray[w] = list(name_to_atomics[w_name])
 
     atomicArray.update(standinArray)
 
