@@ -372,7 +372,7 @@ sub newRateLawNet
             {   # this is a function
                 $rate_law_type = "Function";
             }
-            # TODO: handling for type "FunctionProduct"
+
     
 
             # put name of rate parameter (or fcn) on the constants array
