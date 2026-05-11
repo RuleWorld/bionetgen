@@ -3996,7 +3996,7 @@ sub apply_operations
 				}
 				$ip1++;
 			}
-			unless ( defined $ref1 ) {  $ref1 = $g_ref1;  }
+			unless ( defined $ref1 ) {  $ref1 = '-1.' . $eadd->[0];  }
 
 			# now for the other end of the edge...
 			my $ref2 = undef;
@@ -4016,13 +4016,12 @@ sub apply_operations
 				}
 				$ip2++;
 			}
-			unless ( defined $ref2 ) {  $ref2 = $g_ref2;  }
+			unless ( defined $ref2 ) {  $ref2 = '-1.' . $eadd->[1];  }
 
 			# APPLY edge addition now
 			$g->addEdge( "ne${nedge}", $g_ref1, $g_ref2 );
 			++$nedge;
 
-			# TODO: edges added to new molecules may not be in canonical form!
 			# save edge addition for canonical labeling
 			push @$stack, join( ',', sort cmp_pointer ( $ref1, $ref2 ) );
 		}
