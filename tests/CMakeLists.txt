@@ -79,3 +79,13 @@ target_include_directories(test_net_writer PRIVATE
 )
 target_link_libraries(test_net_writer PRIVATE Catch2::Catch2WithMain Catch2::Catch2 bng_engine bng_ast bng_core antlr4_static)
 catch_discover_tests(test_net_writer)
+
+add_executable(test_evaluate_expression_string test_evaluate_expression_string.cpp)
+target_include_directories(test_evaluate_expression_string PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/parser
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/parser/generated
+    ${antlr4_runtime_SOURCE_DIR}/runtime/Cpp/runtime/src
+)
+target_link_libraries(test_evaluate_expression_string PRIVATE Catch2::Catch2WithMain Catch2::Catch2 bng_engine bng_ast bng_core antlr4_static)
+catch_discover_tests(test_evaluate_expression_string)
