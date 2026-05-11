@@ -61,6 +61,15 @@ target_include_directories(test_node_operator PRIVATE
 )
 target_link_libraries(test_node_operator PRIVATE Catch2::Catch2WithMain Catch2::Catch2 bng_core)
 catch_discover_tests(test_node_operator)
+
+add_executable(test_model test_model.cpp)
+target_include_directories(test_model PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/ast
+)
+target_link_libraries(test_model PRIVATE Catch2::Catch2WithMain Catch2::Catch2 bng_ast bng_parser bng_core antlr4_static)
+catch_discover_tests(test_model)
+
 add_executable(test_net_writer test_net_writer.cpp)
 target_include_directories(test_net_writer PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../src
