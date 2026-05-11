@@ -818,7 +818,7 @@ sub inferSpeciesCompartment
 	my %surfaces = ();    # molecule surface compartments found in $sg
 	my $err = '';  # return error (set string if species compartment is invalid)
 
-	# Gather molecule compartments
+	# Gather molecule compartments and component compartments
 	my %mol_comps = ();
 	foreach my $mol ( @{ $sg->Molecules } )
 	{
@@ -830,10 +830,22 @@ sub inferSpeciesCompartment
 		}
 
 		$mol_comps{$mol} = $comp;
-		next unless ( defined $comp );
 
-		if    ( $comp->SpatialDimensions == 2 ) { $surfaces{$comp} = $comp; }
-		elsif ( $comp->SpatialDimensions == 3 ) { $volumes{$comp}  = $comp; }
+		if ( defined $comp )
+		{
+			if    ( $comp->SpatialDimensions == 2 ) { $surfaces{$comp} = $comp; }
+			elsif ( $comp->SpatialDimensions == 3 ) { $volumes{$comp}  = $comp; }
+		}
+
+		foreach my $component ( @{ $mol->Components } )
+		{
+			my $ccomp = $component->Compartment;
+			if ( defined $ccomp )
+			{
+				if    ( $ccomp->SpatialDimensions == 2 ) { $surfaces{$ccomp} = $ccomp; }
+				elsif ( $ccomp->SpatialDimensions == 3 ) { $volumes{$ccomp}  = $ccomp; }
+			}
+		}
 	}
 
 	my $n_surfaces = scalar( keys %surfaces );
