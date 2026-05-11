@@ -104,15 +104,11 @@ sub TFUN
     # in the file and pull values from the second column.
     my $obs = shift @_;
     my $file = shift @_;
-    # for now, just return the obs value to keep the rest of the mechanism
-    # working.
-    print "You are trying to evaluate a TFUN function ಠ_ಠ TFUNs only make sense
-           within NFsim. Try using NFsim, I'm going to dissapear into the 
-           ether now, good bye cruel world ◉︵◉ \n";
-    exit 1;
-    # TODO: Figure out a behavior for this function for simulators outside
-    # of NFsim
-    # return $obs
+
+    print "WARNING: Evaluating a TFUN function outside of NFsim. " .
+          "Returning the first argument as a stub value.\n";
+
+    return $obs;
 }
 
 # New tfun placeholder - actual evaluation happens in simulators
@@ -120,9 +116,9 @@ sub tfun_placeholder
 {
     # This is a placeholder that should never be called during evaluation
     # The tfun will be handled specially by the parser and simulators
-    print "ERROR: tfun_placeholder should not be directly evaluated.\n";
-    print "       tfun() functions are handled specially by the parser.\n";
-    exit 1;
+    print "WARNING: tfun_placeholder evaluated outside of supported simulators.\n";
+    print "         Returning the first argument (or 0) as a stub value.\n";
+    return @_ ? $_[0] : 0;
 }
 
 # Parse tfun() syntax - supports both file-based and inline data
