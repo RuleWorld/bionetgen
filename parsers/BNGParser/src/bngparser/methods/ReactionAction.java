@@ -120,6 +120,23 @@ public class ReactionAction {
 	}
 	
 	
+
+	private List<String> extractBonds(String component) {
+		List<String> bonds = new ArrayList<String>();
+		String[] parts = component.split("!");
+		for (int k = 1; k < parts.length; k++) {
+			String bond = parts[k];
+			int tildeIdx = bond.indexOf('~');
+			if (tildeIdx != -1) bond = bond.substring(0, tildeIdx);
+			int pctIdx = bond.indexOf('%');
+			if (pctIdx != -1) bond = bond.substring(0, pctIdx);
+			if (bond.endsWith("?")) bond = bond.substring(0, bond.length() - 1);
+			if (bond.endsWith("+")) bond = bond.substring(0, bond.length() - 1);
+			if (!bond.isEmpty()) bonds.add(bond);
+		}
+		return bonds;
+	}
+
 	public void execute(){
 		Map<String,List<String>> tempBonds = new HashMap<String,List<String>>();
 		for(String reactant: molecules.keySet()){
@@ -142,27 +159,24 @@ public class ReactionAction {
 									if(component1.equals(component2)){
 										leftMap.add(species1.getName() + "_C" + (i+1));
 										rightMap.add(species2.getName() + "_C" + (j+1));	
-										if(species1.getComponents()[i].contains("!") && !species2.getComponents()[j].contains("!")){
-											//String label = species1.getComponents()[i].replaceAll("(.+)(![A-Za-z0-9]+)", "$2");
-											String[] label = species1.getComponents()[i].split("!");
-											for(int counter=1;counter<label.length;counter++){
-												if(tempBonds.get(label[counter]) == null){
-													tempBonds.put(label[counter], new ArrayList<String>());
-													tempBonds.get(label[counter]).add("DeleteBond");
+										List<String> bonds1 = extractBonds(species1.getComponents()[i]);
+										List<String> bonds2 = extractBonds(species2.getComponents()[j]);
+										for(String b1 : bonds1) {
+											if(!bonds2.contains(b1)) {
+												if(tempBonds.get(b1) == null) {
+													tempBonds.put(b1, new ArrayList<String>());
+													tempBonds.get(b1).add("DeleteBond");
 												}
-													tempBonds.get(label[counter]).add(species1.getName() + "_C" + (i+1));
+												tempBonds.get(b1).add(species1.getName() + "_C" + (i+1));
 											}
-												
 										}
-										else if(species2.getComponents()[j].contains("!") && !species1.getComponents()[i].contains("!")){
-											//this step checks how many molecules a single component is bound to and adds them to the add bond operation
-											String[] label = species2.getComponents()[j].split("!");
-											for(int counter=1;counter<label.length;counter++){
-												if(tempBonds.get(label[counter]) == null){
-													tempBonds.put(label[counter], new ArrayList<String>());
-													tempBonds.get(label[counter]).add("AddBond");
+										for(String b2 : bonds2) {
+											if(!bonds1.contains(b2)) {
+												if(tempBonds.get(b2) == null) {
+													tempBonds.put(b2, new ArrayList<String>());
+													tempBonds.get(b2).add("AddBond");
 												}
-												tempBonds.get(label[counter]).add(species2.getName() + "_C" + (j+1));
+												tempBonds.get(b2).add(species2.getName() + "_C" + (j+1));
 											}
 										}
 										species2.getComponents()[j] = "";	
