@@ -506,10 +506,6 @@ sub clone
 }
 
 
-# TODO: simplify method
-# eliminate 1's from mulitplications and divisions
-# eliminate 0's from additions and subtractions.
-# cancel terms in basic arthimetic operations.
 
 
 ###
