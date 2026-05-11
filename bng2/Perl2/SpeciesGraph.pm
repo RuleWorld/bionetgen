@@ -2265,6 +2265,7 @@ sub toSBMLMultiSpeciesType
     if($n_mol > 1){
         my %rreferenceClone = %{dclone(\%{$speciesIdHash_ref->{'References'}->{"ST".$id}->{'reverseReferences'}})};
         my %needed_compkeys;
+        my %needed_molkeys;
 
         my $mindex =0;
         foreach my $molecule (@{$sg->Molecules}){
@@ -2277,6 +2278,7 @@ sub toSBMLMultiSpeciesType
 
                 if (defined $component->State && $component->State ne '') {
                     $needed_compkeys{$compkey} = 1;
+                    $needed_molkeys{$molecule->Name} = 1;
                 }
 
                 $cindex += 1;
@@ -2298,21 +2300,25 @@ sub toSBMLMultiSpeciesType
                 my $compkey2 = $speciesIdHash_ref->{'References'}->{"ST".$id}->{'bng2multi'}->{$p2};
                 if ($compkey1) {
                     $needed_compkeys{$compkey1} = 1;
+                    $needed_molkeys{$sg->Molecules->[(split '\.', $p1)[0]]->Name} = 1;
                 }
                 if ($compkey2) {
                     $needed_compkeys{$compkey2} = 1;
+                    $needed_molkeys{$sg->Molecules->[(split '\.', $p2)[0]]->Name} = 1;
                 }
             }
         }
 
         $string .= $indent . "<multi:listOfSpeciesTypeComponentIndexes>\n";
         foreach my $molkey (keys %{$speciesIdHash_ref->{'References'}->{"ST".$id}{'Molecules'}}){
-            foreach my $entry (@{$speciesIdHash_ref->{'References'}->{"ST".$id}->{'Molecules'}->{$molkey}}){
-                #remove the cmp prefix to get the parent sbml_id.
-                @parentEntry = split(/_/,$entry);
-                my $parentEntryStr = join('_',@parentEntry[1..$#parentEntry]);
+            if ($needed_molkeys{$molkey}) {
+                foreach my $entry (@{$speciesIdHash_ref->{'References'}->{"ST".$id}->{'Molecules'}->{$molkey}}){
+                    #remove the cmp prefix to get the parent sbml_id.
+                    @parentEntry = split(/_/,$entry);
+                    my $parentEntryStr = join('_',@parentEntry[1..$#parentEntry]);
 
-                $string .= $indent2. sprintf("<multi:speciesTypeComponentIndex multi:id=\"%s\" multi:component=\"%s\"/>\n", $entry, $parentEntryStr);
+                    $string .= $indent2. sprintf("<multi:speciesTypeComponentIndex multi:id=\"%s\" multi:component=\"%s\"/>\n", $entry, $parentEntryStr);
+                }
             }
         }
 
