@@ -2797,7 +2797,7 @@ sub depthFirstMoleculeSearch
 # Assume that molecules have already been sorted by molecule name and component state
 # using cmp_molecule and cmp_component and cmp_edge
 #
-# TODO: make sure isomorphicTo works correctly on patterns!
+# isomorphicTo now correctly compares patterns and their wildcards via updated Component::compare_local
 sub isomorphicTo
 {
 	my ($sg1, $sg2) = @_;
@@ -3615,10 +3615,36 @@ sub cmp_component
 	# Comparison of number of edges
 	# NOTE: the usual order of a and b are switched!!
 	#  so the components with more edges are before components with fewer edges
-	if ( $cmp = ( @{$b->Edges} <=> @{$a->Edges} ) )
-	{   return $cmp;   }
+
+    my $a_exp = 0;
+    my $a_plus = 0;
+    my $a_ques = 0;
+    my $a_star = 0;
+    for my $e (@{$a->Edges}) {
+        if ($e eq '+') { $a_plus++; }
+        elsif ($e eq '?') { $a_ques++; }
+        elsif ($e eq '*') { $a_star++; }
+        else { $a_exp++; }
+    }
+
+    my $b_exp = 0;
+    my $b_plus = 0;
+    my $b_ques = 0;
+    my $b_star = 0;
+    for my $e (@{$b->Edges}) {
+        if ($e eq '+') { $b_plus++; }
+        elsif ($e eq '?') { $b_ques++; }
+        elsif ($e eq '*') { $b_star++; }
+        else { $b_exp++; }
+    }
+
+    if ( $cmp = ($b_exp <=> $a_exp) ) { return $cmp; }
+    if ( $cmp = ($b_plus <=> $a_plus) ) { return $cmp; }
+    if ( $cmp = ($b_ques <=> $a_ques) ) { return $cmp; }
+    if ( $cmp = ($b_star <=> $a_star) ) { return $cmp; }
 
 	# Comparison of edges
+
 	#  for my $i (0..$#a_edges){
 	#    if ($cmp=($a_edges[$i] cmp $b_edges[$i])){
 	#      return($cmp);
