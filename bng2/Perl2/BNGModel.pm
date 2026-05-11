@@ -966,8 +966,6 @@ sub readSBML
                                 # get group weights
                                 my @group_weights = split (/,/, $tokens[0]);
     
-                                # Zero the weights (TODO..)
-                                @{$obs->Weights} = (0) x scalar @{$obs->Weights};
                                 my ($weight, $species_idx);
                                 foreach my $component (@group_weights)
                                 {
@@ -1032,8 +1030,6 @@ sub readSBML
                                 # get group weights
                                 my @group_weights = ($tokens[0]) ? split( /,/ , $tokens[0] ) : ();
                                 
-                                # Zero the weights
-                                @{$obs->Weights} = (0) x ($n_species+1);
                                 my ($weight, $species_idx);
                                 foreach my $component (@group_weights)
                                 {
