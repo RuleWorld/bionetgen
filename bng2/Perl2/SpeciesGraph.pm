@@ -818,6 +818,8 @@ sub inferSpeciesCompartment
 	my %surfaces = ();    # molecule surface compartments found in $sg
 	my $err = '';  # return error (set string if species compartment is invalid)
 
+	my @missing_comp_mols = ();
+
 	# Gather molecule compartments and component compartments
 	my %mol_comps = ();
 	foreach my $mol ( @{ $sg->Molecules } )
@@ -827,6 +829,11 @@ sub inferSpeciesCompartment
 		if ( !(defined $comp)  and  defined $sg->Compartment )
 		{
 			$comp = $sg->Compartment;
+		}
+
+		if ( !(defined $comp) )
+		{
+			push @missing_comp_mols, $mol;
 		}
 
 		$mol_comps{$mol} = $comp;
@@ -850,6 +857,12 @@ sub inferSpeciesCompartment
 
 	my $n_surfaces = scalar( keys %surfaces );
 	my $n_volumes  = scalar( keys %volumes );
+
+	if ( @missing_comp_mols > 0 && ($n_surfaces > 0 || $n_volumes > 0 || defined $sg->Compartment) )
+	{
+		$err = sprintf "Molecule %s in SpeciesGraph %s does not have a specified compartment.", $missing_comp_mols[0]->Name, $sg->toString();
+		return ( undef, $err );
+	}
 
 	# infer Species Compartment
 	if ( $n_surfaces == 0 )
