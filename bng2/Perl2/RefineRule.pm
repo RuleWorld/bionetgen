@@ -737,8 +737,9 @@ sub restrict_rule
 
 
     # Account for differences in symmetry between the parent rule and the expanded child rule
+    # (Addresses TODO: determine if we need to make any changes to handle MultScale)
     my $mult_factor = 1.0;
-    if ( defined $rr->MultScale && defined $child_rule->MultScale )
+    if ( defined $rr->MultScale && defined $child_rule->MultScale && $child_rule->MultScale != 0 )
     {
         $mult_factor = $rr->MultScale / $child_rule->MultScale;
     }
