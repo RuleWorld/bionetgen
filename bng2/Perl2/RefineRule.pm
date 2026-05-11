@@ -583,6 +583,31 @@ sub restrict_rule
     }
 
 
+
+    # pre-compile the local RateLaw using the original species graphs
+    # this resolves molecule-rooted local functions before the structure
+    # is obscured by substitution with population species.
+    my $local_refs = {};
+    foreach my $ref ( keys %{$rr->RRefs} )
+    {
+        my ($patt_idx, $mol_idx, $comp_idx) = split( /\./, $rr->RRefs->{$ref} );
+        my $ptr2 = "$patt_idx";
+        if (defined $mol_idx)
+        {
+            my ($mol2_idx) = split( /\./, $matches->[$patt_idx]->mapF($mol_idx) );
+            $ptr2 .= ".$mol2_idx";
+            if (defined $comp_idx)
+            {
+                my ($mol2_idx, $comp2_idx) = split( /\./, $matches->[$patt_idx]->mapF("$mol_idx.$comp_idx") );
+                $ptr2 .= ".$comp2_idx";
+            }
+        }
+        $local_refs->{$ref} = $ptr2;
+    }
+
+    my $dummy_rxn = Rxn->new( Reactants=>$reactants, Products=>$products, Priority=>$rr->Priority, RxnRule=>$rr );
+    my $precompiled_ratelaw = $rr->RateLaw->evaluate_local( $dummy_rxn, $local_refs, $hybrid_model );
+
     # if reactant is isomorphic to a population graph, then substitute
     if ( defined $model->PopulationList )
     {
@@ -619,9 +644,7 @@ sub restrict_rule
             }    
         }
     }
-    # TODO: if population obscures a molecule rooted local function, we'll need to
-    #  pre-compile the local function. But this can wait until we handle molecule rooted
-    #  observables are implemented in BNG
+
          
     # remove unnecessary temporary labels
     SpeciesGraph::removeRedundantLabels( $reactants, $products, $temp_labels );
@@ -636,7 +659,7 @@ sub restrict_rule
     $child_rule->Name( $name );
     $child_rule->Reactants( $reactants );
     $child_rule->Products( $products );
-    $child_rule->RateLaw( $rr->RateLaw->copy() );
+    $child_rule->RateLaw( $precompiled_ratelaw->copy() );
     $child_rule->TotalRate( $rr->TotalRate );
     $child_rule->Priority( $rr->Priority );	    
     $child_rule->DeleteMolecules( $rr->DeleteMolecules );
