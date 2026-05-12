@@ -398,7 +398,6 @@ int main(int argc, char *argv[]){
 				exit(1);
 			}
 			if (i == 0)	continue;
-//			if (sample_times[i] <= sample_times[i-1]) {
 			if (sample_times[i] < sample_times[i-1]) { // Handle case where n_sample=2 and t_start=t_end
 				fprintf(stderr,"ERROR: Sample times must be in ascending order.\n");
 				exit(1);
