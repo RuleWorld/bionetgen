@@ -2313,13 +2313,10 @@ sub toSBMLMultiSpeciesType
     my @parentEntry;
 
 
-    # TODO: we should only include fully specified full bonds and states. other stuff doesnt need to be here
-    # technically this is only necessary for symmetric stuff but its easier to just index everything
-        
     if($n_mol > 1){
         my %rreferenceClone = %{dclone(\%{$speciesIdHash_ref->{'References'}->{"ST".$id}->{'reverseReferences'}})};
-        my %needed_compkeys;
-        my %needed_molkeys;
+        my %needed_compkeys = ();
+        my %needed_molkeys = ();
 
         my $mindex =0;
         foreach my $molecule (@{$sg->Molecules}){
@@ -2330,7 +2327,8 @@ sub toSBMLMultiSpeciesType
                 $speciesIdHash_ref->{'References'}->{"ST".$id}->{'bng2multi'}->{"$mindex.$cindex"} = $compkey;
                 splice(@{$rreferenceClone{$fullstring}}, 0, 1);
 
-                if (defined $component->State && $component->State ne '') {
+                # Filter out wildcards and only include fully specified states
+                if (defined $component->State && $component->State ne '' && $component->State !~ /^[?*+]$/) {
                     $needed_compkeys{$compkey} = 1;
                     $needed_molkeys{$molecule->Name} = 1;
                 }
@@ -2349,7 +2347,9 @@ sub toSBMLMultiSpeciesType
         if ( @{$sg->Edges} ) {
             foreach my $edge ( @{$sg->Edges} ) {
                 my ($p1, $p2) = split ' ', $edge;
-                next unless (defined $p2);
+                # Only include fully specified full bonds; exclude dangling or half-bonds ("other stuff")
+                next unless (defined $p1 && defined $p2);
+
                 my $compkey1 = $speciesIdHash_ref->{'References'}->{"ST".$id}->{'bng2multi'}->{$p1};
                 my $compkey2 = $speciesIdHash_ref->{'References'}->{"ST".$id}->{'bng2multi'}->{$p2};
                 if ($compkey1) {
