@@ -506,48 +506,32 @@ sub clone
 
 ###
 ###
-###
-
-
 # create a new expression from a number or a param name
 sub newNumOrVar
 {
     my $value = shift @_;
     my $plist = (@_) ? shift @_ : undef;
-    
-    my $expr;
-    my $err;
-    # is this a number?
-    if ( looks_like_number($value) )
-    {   # create a new number expression
-        $expr = Expression->new();
+
+    if ( looks_like_number($value) ) {
+        my $expr = Expression->new();
         $expr->Type('NUM');
         $expr->Arglist( [$value] );
         $expr->Err( undef );
+        return $expr;
     }
-    # or possibly a parameter name?
-    elsif ( $value =~ /$PARAM_REGEX/ )
-    {
-        # we need a paramlist to continue
-        if ( ref $plist eq "ParamList" )
-        {
-            # check that parameter exists
-            (my $param, $err) = $plist->lookup( $value );
-            if (defined $param)
-            {   # create a new number expression
-                $expr = Expression->new();
-                $expr->Type('VAR');
-                $expr->Arglist( [$value] );
-                $expr->Err( undef );            
-            }
+
+    if ( $value =~ /$PARAM_REGEX/ && ref $plist eq "ParamList" ) {
+        my ($param, $err) = $plist->lookup( $value );
+        if (defined $param) {
+            my $expr = Expression->new();
+            $expr->Type('VAR');
+            $expr->Arglist( [$value] );
+            $expr->Err( undef );
+            return $expr;
         }
     }
     
-    unless (defined $expr)
-    {   die "Expression::newNumOrVar() - Attempted but failed to create number or variable expression";   }
-
-    # return expression or undefined
-    return $expr;
+    die "Expression::newNumOrVar() - Attempted but failed to create number or variable expression";
 }
 
 
