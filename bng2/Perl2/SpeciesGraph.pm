@@ -849,7 +849,7 @@ sub inferSpeciesCompartment
 		{
 			my $ccomp = $component->Compartment;
 
-			# Fallback to molecule's compartment if defined and component's is not
+			# Inherit compartment from parent molecule if it is defined and component's is not
 			if ( !(defined $ccomp) and defined $comp )
 			{
 				$ccomp = $comp;
