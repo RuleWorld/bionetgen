@@ -71,7 +71,7 @@ def writeNetwork(bnglFile):
 def generateGraph(bnglFile,graphType):
     directory = os.sep.join(bnglFile.split(os.sep)[:-1])
     os.chdir(directory)
-    print directory
+    print(directory)
     bngconsole = pexpect.spawn('{0} --console'.format(getBngExecutable()))
     bngconsole.expect('BNG>')
     bngconsole.sendline('load {0}'.format(bnglFile))
@@ -88,4 +88,4 @@ def generateGraph(bnglFile,graphType):
     
     
 if __name__ == "__main__":      
-    print bngl2xml('output19.bngl')
+    print(bngl2xml('output19.bngl'))
