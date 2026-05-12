@@ -5,13 +5,22 @@ Created on Fri May 31 16:56:13 2013
 @author: proto
 """
 
-from SimpleXMLRPCServer import SimpleXMLRPCServer
-from SimpleXMLRPCServer import SimpleXMLRPCRequestHandler
+try:
+    from SimpleXMLRPCServer import SimpleXMLRPCServer
+except ImportError:
+    from xmlrpc.server import SimpleXMLRPCServer
+try:
+    from SimpleXMLRPCServer import SimpleXMLRPCRequestHandler
+except ImportError:
+    from xmlrpc.server import SimpleXMLRPCRequestHandler
 import threading
 import subprocess
 import createGraph
 import pexpect
-import xmlrpclib
+try:
+    import xmlrpclib
+except ImportError:
+    import xmlrpc.client as xmlrpclib
 import glob
 import os
 # Restrict to a particular path.
@@ -19,9 +28,6 @@ class RequestHandler(SimpleXMLRPCRequestHandler):
     rpc_paths = ('/RPC2',)
 
 # Create server
-server = SimpleXMLRPCServer(("10.253.98.102", 9100),              requestHandler=RequestHandler)
-#server = SimpleXMLRPCServer(("127.0.0.1", 9100), requestHandler=RequestHandler)
-server.register_introspection_functions()
 
 
 
@@ -42,7 +48,7 @@ class BipartiteServer:
         pass
     def bipartite(self, bbnglFile,returnType,center,context,product):
         counter = next_id()
-        print center,context,product
+        print(center,context,product)
         bnglFile = bbnglFile.data
         with open('temp{0}.bngl'.format(counter),'w') as f:
             f.write(bnglFile)
@@ -76,7 +82,10 @@ class BipartiteServer:
         bngconsole.close()
         
         
-server.register_instance(BipartiteServer())
 
-# Run the server's main loop
-server.serve_forever()
+
+if __name__ == '__main__':
+    server = SimpleXMLRPCServer(("10.253.98.102", 9100), requestHandler=RequestHandler)
+    server.register_introspection_functions()
+    server.register_instance(BipartiteServer())
+    server.serve_forever()
