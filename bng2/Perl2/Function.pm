@@ -95,26 +95,7 @@ sub evaluate_local
     my $expr = $local_fcn->Expr->evaluate_local($local_plist, $level+1);
     $local_fcn->Expr($expr);
 
-    # check if local variables are unused
-    my $bad_args = [];
-    $ii=0;
-    while ( $ii < @{$local_fcn->Args} )
-    {
-        my ($dep, $err) = $expr->depends( $plist, $fcn->Args->[$ii] );
-        if ($dep)
-        {
-            # do nothing
-            ++$ii;
-        }
-        else
-        {
-            # remove argument
-            splice @{$local_fcn->Args}, $ii, 1;
-            push @$bad_args, $ii+1;
-        }
-    }    
-
-    return $local_fcn, $bad_args;
+    return $local_fcn;
 }
 
 

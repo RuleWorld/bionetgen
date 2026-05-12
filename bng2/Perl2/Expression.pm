@@ -1295,7 +1295,7 @@ sub evaluate_local
         {   # anonymous function..
             my $fcn = $name;
             # get locally evaluated function
-            my ($local_fcn, $elim_args) = $fcn->evaluate_local( $local_expr->Arglist, $plist, $level+1 );
+            my $local_fcn = $fcn->evaluate_local( $local_expr->Arglist, $plist, $level+1 );
 
             # if the local_fcn does not refer to observables of named functions,
             # then we can convert it to a constant expression
@@ -1309,9 +1309,6 @@ sub evaluate_local
             else
             {   # point this fcn call to the local expr
                 $local_expr->Arglist->[0] = $local_fcn;
-                # eliminate unused arguments
-                foreach my $iarg (@$elim_args)
-                {   splice @{$local_expr->Arglist}, $iarg, 1;   }
             }
         }
         elsif ( exists $functions{$name} )
@@ -1327,7 +1324,7 @@ sub evaluate_local
             if ( $fcn_param->Type eq 'Function' )
             {                    
                 # get locally evaluated function
-                my ($local_fcn, $elim_args) = $fcn_param->Ref->evaluate_local( $local_expr->Arglist, $plist, $level+1 );
+                my $local_fcn = $fcn_param->Ref->evaluate_local( $local_expr->Arglist, $plist, $level+1 );
 
                 # if the local_fcn does not refer to observables of named functions,
                 # then we can convert it to a constant expression
@@ -1341,9 +1338,6 @@ sub evaluate_local
                 else
                 {   # point this fcn call to the local expr
                     $local_expr->Arglist->[0] = $local_fcn;
-                    # eliminate unused arguments
-                    foreach my $iarg (@$elim_args)
-                    {   splice @{$local_expr->Arglist}, $iarg, 1;   }
                 }
             }
             # This function is Really an Observable!!    
