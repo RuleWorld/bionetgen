@@ -73,7 +73,6 @@ sub toString
     $string .= " #";
 
     # write source RxnRule
-#    if (defined $rxn->RxnRule) {  $string .= $rxn->RxnRule->Name;  }
 	if (defined $rxn->RxnRule)
 	{
 		my $i = 0;
