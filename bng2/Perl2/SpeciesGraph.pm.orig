@@ -93,9 +93,9 @@ sub getMultiSpeciesTypeStr
                 foreach my $edge (@{$comp->Edges})
                 {
                     if ($edge=~ /^\d+$/)
-                    {   
+                    {
                         $componentFlag = 1;
-                        last;   
+                        last;
                     }
                 }
             }
@@ -113,7 +113,7 @@ sub getMultiSpeciesTypeStr
 
         }
         $molecule->Components(\@multistcomponents);
-        
+
     }
     $sg->labelHNauty();
     return $sg->StringExact;
@@ -259,7 +259,7 @@ sub readString
     {   return "Expecting SpeciesGraph but found termination characters instead\n"
               ."  in string '$string_left'.";
 	}
-    
+
     # parse molecules
 	while ($string_left)
 	{
@@ -283,10 +283,10 @@ sub readString
 				# AS2023 - this means what we have left doesn't start with a space
 				# or a "," meaning that this is not a properly separated pattern
 				if ( $string_left =~ s/(=|==|<|<=|>|>=)(\d+)// ) {
-					return "Can't have multiple quantifiers in pattern."; 
+					return "Can't have multiple quantifiers in pattern.";
 				}
 			}
-			
+
 			if ($is_species) {  return "Quantifier not allowed in species";  }
 		}
 		elsif ( $string_left =~ s/^[{]// )
@@ -311,10 +311,10 @@ sub readString
 
 				if ( $attr eq 'MatchOnce' )
                 {
-                	if ($is_species)
-                	{
-                		return "MatchOnce is not a valid attribute for a species.";
-                	}
+			if ($is_species)
+			{
+				return "MatchOnce is not a valid attribute for a species.";
+			}
 					my $val = booleanToInt($value);
 					if ( $val == -1 )
                     {
@@ -422,9 +422,9 @@ sub checkSpecies
     my $comp;
     my $params = { IsSpecies     => 1,
                    AllowNewTypes => 0  };
-    
+
     # check that components are fully specified
-    $err = $model->MoleculeTypesList->checkSpeciesGraph( $sg, $params );                           
+    $err = $model->MoleculeTypesList->checkSpeciesGraph( $sg, $params );
 	return 0 if ($err);
 
     # check that compartments are specified, if we're using compartments
@@ -480,14 +480,14 @@ sub p_to_multi_label
     my $p = shift @_;
     my $speciesIdHash_ref = shift @_;
     my $stid = shift @_;
-    
+
     my @inds = split( '\.', $p );
     my $fullstring = sprintf("%s(%s)", @{$sg->Molecules}[$inds[0]]->Name, @{@{$sg->Molecules}[$inds[0]]->Components}[$inds[1]]->Name);
-     
+
     my $multiid = sprintf "ST${stid}_M%d_C%d" , ($inds[0]+1) , $inds[1] + 1;
 
-    
-    #print Dumper $speciesIdHash_ref;    
+
+    #print Dumper $speciesIdHash_ref;
     #my $mid = sprintf("ST%s_M%d",$stid,$p+1);
     #foreach my $comp (@{$speciesIdHash_ref->{'reverseReferences'}->{$fullstring}}){
     #     if (index($comp, $mid) != -1){
@@ -508,11 +508,11 @@ sub labelHNauty
 {
 	use strict;
 	use Data::Dumper;
-	
+
 	my $sg = shift @_;
 	my $allow_dangling = @_ ? shift @_ : 0;
 	my $trim_dangling  = @_ ? shift @_ : 0;
-	
+
 	# holds error value for return
 	my $err;
 
@@ -707,7 +707,7 @@ sub labelQuasi
 
 # Modified version using different labeling functions
 sub sortLabel
-{ 
+{
 	my $sg = shift @_;
 	my $allow_dangling = @_ ? shift @_ : FALSE;
 	my $trim_dangling  = @_ ? shift @_ : FALSE;
@@ -727,7 +727,7 @@ sub sortLabel
 	{
 		$err = $sg->labelHNauty( $allow_dangling, $trim_dangling );
 	}
-	
+
 	return $err;
 }
 
@@ -819,7 +819,6 @@ sub inferSpeciesCompartment
 	my $err = '';  # return error (set string if species compartment is invalid)
 
 	my @missing_comp_mols = ();
-	my @missing_comp_components = ();
 
 	# Gather molecule compartments and component compartments
 	my %mol_comps = ();
@@ -848,18 +847,6 @@ sub inferSpeciesCompartment
 		foreach my $component ( @{ $mol->Components } )
 		{
 			my $ccomp = $component->Compartment;
-
-			# Fallback to molecule's compartment if defined and component's is not
-			if ( !(defined $ccomp) and defined $comp )
-			{
-				$ccomp = $comp;
-			}
-
-			if ( !(defined $ccomp) )
-			{
-				push @missing_comp_components, $component;
-			}
-
 			if ( defined $ccomp )
 			{
 				if    ( $ccomp->SpatialDimensions == 2 ) { $surfaces{$ccomp} = $ccomp; }
@@ -874,12 +861,6 @@ sub inferSpeciesCompartment
 	if ( @missing_comp_mols > 0 && ($n_surfaces > 0 || $n_volumes > 0 || defined $sg->Compartment) )
 	{
 		$err = sprintf "Molecule %s in SpeciesGraph %s does not have a specified compartment.", $missing_comp_mols[0]->Name, $sg->toString();
-		return ( undef, $err );
-	}
-
-	if ( @missing_comp_components > 0 && ($n_surfaces > 0 || $n_volumes > 0 || defined $sg->Compartment) )
-	{
-		$err = sprintf "Component %s in SpeciesGraph %s does not have a specified compartment.", $missing_comp_components[0]->Name, $sg->toString();
 		return ( undef, $err );
 	}
 
@@ -1171,29 +1152,29 @@ sub copymerge
     # build offsets array:
     #  offset[i] = index of first molecule of reactant i in the aggregate graph
     my $offsets = [ (0) x @sgs ];
-	
+
 	# create new speciesgraph to hold copy
 	my $sg_copy = SpeciesGraph->new();
-	
+
 	# create array to hold copied molecules
 	my $mol_copy = [];
 	$sg_copy->Molecules($mol_copy);
-	
+
 	# loop over subgraphs and copy
-	my $allow_dangling = FALSE;	
+	my $allow_dangling = FALSE;
 	my $offset = 0;
 	for ( my $i_sg = 0;  $i_sg < @sgs;  ++$i_sg )
 	{
 	    my $sg = $sgs[$i_sg];
-	    
+
 	    # get offsets
 	    $offsets->[$i_sg] = $offset;
 	    $offset += @{$sg->Molecules};
-	    
+
 	    # if we find a non-species graph, then allow dangling!
 	    unless ( defined $sg->Species  and  ref $sg->Species eq 'SPECIES' )
 	    {   $allow_dangling = TRUE;  }
-	
+
 	    # copy molecules
 		foreach my $mol ( @{$sg->Molecules} )
 		{
@@ -1203,11 +1184,11 @@ sub copymerge
 		}
 	}    # END loop over SpeciesGraphs
 
-		
+
 	# update graph edges
 	my $err = $sg_copy->updateEdges( $allow_dangling );
 	if ( $err ) {  print "SpeciesGraph::copymerge(): updateEdges failed with error:\n  $err\n";  }
-	
+
 	# return copy
 	return ($sg_copy, $offsets);
 }
@@ -1247,7 +1228,7 @@ sub copy
 	{
 	    $sg_copy->Molecules( [map {$_->copy($copy_labels)} @{$sg->Molecules}] );
 	}
-	
+
 	if ($copy_labels)
 	{
         # copy labels, IDs, etc..
@@ -1255,7 +1236,7 @@ sub copy
         $sg_copy->StringID( $sg->StringID );
         $sg_copy->StringExact( $sg->StringExact );
         $sg_copy->IsCanonical( $sg->IsCanonical );
-        	
+
 	    # copy edges
 	    foreach my $edge ( @{$sg->Edges} )
 	    {
@@ -1274,7 +1255,7 @@ sub copy
 	    }
 	}
 	else
-	{    
+	{
 	    if ($get_label)
 	    {
 	        # generate label and, as side-effect, build Edges and Adjacencies
@@ -1285,10 +1266,10 @@ sub copy
 		{
 	        # Build Edges and Adjacencies, but don't get label
 		    my $err = $sg_copy->updateEdges( ALLOW_DANGLING_BONDS, TRIM_DANGLING_BONDS );
-		    if ($err) {  print "SpeciesGraph::copy(): updateEdges failed with error:\n  $err\n";  }		
+		    if ($err) {  print "SpeciesGraph::copy(): updateEdges failed with error:\n  $err\n";  }
 		}
     }
-	
+
     if (defined $sg->Species)
     {   # pass the Species reference to the copy (but don't copy the Species!)
         $sg_copy->Species( $sg->Species );
@@ -1311,18 +1292,18 @@ sub relinkCompartments
 {
     my $sg = shift;
     my $clist = shift;
-    
+
     if ( defined $sg->Compartment )
     {
         my $new_comp = $clist->lookup( $sg->Compartment->Name );
         $sg->Compartment( $new_comp );
     }
-    
+
     foreach my $mol ( @{$sg->Molecules} )
     {
         $mol->relinkCompartments( $clist );
     }
-    
+
     return $sg;
 }
 
@@ -1340,17 +1321,17 @@ sub gatherLabels
     my $sg = shift @_;
     my $label_map = shift @_;
     my $i_sg = (@_) ? shift : 0;
-    
+
     $label_map->{$sg->Label} = $i_sg  if (defined $sg->Label);
     for ( my $i_mol = 0;  $i_mol < @{$sg->Molecules}; ++$i_mol )
     {
         my $mol = $sg->Molecules->[$i_mol];
         $label_map->{$mol->Label} = "$i_sg.$i_mol"  if (defined $mol->Label);
-        
+
         for ( my $i_comp = 0; $i_comp < @{$mol->Components}; ++$i_comp )
         {
             my $comp = $mol->Components->[$i_comp];
-            $label_map->{$comp->Label} = "$i_sg.$i_mol.$i_comp"  if (defined $comp->Label);            
+            $label_map->{$comp->Label} = "$i_sg.$i_mol.$i_comp"  if (defined $comp->Label);
         }
     }
 }
@@ -1365,7 +1346,7 @@ sub isPopulationType
 {
     my $sg = shift @_;
     my $mtlist = shift @_;
- 
+
     my $mt = $mtlist->MolTypes->{$sg->Molecules->[0]->Name};
     return (defined $mt->PopulationType) ? $mt->PopulationType : 0;
 }
@@ -1385,7 +1366,7 @@ sub assignLabels
     my $start_index = shift @_;
     my $new_labels = shift @_;
     my $used_labels = shift @_;
-    
+
     my $base = 'T';
     my $i_label = $start_index;
     foreach my $mol ( @{$sg->Molecules} )
@@ -1405,7 +1386,7 @@ sub assignLabels
                 while ( exists $used_labels->{"$base$i_label"} )
                 {  ++$i_label;  }
                 $comp->Label( "$base$i_label" );
-                $new_labels->{"$base$i_label"} = 1;                
+                $new_labels->{"$base$i_label"} = 1;
                 ++$i_label;
             }
         }
@@ -1457,7 +1438,7 @@ sub removeLabels
 sub removeRedundantLabels
 {
     my ($sgs1, $sgs2, $temp_labels) = @_;
-    
+
     # autolabel molecules
     my $autolabels1 = autolabel_molecules($sgs1, $temp_labels);
     my $autolabels2 = autolabel_molecules($sgs2, $temp_labels);
@@ -1476,7 +1457,7 @@ sub removeRedundantLabels
 
     # remove temporary molecule labels that are not required for the correspondence mapping
     foreach my $key ( keys %$autolabels1 )
-    {   
+    {
         my @set1 = @{$autolabels1->{$key}};
         my @set2 = @{$autolabels2->{$key}};
 
@@ -1618,7 +1599,7 @@ sub removeRedundantLabels
 
         # remove temporary molecule labels that are not required for the correspondence mapping
         foreach my $key ( keys %$autolabels1 )
-        {   
+        {
             my @set1 = @{$autolabels1->{$key}};
             my @set2 = @{$autolabels2->{$key}};
 
@@ -1729,10 +1710,10 @@ sub copySubgraph
 #   fails a warning is printed to the default output.
 {
 	my ($sg, $subgraph, $nsub) = @_;
-	
+
 	# holds error value
 	my $err;
-	
+
 	# Create SG to hold subgraph copy
 	my $sg_copy = SpeciesGraph->new();
 
@@ -1744,11 +1725,11 @@ sub copySubgraph
 		next unless ( $$subgraph[$imol] == $nsub );
 		push @$mol_copy, $sg->Molecules->[$imol]->copy();
 	}
-	
+
 	# update graph edges
 	$err = $sg_copy->updateEdges( !ALLOW_DANGLING_BONDS );
 	if ( $err ) {   print "WARNING: $err.\n";   }
-	
+
 	return $sg_copy;
 }
 
@@ -1762,7 +1743,7 @@ sub copySubgraph
 
 
 
-# returns the number of molecules with name $mname 
+# returns the number of molecules with name $mname
 #  in species graph $sg.
 sub stoich
 {
@@ -1822,7 +1803,7 @@ sub updateEdges
 		foreach my $comp ( @{$mol->Components} )
 		{
 		    my @wildcards = ();
-		    # loop over edge labels at this component			
+		    # loop over edge labels at this component
 			foreach my $elabel ( @{$comp->Edges} )
 			{
 				if ( $elabel =~ /^[+?]$/ )
@@ -1862,7 +1843,7 @@ sub updateEdges
             ($m1, $c1) = @{$edge->[0]};
             ($m2, $c2) = @{$edge->[1]};
 		    # create pointer to bond end2
-    		$p1 = "$m1.$c1";
+		$p1 = "$m1.$c1";
 			$p2 = "$m2.$c2";
 			# update adjacency hash
 			$adjacency->{$p1}{$p2} = $iedge;
@@ -1872,7 +1853,7 @@ sub updateEdges
 			push @{ $sg->Molecules->[$m2]->Components->[$c2]->Edges }, $iedge;
 			# add edge definition to edge array
 			push @$edges, "$p1 $p2";
-		    ++$iedge;			
+		    ++$iedge;
 		}
 		elsif ( @$edge==1  and  $allow_dangling )
 		{
@@ -1889,7 +1870,7 @@ sub updateEdges
 		}
 		elsif ( @$edge==1  and  !$allow_dangling )
 		{   $err = "SpeciesGraph::updateEdges(): dangling edge not allowed in species graph!";   }
-	    elsif ( @$edge > 2 ) 
+	    elsif ( @$edge > 2 )
 	    {   $err = "SpeciesGraph::updateEdges(): edge binds more than 2 components!";   }
 		else
 	    {   $err = "SpeciesGraph::updateEdges(): unknown error!";   }
@@ -1924,14 +1905,14 @@ sub toString
 	{
 	    if ($sg->Name)
 	    {   $string .= $sg->Name;   }
-	    
+
 	    if ($sg->Label)
 	    {   $string .= '%' . $sg->Label;   }
     }
-	
+
 	if ( $sg->Compartment )
 	{   $string .= '@' . $sg->Compartment->Name;   }
-	
+
 	if ($string)
 	{   $string .= "::";   }
 
@@ -1942,13 +1923,13 @@ sub toString
 		my @attr = ();
 		if ( $sg->MatchOnce )
 		{   push @attr, "MatchOnce";   }
-		
+
 		# put additional attributes here!
-		
+
 		# write attributes to string
 		if (@attr)
 		{   $string .= '{' . join( ',', @attr ) . '}';   }
-		
+
 		# Handle "Fixed" by prepending '$'
 		if ( $sg->Fixed )
 		{   $string .= '$';   }
@@ -1969,7 +1950,7 @@ sub toString
         if ( $sg->Quantifier )
         {   $string .= $sg->Quantifier;   }
 	}
-	
+
 	return $string;
 }
 
@@ -2198,7 +2179,7 @@ sub toSBMLMultiSpecies
     if ( $sg->Compartment )
     {
         $string .= " compartment=\"" . $sg->Compartment->Name . "\"";
-        
+
     }
     else
     {
@@ -2231,7 +2212,7 @@ sub toSBMLMultiSpecies
     # Molecules
     if ( @{$sg->Molecules} )
     {
-        
+
 
         my $index = 1;
         # clone the list of references we need for this particular species (since we will be modifying it)
@@ -2240,7 +2221,7 @@ sub toSBMLMultiSpecies
         #print Dumper \%multicomponentHash;
         foreach my $mol ( @{$sg->Molecules} )
         {
-            $mol->getSBMLMultiSpeciesFields($mtlist, "  " . $indent2, ${attributes_ref}->{'multi:speciesType'}, sprintf("%s_M%d", $id, $index), 
+            $mol->getSBMLMultiSpeciesFields($mtlist, "  " . $indent2, ${attributes_ref}->{'multi:speciesType'}, sprintf("%s_M%d", $id, $index),
                                             \%sbmlMultiSpeciesInfo, $speciesIdHash_ref, \%multicomponentHash);
             ++$index;
         }
@@ -2297,7 +2278,7 @@ sub toSBMLMultiSpeciesType
     my $sbmlMultiSpeciesInfo_ref = shift @_;
     my $speciesIdHash_ref = shift @_;
     my $n_mol = scalar( @{ $sg->Molecules } );
-    
+
     my $attributes_str = '';
 
     for my $attrkey (keys %{$attributes}){
@@ -2334,7 +2315,7 @@ sub toSBMLMultiSpeciesType
 
     # TODO: we should only include fully specified full bonds and states. other stuff doesnt need to be here
     # technically this is only necessary for symmetric stuff but its easier to just index everything
-        
+
     if($n_mol > 1){
         my %rreferenceClone = %{dclone(\%{$speciesIdHash_ref->{'References'}->{"ST".$id}->{'reverseReferences'}})};
         my %needed_compkeys;
@@ -2410,7 +2391,7 @@ sub toSBMLMultiSpeciesType
         #print Dumper $speciesIdHash_ref->{'References'}->{"ST".$id}->{'bng2multi'};
         if ( @{$sg->Edges} )
         {
-            
+
             my $bstring = '';
             my $index   = 1;
             my $indent3 = '  ' . $indent2;
@@ -2424,7 +2405,7 @@ sub toSBMLMultiSpeciesType
                 next unless (defined $p2); # Only print full bonds; half-bonds handled by BindingState variable in Components
                 $bid1 = "cmp_". $speciesIdHash_ref->{'References'}->{"ST".$id}->{'bng2multi'}->{$p1};
                 $bid2 = "cmp_" . $speciesIdHash_ref->{'References'}->{"ST".$id}->{'bng2multi'}->{$p2};
-                
+
                 my $a_bid1 = substr($bid1,4);
                 my $a_bid2 = substr($bid2,4);
                 foreach my $mol2 (keys %{$speciesIdHash_ref->{'References'}->{"ST" . $id}->{'reverseReferences'}}){
@@ -2435,19 +2416,19 @@ sub toSBMLMultiSpeciesType
                     #remove components that can't possibly be outward bonds (because they are inward bonds) from the list of reverseReferences
                     my $index2  = first_index {$_  eq $a_bid1 } @{$speciesIdHash_ref->{'References'}->{"ST" . $id}->{'reverseReferences'}->{$mol2}};
                     if ($index2 >=0){
-                        splice(@{$speciesIdHash_ref->{'References'}->{"ST" . $id}->{'reverseReferences'}->{$mol2}}, $index2, 1); 
+                        splice(@{$speciesIdHash_ref->{'References'}->{"ST" . $id}->{'reverseReferences'}->{$mol2}}, $index2, 1);
                     }
 
                     $index2  = first_index {$_  eq $a_bid2 } @{$speciesIdHash_ref->{'References'}->{"ST" . $id}->{'reverseReferences'}->{$mol2}};
                     if ($index2 >= 0){
-                        splice(@{$speciesIdHash_ref->{'References'}->{"ST" . $id}->{'reverseReferences'}->{$mol2}}, $index2, 1); 
+                        splice(@{$speciesIdHash_ref->{'References'}->{"ST" . $id}->{'reverseReferences'}->{$mol2}}, $index2, 1);
                     }
 
 
                     #;
                 }
-                
-                
+
+
                 $bstring .= sprintf("%s<multi:inSpeciesTypeBond multi:bindingSite1=\"%s\" multi:bindingSite2=\"%s\"/>\n", $indent3, $bid1, $bid2);
 
                 ++$index;
@@ -2610,11 +2591,11 @@ sub findConnected
 sub isConnected
 {
     my $sg = shift;
-    
+
     # find the connected component
     my $connected_component = {};
     $sg->depthFirstMoleculeSearch( 0, $connected_component );
-   
+
     for ( my $imol = 0;  $imol < @{$sg->Molecules};  ++$imol )
     {
         return 0  unless ( exists $connected_component->{$imol} );
@@ -2638,7 +2619,7 @@ sub splitConnectedComponents
     my $sg = shift @_;
     # force a subset of molecules to map to specific patterns
     my $map_imol_to_ipatt = (@_) ? shift @_ : undef;
-     
+
     # Do some error checking
     my $n_patt;
     if ( defined $map_imol_to_ipatt )
@@ -2659,20 +2640,20 @@ sub splitConnectedComponents
     {   # no map specified, create an undefined map
         $map_imol_to_ipatt = [(undef) x @{$sg->Molecules}];
         $n_patt = 0;
-    }       
- 
+    }
+
     # initialize vector of species graphs (speed optimization)
     my $sgs = [ (undef) x $n_patt ];
 
 
-    # Find all connected components: 
+    # Find all connected components:
     #   Loop over molecules and do a breadth first search for connected molecules
     my $visited = {};
     for ( my $imol = 0;  $imol < @{$sg->Molecules};  ++$imol )
     {
         # skip molecule if already visited
         next if ( exists $visited->{$imol} );
-    
+
         # find the connected component
         my $connected_component = [];
         $sg->breadthFirstMoleculeSearch( $imol, $connected_component, $visited );
@@ -2694,20 +2675,20 @@ sub splitConnectedComponents
                 $ipatt = $map_imol_to_ipatt->[$imol2];
             }
         }
-        
+
         # if ipatt isn't defined, get the next index available
         unless ( defined $ipatt )
         {
             $ipatt = $n_patt;
             ++$n_patt;
         }
-        
+
         # create speciesGraph, if not already created
         unless ( defined $sgs->[$ipatt] ) {  $sgs->[$ipatt] = SpeciesGraph::new();  }
 
         # add molecules to the SpeciesGraph
         foreach my $imol2 ( sort {$a<=>$b} @$connected_component )
-        {   
+        {
             # map imol to ipatt
             $map_imol_to_ipatt->[$imol2] = $ipatt;
             # add imol to species graph
@@ -2719,10 +2700,10 @@ sub splitConnectedComponents
     # tell original SpeciesGraph to forget about its molecules
     # (just to make sure no one tampers with them)
     @{$sg->Molecules} = ();
-    
+
     # make sure all the products are defined
     #  then build adjacency hash and edge array
-    my $ipatt = 0;   
+    my $ipatt = 0;
     foreach my $sg2 ( @$sgs )
     {
         unless (defined $sg2)
@@ -2733,15 +2714,15 @@ sub splitConnectedComponents
 	    # Put SpeciesGraph in canonical order
 	    my $err = $sg2->updateEdges();
 		if ($err)
-    	{
+	{
 		    return "SpeciesGraph->splitConnectedComponents: ERROR!! some problem in updateEdges:\n" . $sg2->toString() . "\n", [];
 		}
         ++$ipatt;
     }
-    
+
     # return
     return undef, $sgs;
-}          
+}
 
 
 
@@ -2760,23 +2741,23 @@ sub breadthFirstMoleculeSearch
     my $visited   = (@_) ? shift : {};   # hashmap of molecules that we've visited
     # by default, collect every molecule we encounter
     my $condition = (@_) ? shift : sub { return 1; };
-    
+
     # initialize a molecule queue
     my @mol_queue = ($root_mol);
-    
+
     # process until until empty
     while ( @mol_queue )
     {
         # get next molecule on the queue
         my $imol = shift @mol_queue;
         # skip molecule if already visited
-        next if ( exists $visited->{$imol} );   
+        next if ( exists $visited->{$imol} );
         # remember that we visited this molecule
         $visited->{$imol} = 1;
 
         # does this molecule satisfy the condition?
         push @$found, $imol  if ($condition->($imol));
-   
+
         # search through components and look at adjacent molecules
         my $mol = $sg->Molecules->[$imol];
         for ( my $icomp = 0;  $icomp < @{$mol->Components};  ++$icomp )
@@ -2787,8 +2768,8 @@ sub breadthFirstMoleculeSearch
                 my ($imol2,$icomp2) = split /\./, $ptr2;
                 push @mol_queue, $imol2;
             }
-        }        
-    } 
+        }
+    }
 }
 
 
@@ -2812,10 +2793,10 @@ sub depthFirstMoleculeSearch
     # don't visit a molecule twice
     return if ( exists $visited->{$imol} );
     $visited->{$imol} = 1;
-    
+
     # add this molecule to 'found' if it satifies 'condition'
     $found->{$imol} = 1  if ( $condition->($imol) );
-    
+
     # search through components and look at adjacent molecules
     my $mol = $sg->Molecules->[$imol];
     for ( my $icomp = 0;  $icomp < @{$mol->Components};  ++$icomp )
@@ -2946,7 +2927,7 @@ sub isomorphicTo
 
         # The CITER loop tries to access undefined values if there are 0 components..
         #  in which case we can just skip CITER.
-        
+
         unless ( @{$molecules1->[$im1]->Components} == 0 )
         {
 	        # Do depth first search over components of molecule 2
@@ -3053,7 +3034,7 @@ sub isomorphicTo
 # Determine if SpeciesGraph is isomorphic
 # to a portion of another SpeciesGraph
 sub isomorphicToSubgraph
-{   
+{
 
 	my $sg1 = shift @_;
     my $sg2 = shift @_;
@@ -3064,7 +3045,7 @@ sub isomorphicToSubgraph
     #    $sg1->toString(), $sg2->toString(), $root_src, $root_targ;
 
 	my $molecules1 = $sg1->Molecules;
- 	my $edges1     = $sg1->Edges;
+	my $edges1     = $sg1->Edges;
 	my $adj1       = $sg1->Adjacency;
 
 	my $molecules2 = $sg2->Molecules;
@@ -3089,7 +3070,7 @@ sub isomorphicToSubgraph
 
     # if this is the null graph, then return a trivial subgraph isomorphism
     if ( $sg1->isNull() )
-    {   
+    {
         my $map = Map->new( Source=>$sg1, Target=>$sg2 );
 		push @maps, $map;
         return @maps;
@@ -3105,7 +3086,7 @@ sub isomorphicToSubgraph
 
     my @mol1_begin = (0) x @$molecules1;                     # first index of mol2 that mol1 can match
     my @mol1_ptr   = (0) x @$molecules1;                     # current index of mol2 that mol1 is trying to match
-    my @mol1_end   = (scalar @$molecules2) x @$molecules1;   # end index of mol2 that mol1 can match 
+    my @mol1_end   = (scalar @$molecules2) x @$molecules1;   # end index of mol2 that mol1 can match
 	my @mol2_used  = (0) x @$molecules2;
 
 
@@ -3150,7 +3131,7 @@ sub isomorphicToSubgraph
 		for ( $im2 = $mol1_ptr[$im1]; $im2 < $mol1_end[$im1]; ++$im2 )
         {
             # Continue if this molecule already mapped
-            unless ($im1==$root_src) { next if $mol2_used[$im2]; } 
+            unless ($im1==$root_src) { next if $mol2_used[$im2]; }
 
             # Is mol2? a candidate match for mol1?
             # compare molecule types
@@ -3159,7 +3140,7 @@ sub isomorphicToSubgraph
             next if ( @$components1 > @{$molecules2->[$im2]->Components} );
             # compare compartments
 			if ( defined $molecules1->[$im1]->Compartment )
-            {   
+            {
                 next unless ( defined $molecules2->[$im2]->Compartment );
 				next unless ( $molecules1->[$im1]->Compartment == $molecules2->[$im2]->Compartment );
 			}
@@ -3172,7 +3153,7 @@ sub isomorphicToSubgraph
 			$ic1 = ($comp1_last >= 0) ? 0 : -1;
 			$found_mol_match = 1;
 			last;
-		}    
+		}
 
 		# if no match found to this molecule, move back to previous molecule and try again
 		unless ($found_mol_match)
@@ -3225,7 +3206,7 @@ sub isomorphicToSubgraph
 					# Component state only if present in sg1
 					if ( defined $ci1->State )
                     {
-                    	next unless ( defined $ci2->State);
+			next unless ( defined $ci2->State);
 						unless ( $ci1->State eq "?" )
                         {   next unless ( $ci1->State eq $ci2->State );   }
 					}
@@ -3389,21 +3370,21 @@ sub getIdentityMap
     # initialize map hashes
     my $mapF = {};
     my $mapR = {};
-    
+
     # create map object
 	my $map = Map::new();
 	$map->Source($sg);
-	$map->Target($sg);    
+	$map->Target($sg);
     $map->MapF( $mapF );
     $map->MapR( $mapR );
-    
+
     # build identity maps
     my $im = 0;
     foreach my $mol ( @{$sg->Molecules} )
     {
         $mapF->{$im} = $im;
         $mapR->{$im} = $im;
-        
+
         my $ic = 0;
         foreach my $comp ( @{$mol->Components} )
         {
@@ -3414,7 +3395,7 @@ sub getIdentityMap
         }
         ++$im;
     }
-    
+
     return $map;
 }
 
@@ -3549,8 +3530,8 @@ sub buildLabelMap
             # NEW CODE. TODO: Figure this out!
             # the old code leaves out user tags, which seems sketchy.
             # but adding the tags breaks the state inheritance mechanism.
-    		#my $clabel = $clabels[$ic];
-    		## prefix component label with molecule label to ensure that
+		#my $clabel = $clabels[$ic];
+		## prefix component label with molecule label to ensure that
             ##  molecule and component maps are compatible
             #$clabel = $mlabel . '|' . $clabel . '_';
             #$clabel .= ++$labels{$clabel};
@@ -3584,12 +3565,12 @@ sub cmp_molecule
 {
 	my $a = shift;
 	my $b = shift;
-	    
+
 	my $cmp;
 	# compare molecule names
 	if ( $cmp = ( $a->Name cmp $b->Name ) )
 	{   return $cmp;   }
-	
+
 	# compare number of components
 	if ( $cmp = (@{$a->Components} <=> @{$b->Components}) )
 	{   return $cmp;   }
@@ -3612,7 +3593,7 @@ sub cmp_molecule
 		if ( $cmp = cmp_component($a->Components->[$ic], $b->Components->[$ic]) )
 		{   return $cmp;   }
 	}
-	
+
 	# no difference found
 	return 0;
 }
@@ -3719,7 +3700,7 @@ sub by_component
 sub cmp_edge
 {
 	my ($a,$b) = @_;
-	
+
 	my $cmp;
     # split pointers
 	my (@a_p) = split /[ \.]/, $a;
