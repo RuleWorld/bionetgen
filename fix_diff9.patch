@@ -1,0 +1,59 @@
+<<<<<<< SEARCH
+		foreach my $component ( @{ $mol->Components } )
+		{
+			my $ccomp = $component->Compartment;
+			if ( defined $ccomp )
+			{
+				if    ( $ccomp->SpatialDimensions == 2 ) { $surfaces{$ccomp} = $ccomp; }
+				elsif ( $ccomp->SpatialDimensions == 3 ) { $volumes{$ccomp}  = $ccomp; }
+			}
+		}
+	}
+
+	my $n_surfaces = scalar( keys %surfaces );
+	my $n_volumes  = scalar( keys %volumes );
+
+	if ( @missing_comp_mols > 0 && ($n_surfaces > 0 || $n_volumes > 0 || defined $sg->Compartment) )
+	{
+		$err = sprintf "Molecule %s in SpeciesGraph %s does not have a specified compartment.", $missing_comp_mols[0]->Name, $sg->toString();
+		return ( undef, $err );
+	}
+=======
+		foreach my $component ( @{ $mol->Components } )
+		{
+			my $ccomp = $component->Compartment;
+
+			# Fallback to molecule's compartment if defined and component's is not
+			if ( !(defined $ccomp) and defined $comp )
+			{
+				$ccomp = $comp;
+			}
+
+			if ( !(defined $ccomp) )
+			{
+				push @missing_comp_components, $component;
+			}
+
+			if ( defined $ccomp )
+			{
+				if    ( $ccomp->SpatialDimensions == 2 ) { $surfaces{$ccomp} = $ccomp; }
+				elsif ( $ccomp->SpatialDimensions == 3 ) { $volumes{$ccomp}  = $ccomp; }
+			}
+		}
+	}
+
+	my $n_surfaces = scalar( keys %surfaces );
+	my $n_volumes  = scalar( keys %volumes );
+
+	if ( @missing_comp_mols > 0 && ($n_surfaces > 0 || $n_volumes > 0 || defined $sg->Compartment) )
+	{
+		$err = sprintf "Molecule %s in SpeciesGraph %s does not have a specified compartment.", $missing_comp_mols[0]->Name, $sg->toString();
+		return ( undef, $err );
+	}
+
+	if ( @missing_comp_components > 0 && ($n_surfaces > 0 || $n_volumes > 0 || defined $sg->Compartment) )
+	{
+		$err = sprintf "Component %s in SpeciesGraph %s does not have a specified compartment.", $missing_comp_components[0]->Name, $sg->toString();
+		return ( undef, $err );
+	}
+>>>>>>> REPLACE
