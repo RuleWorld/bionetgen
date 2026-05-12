@@ -2440,7 +2440,6 @@ sub getVariables
         else
         {   # named function
             my ($param, $err) = $plist->lookup( $expr->Arglist->[0] );
-#			if (defined $param)
             if (defined $param && defined $param->Type)
             {   # add named function to rethash
                 $rethash->{$param->Type}->{$param->Name} = $param;
