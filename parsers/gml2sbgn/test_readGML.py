@@ -21,6 +21,11 @@ sys.modules['readBNGXML'] = mock_readBNGXML
 import readGML
 
 class TestReadGML(unittest.TestCase):
+    def setUp(self):
+        # Reset global mocks before each test to prevent state leakage
+        mock_networkx.reset_mock()
+        mock_readBNGXML.reset_mock()
+
     def test_readXML(self):
         # Setup
         filename = 'test_file.bngl'
@@ -46,6 +51,34 @@ class TestReadGML(unittest.TestCase):
         # Verify
         mock_readBNGXML.parseXML.assert_called_with(expected_xml_filename)
         self.assertEqual(result, 'some_result')
+
+    def test_openGML_basic(self):
+        # Setup
+        filename = 'test_file.bngl'
+        graphType = 'contactmap'
+        expected_gml_filename = 'test_file_contactmap.gml'
+        mock_networkx.read_gml.return_value = 'mock_gml_model'
+
+        # Execute
+        result = readGML.openGML(filename, graphType)
+
+        # Verify
+        mock_networkx.read_gml.assert_called_with(expected_gml_filename)
+        self.assertEqual(result, 'mock_gml_model')
+
+    def test_openGML_multiple_extensions(self):
+        # Setup
+        filename = 'model.xml.bngl'
+        graphType = 'regulatory'
+        expected_gml_filename = 'model.xml_regulatory.gml'
+        mock_networkx.read_gml.return_value = 'mock_regulatory_model'
+
+        # Execute
+        result = readGML.openGML(filename, graphType)
+
+        # Verify
+        mock_networkx.read_gml.assert_called_with(expected_gml_filename)
+        self.assertEqual(result, 'mock_regulatory_model')
 
 if __name__ == '__main__':
     unittest.main()
