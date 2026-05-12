@@ -18,6 +18,7 @@ import re
 import collections as co
 import copy
 import json
+from functools import reduce
 
 # Classes and methods for collecting transformation pairs
 class TransformationPair:
@@ -81,7 +82,7 @@ def getTransformationPairs(transformations,tprules):
 	'''
 	Constructs transformation pairs from transformations, sorted using provided rules
 	'''
-	print "\nIdentifying transformation pairs..."
+	print("\nIdentifying transformation pairs...")
 	tprules2 = processTransformationPairRules(tprules)
 	tp = [x for x in itertools.combinations(transformations,2) if (x[0].lhs==x[1].rhs and x[0].rhs==x[1].lhs)]
 	tp2 = []
@@ -103,8 +104,8 @@ def getTransformationPairs(transformations,tprules):
 	tp2 = set(tp2)
 	irrev = set(irrev)
 	
-	print len(tp2),"transformation pairs found."
-	print len(irrev),"irreversible transformations found."
+	print(len(tp2),"transformation pairs found.")
+	print(len(irrev),"irreversible transformations found.")
 	return tp2,irrev
 	
 # Classes and methods for handling names and ids of rules, patterns, transformations and transformation pairs
@@ -142,34 +143,34 @@ class NameDictionary:
 	def getIdx(self,elemtype,string):
 		# ⚡ Bolt: Use next() with generator instead of list comprehension + [0] for O(1) early exit
 		if elemtype == 'p':
-			return next((idx for x,idx in self.p.items() if str(x)==string), None)
+			return next((idx for x,idx in list(self.p.items()) if str(x)==string), None)
 		if elemtype == 't':
-			return next((idx for x,idx in self.t.items() if str(x)==string), None)
+			return next((idx for x,idx in list(self.t.items()) if str(x)==string), None)
 		if elemtype == 'tp':
-			return next((idx for x,idx in self.tp.items() if str(x)==string), None)
+			return next((idx for x,idx in list(self.tp.items()) if str(x)==string), None)
 		if elemtype == 'r':
-			return next((idx for x,idx in self.r.items() if str(x)==string), None)
+			return next((idx for x,idx in list(self.r.items()) if str(x)==string), None)
 		if elemtype == 'irr':
-			return next((idx for x,idx in self.irr.items() if str(x)==string), None)
+			return next((idx for x,idx in list(self.irr.items()) if str(x)==string), None)
 			
 	def getElement(self,elemtype,idx1):
 		# ⚡ Bolt: Use next() with generator instead of list comprehension + [0] for O(1) early exit
 		if elemtype == 'p':
-			return next((x for x,idx in self.p.items() if idx==idx1), None)
+			return next((x for x,idx in list(self.p.items()) if idx==idx1), None)
 		if elemtype == 't':
-			return next((x for x,idx in self.t.items() if idx==idx1), None)
+			return next((x for x,idx in list(self.t.items()) if idx==idx1), None)
 		if elemtype == 'tp':
-			return next((x for x,idx in self.tp.items() if idx==idx1), None)
+			return next((x for x,idx in list(self.tp.items()) if idx==idx1), None)
 		if elemtype == 'r':
-			return next((x for x,idx in self.r.items() if idx==idx1), None)
+			return next((x for x,idx in list(self.r.items()) if idx==idx1), None)
 		if elemtype == 'irr':
-			return next((x for x,idx in self.irr.items() if idx==idx1), None)
+			return next((x for x,idx in list(self.irr.items()) if idx==idx1), None)
 			
 	def getString(self,elemtype,idx1):
 		return str(self.getElement(elemtype,idx1))
 			
 	def printDict(self,elemtype,someDict,sortbywhat):
-		tuples = [(self.getString(elemtype,x),y) for x,y in someDict.items()]
+		tuples = [(self.getString(elemtype,x),y) for x,y in list(someDict.items())]
 		if sortbywhat == 'value':
 			tuples = sorted(tuples,key=lambda x: x[1])
 		return "\n".join([":".join([str(x) for x in z]) for z in tuples])
@@ -180,7 +181,7 @@ def getNameDictionary(atomizedrules,patterns,transformations,transformationpairs
 	Takes atomized rules, patterns, transformations and transformation pairs
 	returns dictionaries of rules, patterns, transformations, transformation pairs
 	'''
-	print "\nBuilding dictionaries of unique elements..."
+	print("\nBuilding dictionaries of unique elements...")
 	#dictRules,dictPatterns,dictTransformations,dictTransformationPairs = getNameDictionaries(atomizedrules,patterns,transformations,transformationpairs)
 	names = NameDictionary(atomizedrules,patterns,transformations,transformationpairs,irreversibles)
 	return names
@@ -307,7 +308,7 @@ class TransformationPairMap:
 		tp2p_forwardcontext_opt = set()
 		tp2p_reversecontext_opt = set()
 
-		for tp_id in dictTransformationPairs.values():
+		for tp_id in list(dictTransformationPairs.values()):
 			fwd_t_id = self.tp2t_forward.get(tp_id)
 			rev_t_id = self.tp2t_reverse.get(tp_id)
 
@@ -460,7 +461,7 @@ class allMaps:
 		elif type_vector == ['irr','p']:
 			return self.getFlow(['t','p'],idx_list)
 		else:
-			print "Bad Type Vector!"
+			print("Bad Type Vector!")
 			return None
 
 	def getFlux(self,type_vector,idx_list):
@@ -518,13 +519,13 @@ class allMaps:
 		ty3 = type_vector[2]
 		
 		if ty1=='p':
-			list1 = self.names.p.values()
+			list1 = list(self.names.p.values())
 		if ty1=='tp':
-			list1 = self.names.tp.values()
+			list1 = list(self.names.tp.values())
 		if ty1=='t':
-			list1 = self.names.t.values()
+			list1 = list(self.names.t.values())
 		if ty1=='irr':
-			list1 = self.names.irr.values()
+			list1 = list(self.names.irr.values())
 		
 		return [ (x,y,z) for x in list1 for y in self.getFlow([ty1,ty2],[x]) for z in self.getFlow([ty2,ty3],[y]) ]
 	
@@ -535,30 +536,30 @@ def getMaps(names,verbose):
 	'''
 	
 	
-	print "Building maps between elements..."
+	print("Building maps between elements...")
 
 	rule_map = RuleMap(names)
 	if(verbose):
-		print "\nMaps to reaction rules:"
-		print "There are",len(rule_map.r2t),"maps to transformations,"
-		print len(rule_map.r2p_transfcenter),"maps from patterns to reaction centers,"
-		print len(rule_map.r2p_context),"maps from patterns to reaction contexts, and"
-		print len(rule_map.r2p_syndelcontext),"maps from patterns that are syndel contexts."
+		print("\nMaps to reaction rules:")
+		print("There are",len(rule_map.r2t),"maps to transformations,")
+		print(len(rule_map.r2p_transfcenter),"maps from patterns to reaction centers,")
+		print(len(rule_map.r2p_context),"maps from patterns to reaction contexts, and")
+		print(len(rule_map.r2p_syndelcontext),"maps from patterns that are syndel contexts.")
 	
 	tr_map = TransformationMap(names,rule_map)
 	if verbose:
-		print "\nMaps to transformations:"
-		print "There are",len(tr_map.t2p_reactant),"maps from reactant patterns,"
-		print len(tr_map.t2p_product),"maps from product patterns,"
-		print len(tr_map.t2p_context),"maps from context patterns, and"
-		print len(tr_map.t2p_syndelcontext),"maps from patterns that are syndel contexts."
+		print("\nMaps to transformations:")
+		print("There are",len(tr_map.t2p_reactant),"maps from reactant patterns,")
+		print(len(tr_map.t2p_product),"maps from product patterns,")
+		print(len(tr_map.t2p_context),"maps from context patterns, and")
+		print(len(tr_map.t2p_syndelcontext),"maps from patterns that are syndel contexts.")
 	
 	trpair_map = TransformationPairMap(names,tr_map)
 	if verbose:
-		print "\nMaps to transformation pairs:"
-		print "There are",len(trpair_map.tp2p_forwardreactant),"forward reactant patterns and",len(trpair_map.tp2p_reversereactant),"reverse reactant patterns,"
-		print len(trpair_map.tp2p_forwardcontext),"forward context patterns and",len(trpair_map.tp2p_reversecontext),"reverse context patterns, and"
-		print len(trpair_map.tp2p_syncontext),"synthesis context patterns and",len(trpair_map.tp2p_delcontext),"deletion context patterns."
+		print("\nMaps to transformation pairs:")
+		print("There are",len(trpair_map.tp2p_forwardreactant),"forward reactant patterns and",len(trpair_map.tp2p_reversereactant),"reverse reactant patterns,")
+		print(len(trpair_map.tp2p_forwardcontext),"forward context patterns and",len(trpair_map.tp2p_reversecontext),"reverse context patterns, and")
+		print(len(trpair_map.tp2p_syncontext),"synthesis context patterns and",len(trpair_map.tp2p_delcontext),"deletion context patterns.")
 	
 	
 	
@@ -700,9 +701,9 @@ def getLevels(start,end,names,all_maps):
 	triplets1 = all_maps.getTriplets(['p','tp','p'])
 	triplets2 = all_maps.getTriplets(['p','irr','p'])
 	triplets = triplets1 + triplets2
-	print "Getting forward traces for patterns..."
+	print("Getting forward traces for patterns...")
 	[p_fwd,p_fwd_bad] = getTraces(start,end,triplets,'p',names)
-	print "Getting reverse traces for patterns..."
+	print("Getting reverse traces for patterns...")
 	[p_rev,p_rev_bad] = getTraces(end,start,triplets,'p',names)
 	
 	# Collect and sort traces
@@ -729,7 +730,7 @@ def getLevels(start,end,names,all_maps):
 		max_p_levels = None
 		min_p_levels = None
 
-	remaining_tp = [x for x in names.tp.values() if x not in tp_levels]
+	remaining_tp = [x for x in list(names.tp.values()) if x not in tp_levels]
 	for tp in remaining_tp:
 		possiblelevels = [p_levels[y] for x,y in maps if x==tp and y in p_levels]
 		if len(possiblelevels)>0:
@@ -742,7 +743,7 @@ def getLevels(start,end,names,all_maps):
 				tp_levels[tp] = min(possiblelevels)
 	irr_levels = dict()
 	maps2 = all_maps.t.t2p_reactant+all_maps.t.t2p_product+all_maps.t.t2p_syndelcontext
-	remaining_irr = [x for x in names.irr.values() if x not in irr_levels]
+	remaining_irr = [x for x in list(names.irr.values()) if x not in irr_levels]
 	for irr in remaining_irr:
 		possiblelevels = [p_levels[y] for x,y in maps2 if x==irr and y in p_levels]
 		if len(possiblelevels)>0:
@@ -757,13 +758,13 @@ def getLevels(start,end,names,all_maps):
 
 	# Second round of assigning levels to patterns
 	maps = all_maps.tp.tp2p_forwardreactant+all_maps.tp.tp2p_delcontext + all_maps.tp.tp2p_forwardcontext + all_maps.tp.tp2p_reversecontext
-	remaining_p = [x for x in names.p.values() if x not in p_levels]
+	remaining_p = [x for x in list(names.p.values()) if x not in p_levels]
 	for p in remaining_p:
 		possiblelevels = [tp_levels[x] for x,y in maps if y==p and x in tp_levels]
 		if len(possiblelevels) > 0:
 			p_levels[p] = min(possiblelevels)
 	maps2 = all_maps.t.t2p_reactant+all_maps.t.t2p_product+all_maps.t.t2p_syndelcontext + all_maps.t.t2p_context
-	remaining_p = [x for x in names.p.values() if x not in p_levels]
+	remaining_p = [x for x in list(names.p.values()) if x not in p_levels]
 	for p in remaining_p:
 		possiblelevels = [irr_levels[x] for x,y in maps2 if y==p and x in irr_levels]
 		if len(possiblelevels) > 0:
@@ -866,17 +867,17 @@ def writeJSON(names,all_maps,annot):
 	# Getting the node elements
 	# A node for each rule
 	nodes = []
-	for rule,idx in names.r.items(): 
+	for rule,idx in list(names.r.items()):
 		temp = rule.getJSON()
 		temp.update({"idx":idx,"annot":annot.r[idx]})
 		nodes.append(temp)
 	# A node for each pattern
-	for patt,idx in names.p.items():
+	for patt,idx in list(names.p.items()):
 		temp = patt.getJSON()
 		temp.update({"idx":idx,"annot":annot.p[idx]})
 		nodes.append(temp)
 	# A node for each transformation (how to deal with irreversibles)
-	for tr,idx in names.t.items():
+	for tr,idx in list(names.t.items()):
 		temp = tr.getJSON()
 		temp.update({"idx":idx,"annot":annot.p[idx]})
 		if idx in [str(x) for x in names.irr]:
@@ -886,7 +887,7 @@ def writeJSON(names,all_maps,annot):
 		nodes.append(temp)
 
 	# A node for each transformation pair
-	for tp,idx in names.tp.items():
+	for tp,idx in list(names.tp.items()):
 		temp = tp.getJSON()
 		temp.update({"idx":idx,"annot":annot.tp[idx]})
 		nodes.append(temp)
@@ -942,7 +943,7 @@ def writeJSON(names,all_maps,annot):
 def listify(set1):
 	return [list(x) for x in list(set1)]
 def listify2(dict1):
-	return [ [x,y] for x,y in dict1.items()]
+	return [ [x,y] for x,y in list(dict1.items())]
 
 def unq(list1):
 	return list(set(list1))
