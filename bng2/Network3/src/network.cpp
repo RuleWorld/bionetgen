@@ -3293,14 +3293,11 @@ void derivs_network(double t, double* conc, double* derivs) {
 }
 
 int print_derivs_network(FILE* out) {
-	int i/*,j*/;
+	int i;
 	int error = 0, n_species;
-//	double *X = NULL, *dX = NULL;
 
 	n_species = n_species_network();
-//	X = ALLOC_VECTOR(n_species);
 	double X[n_species];
-//	dX = ALLOC_VECTOR(n_species);
 	double dX[n_species];
 
 	// Compute time derivs of species concentration by reaction
@@ -3319,14 +3316,11 @@ int print_derivs_network(FILE* out) {
 	}
 	fprintf(out, "end derivs\n");
 
-//	exit:
-//	if (X) FREE_VECTOR(X);
-//	if (dX) FREE_VECTOR(dX);
 	return (error);
 }
 
 int print_derivs_species_network(FILE* out) {
-	int i/*,j*/;
+	int i;
 	int error = 0, n_species;
 	double *X = NULL, *dX = NULL;
 
@@ -3347,7 +3341,6 @@ int print_derivs_species_network(FILE* out) {
 	}
 	fprintf(out, "end derivs_species\n");
 
-//	exit:
 	if (X) FREE_VECTOR(X);
 	if (dX) FREE_VECTOR(dX);
 	return (error);
@@ -3356,7 +3349,7 @@ int print_derivs_species_network(FILE* out) {
 int print_rates_network(FILE* out, int discrete) {
 
 	int i;
-	int error = 0, /*n_species,*/n_reactions;
+	int error = 0, n_reactions;
 	double* rates_rxn = NULL;
 	Rxn** rxns;
 	n_reactions = n_rxns_network();
@@ -3375,7 +3368,6 @@ int print_rates_network(FILE* out, int discrete) {
 		}
 	}
 	fprintf(out, "end reaction_rates\n");
-//	exit:
 	if (rates_rxn) FREE_VECTOR(rates_rxn);
 	return (error);
 }
