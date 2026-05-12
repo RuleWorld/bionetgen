@@ -155,12 +155,12 @@ begin reaction rules
   Rule23:  P2        ->  Sink()@CP                  k_P_deg  DeleteMolecules
   
   # importin binds TF dimer (tends to pick up in CP, drop off in NU).
-  Rule24:  TF(im,dna,r).TF(im,dna,r) + Im(cargo)@CP <-> TF(im!1,dna,r).TF(im!2,dna,r).Im(cargo!1!2)@CP	k_Im_bind_CP, k_Im_unbind_CP
-  Rule25:  TF(im,dna,r).TF(im,dna,r) + Im(cargo)@NU <-> TF(im!1,dna,r).TF(im!2,dna,r).Im(cargo!1!2)@NU	k_Im_bind_NU, k_Im_unbind_NU
+  Rule24:  TF(im,dna,r)@CP.TF(im,dna,r)@CP + Im(cargo)@CP <-> TF(im!1,dna,r)@CP.TF(im!2,dna,r)@CP.Im(cargo!1!2)@CP	k_Im_bind_CP, k_Im_unbind_CP
+  Rule25:  TF(im,dna,r)@NU.TF(im,dna,r)@NU + Im(cargo)@NU <-> TF(im!1,dna,r)@NU.TF(im!2,dna,r)@NU.Im(cargo!1!2)@NU	k_Im_bind_NU, k_Im_unbind_NU
 
   # importin binds P1 (tends to pick up in CP, drop off in NU).
-  Rule26:  P1(im,dna) + Im(cargo)@CP    <->  P1(im!1,dna).Im(cargo!1)@CP	  k_Im_bind_CP, k_Im_unbind_CP
-  Rule27:  P1(im,dna) + Im(cargo)@NU    <->  P1(im!1,dna).Im(cargo!1)@NU      k_Im_bind_NU, k_Im_unbind_NU
+  Rule26:  P1(im,dna)@CP + Im(cargo)@CP    <->  P1(im!1,dna)@CP.Im(cargo!1)@CP	  k_Im_bind_CP, k_Im_unbind_CP
+  Rule27:  P1(im,dna)@NU + Im(cargo)@NU    <->  P1(im!1,dna)@NU.Im(cargo!1)@NU      k_Im_bind_NU, k_Im_unbind_NU
   
   # importin enters nuclear pore.
   Rule28:  Im(fg) + NP(fg)  <->  Im(fg!1).NP(fg!1)            k_Im_enters_NP, k_Im_exits_NP
