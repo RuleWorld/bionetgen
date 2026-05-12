@@ -1,0 +1,41 @@
+From 1c5c72cbaec67029813c9bc862c6afdab9a964f3 Mon Sep 17 00:00:00 2001
+From: "google-labs-jules[bot]"
+ <161369871+google-labs-jules[bot]@users.noreply.github.com>
+Date: Tue, 12 May 2026 15:36:59 +0000
+Subject: [PATCH] Ensure edges added to new molecules are in canonical form
+
+---
+ bng2/Perl2/RxnRule.pm | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
+
+diff --git a/bng2/Perl2/RxnRule.pm b/bng2/Perl2/RxnRule.pm
+index 6fd8df6..ae70dc4 100644
+--- a/bng2/Perl2/RxnRule.pm
++++ b/bng2/Perl2/RxnRule.pm
+@@ -3995,7 +3995,7 @@ sub apply_operations
+				}
+				$ip1++;
+			}
+-			unless ( defined $ref1 ) {  $ref1 = $g_ref1;  }
++			unless ( defined $ref1 ) {  $ref1 = '-1.' . $eadd->[0];  }
+
+			# now for the other end of the edge...
+			my $ref2 = undef;
+@@ -4015,14 +4015,13 @@ sub apply_operations
+				}
+				$ip2++;
+			}
+-			unless ( defined $ref2 ) {  $ref2 = $g_ref2;  }
++			unless ( defined $ref2 ) {  $ref2 = '-1.' . $eadd->[1];  }
+
+			# APPLY edge addition now
+			$g->addEdge( "ne${nedge}", $g_ref1, $g_ref2 );
+			++$nedge;
+
+			# save edge addition for canonical labeling
+-			# TODO: edges added to new molecules may not be in canonical form!
+			push @$stack, join( ',', sort cmp_pointer ( $ref1, $ref2 ) );
+		}
+
+--
+2.53.0
