@@ -486,14 +486,6 @@ sub p_to_multi_label
      
     my $multiid = sprintf "ST${stid}_M%d_C%d" , ($inds[0]+1) , $inds[1] + 1;
 
-    
-    #print Dumper $speciesIdHash_ref;    
-    #my $mid = sprintf("ST%s_M%d",$stid,$p+1);
-    #foreach my $comp (@{$speciesIdHash_ref->{'reverseReferences'}->{$fullstring}}){
-    #     if (index($comp, $mid) != -1){
-    #         return $speciesIdHash_ref->{'Components'}->{$comp}->{'id'};
-    #     }
-    # }
     return $speciesIdHash_ref->{'Components'}->{$multiid}->{'id'};
 
 }
