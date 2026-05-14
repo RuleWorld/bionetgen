@@ -2305,10 +2305,10 @@ sub toSBMLMultiSpeciesType
     my @parentEntry;
 
 
-    # TODO: we should only include fully specified full bonds and states. other stuff doesnt need to be here
+    # We only include fully specified full bonds and states. Other stuff doesnt need to be here.
     # technically this is only necessary for symmetric stuff but its easier to just index everything
         
-    if($n_mol > 1){
+    if ($n_mol > 1) {
         my %rreferenceClone = %{dclone(\%{$speciesIdHash_ref->{'References'}->{"ST".$id}->{'reverseReferences'}})};
         my %needed_compkeys;
         my %needed_molkeys;
@@ -2322,7 +2322,7 @@ sub toSBMLMultiSpeciesType
                 $speciesIdHash_ref->{'References'}->{"ST".$id}->{'bng2multi'}->{"$mindex.$cindex"} = $compkey;
                 splice(@{$rreferenceClone{$fullstring}}, 0, 1);
 
-                if (defined $component->State && $component->State ne '') {
+                if (defined($component->State) && $component->State ne '') {
                     $needed_compkeys{$compkey} = 1;
                     $needed_molkeys{$molecule->Name} = 1;
                 }
@@ -2338,20 +2338,18 @@ sub toSBMLMultiSpeciesType
             $mindex += 1;
         }
 
-        if ( @{$sg->Edges} ) {
-            foreach my $edge ( @{$sg->Edges} ) {
-                my ($p1, $p2) = split ' ', $edge;
-                next unless (defined $p2);
-                my $compkey1 = $speciesIdHash_ref->{'References'}->{"ST".$id}->{'bng2multi'}->{$p1};
-                my $compkey2 = $speciesIdHash_ref->{'References'}->{"ST".$id}->{'bng2multi'}->{$p2};
-                if ($compkey1) {
-                    $needed_compkeys{$compkey1} = 1;
-                    $needed_molkeys{$sg->Molecules->[(split '\.', $p1)[0]]->Name} = 1;
-                }
-                if ($compkey2) {
-                    $needed_compkeys{$compkey2} = 1;
-                    $needed_molkeys{$sg->Molecules->[(split '\.', $p2)[0]]->Name} = 1;
-                }
+        foreach my $edge ( @{$sg->Edges} ) {
+            my ($p1, $p2) = split ' ', $edge;
+            next unless (defined $p2);
+            my $compkey1 = $speciesIdHash_ref->{'References'}->{"ST".$id}->{'bng2multi'}->{$p1};
+            my $compkey2 = $speciesIdHash_ref->{'References'}->{"ST".$id}->{'bng2multi'}->{$p2};
+            if ($compkey1) {
+                $needed_compkeys{$compkey1} = 1;
+                $needed_molkeys{$sg->Molecules->[(split '\.', $p1)[0]]->Name} = 1;
+            }
+            if ($compkey2) {
+                $needed_compkeys{$compkey2} = 1;
+                $needed_molkeys{$sg->Molecules->[(split '\.', $p2)[0]]->Name} = 1;
             }
         }
 
