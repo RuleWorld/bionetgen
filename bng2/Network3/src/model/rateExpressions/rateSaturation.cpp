@@ -82,11 +82,6 @@ double RateSaturation::getRate(vector<double> X){
 	double rate = this->kcat;
 	// Loop over reactant species
 	for (unsigned int i=0;i < X.size();i++){
-		// Error check
-//		if (X[i] < 0.0){
-//			cout << "Error in RateSaturation::getRate(): Negative population detected (X[" << i << "] = " << X[i] << "). Exiting." << endl;
-//			exit(1);
-//		}
 		// Loop over stoichiometry
 		double X_mult = 1.0;
 		int stoich = std::abs(this->rStoich[i]);
@@ -114,11 +109,6 @@ double RateSaturation::get_dRate_dX(unsigned int which, vector<double> X){
 	//
 	double dRate = this->kcat;
 	for (unsigned int i=0;i < X.size();i++){
-		// Error check
-//		if (X[i] < 0.0){
-//			cout << "Error in RateSaturation::get_dRate_dX(): Negative population detected (X[" << i << "] = " << X[i] << "). Exiting.\n";
-//			exit(1);
-//		}
 		// Calculate X_mult = X * (X-1)/2 * (X-2)/3 *...
 		double X_mult = 1.0;
 		int stoich = std::abs(this->rStoich[i]);

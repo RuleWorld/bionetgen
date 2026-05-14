@@ -1868,9 +1868,19 @@ EOF
 
 	close(Mscript);
 	print "Wrote M-file script $mscript_path.\n";
-    system('perl', '-pi.bak', '-e', 's/_rateLaw/rateLaw__/g', $mscript_path);
-    my $toRemove = $mscript_path . ".bak";
-    unlink($toRemove);
+
+    # Secure file modification replacing `_rateLaw` with `rateLaw__`
+    open(my $in, '<', $mscript_path) or die "Cannot open $mscript_path for reading: $!";
+    my @lines = <$in>;
+    close($in);
+
+    open(my $out, '>', $mscript_path) or die "Cannot open $mscript_path for writing: $!";
+    foreach my $line (@lines) {
+        $line =~ s/_rateLaw/rateLaw__/g;
+        print $out $line;
+    }
+    close($out);
+
 	return ();	
 }
 

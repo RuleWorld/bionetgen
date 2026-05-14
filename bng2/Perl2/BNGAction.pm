@@ -1226,30 +1226,6 @@ sub generate_hybrid_model
     # do nothing if $NO_EXEC is true
     return '' if $BNGModel::NO_EXEC;
 
-    # determine HPP model name
-    # (1) if prefix is defined, try to extract the file basename
-    # (2) otherwise use the name of the parent model
-#    my $modelname;
-#    my $outdir;
-#    if (defined $options->{prefix})
-#    {
-#        my ($vol,$dir,$filebase) = File::Spec->splitpath($options->{prefix});
-#        if ($filebase eq '')
-#        { return sprintf "Prefix value '%s' does not end with a file basename", $options->{prefix}; }
-#        $outdir = File::Spec->catpath($vol, $dir);
-#        $modelname = $filebase;
-#    }
-#    else
-#    {   
- #   	$outdir = defined $options->{output_dir} ? $options->{output_dir} : $model->getOutputDir();
-#        $modelname = $model->Name;
-#    }
-    # add suffix
-#    $modelname .= "_" . $options->{suffix};
-
-
-    # define prefix
-#    my $prefix = defined $options->{prefix} ? $options->{prefix} : File::Spec->catfile($outdir, $modelname);
     my $prefix = defined $options->{prefix} ? $model->getOutputPrefix( $options->{prefix} ) : $model->getOutputPrefix();
 	$prefix .= "_" . $options->{suffix};
 
