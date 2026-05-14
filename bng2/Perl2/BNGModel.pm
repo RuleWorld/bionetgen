@@ -402,7 +402,18 @@ sub readSBML
     
     # Run the translator
     printf "SBML translation: %s\n", join(" ", @cmd);
-    system(@cmd);
+    system { $cmd[0] } @cmd;
+
+    if ($? == -1) {
+        return 1, "failed to execute sbmlTranslator: $!";
+    }
+    elsif ($? & 127) {
+        return 1, sprintf("sbmlTranslator died with signal %d, %s coredump",
+                          ($? & 127),  ($? & 128) ? 'with' : 'without');
+    }
+    elsif ($? >> 8) {
+        return 1, sprintf("sbmlTranslator exited with value %d", $? >> 8);
+    }
     
     # Return full path to generated BNGL file
     return 0, $outfile
