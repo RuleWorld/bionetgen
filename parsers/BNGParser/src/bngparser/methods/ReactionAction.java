@@ -149,9 +149,7 @@ public class ReactionAction {
 							leftMap.add(species1.getName());
 							rightMap.add(species2.getName());
 						
-							//TODO: add bond and delete bond have to be done on a per component level. 
-							
-							//if 2 molecules map to each other we need to check how the components map too
+							// if 2 molecules map to each other we need to check how the components map too
 							for(int i = 0; i< species1.getComponents().length;i++){
 								for(int j = 0; j< species2.getComponents().length;j++){
 									String component1 = species1.getComponents()[i].replaceAll("([A-Za-z0-9_]+).*","$1").replaceAll("\\s","");
@@ -163,7 +161,7 @@ public class ReactionAction {
 										List<String> bonds2 = extractBonds(species2.getComponents()[j]);
 										for(String b1 : bonds1) {
 											if(!bonds2.contains(b1)) {
-												if(tempBonds.get(b1) == null) {
+												if(!tempBonds.containsKey(b1)) {
 													tempBonds.put(b1, new ArrayList<String>());
 													tempBonds.get(b1).add("DeleteBond");
 												}
@@ -172,7 +170,7 @@ public class ReactionAction {
 										}
 										for(String b2 : bonds2) {
 											if(!bonds1.contains(b2)) {
-												if(tempBonds.get(b2) == null) {
+												if(!tempBonds.containsKey(b2)) {
 													tempBonds.put(b2, new ArrayList<String>());
 													tempBonds.get(b2).add("AddBond");
 												}
@@ -185,16 +183,6 @@ public class ReactionAction {
 								}
 							}
 							
-							/*if(species1.getBonds().getNumBonds() > species2.getBonds().getNumBonds()){
-								operations.add("DeleteBond");
-								operator1.add(species1.getName());
-								operator2.add(species2.getName());
-							}
-							else if(species1.getBonds().getNumBonds() < species2.getBonds().getNumBonds()){
-								operations.add("AddBond");
-								operator1.add(species1.getName());
-								operator2.add(species2.getName());
-							}*/
 							
 							species2.name = "RP"; //this is to indicate that species2 is not eligible to appear again in the map section
 					
