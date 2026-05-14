@@ -506,48 +506,32 @@ sub clone
 
 ###
 ###
-###
-
-
 # create a new expression from a number or a param name
 sub newNumOrVar
 {
     my $value = shift @_;
     my $plist = (@_) ? shift @_ : undef;
-    
-    my $expr;
-    my $err;
-    # is this a number?
-    if ( looks_like_number($value) )
-    {   # create a new number expression
-        $expr = Expression->new();
+
+    if ( looks_like_number($value) ) {
+        my $expr = Expression->new();
         $expr->Type('NUM');
         $expr->Arglist( [$value] );
         $expr->Err( undef );
+        return $expr;
     }
-    # or possibly a parameter name?
-    elsif ( $value =~ /$PARAM_REGEX/ )
-    {
-        # we need a paramlist to continue
-        if ( ref $plist eq "ParamList" )
-        {
-            # check that parameter exists
-            (my $param, $err) = $plist->lookup( $value );
-            if (defined $param)
-            {   # create a new number expression
-                $expr = Expression->new();
-                $expr->Type('VAR');
-                $expr->Arglist( [$value] );
-                $expr->Err( undef );            
-            }
+
+    if ( $value =~ /$PARAM_REGEX/ && ref $plist eq "ParamList" ) {
+        my ($param, $err) = $plist->lookup( $value );
+        if (defined $param) {
+            my $expr = Expression->new();
+            $expr->Type('VAR');
+            $expr->Arglist( [$value] );
+            $expr->Err( undef );
+            return $expr;
         }
     }
     
-    unless (defined $expr)
-    {   die "Expression::newNumOrVar() - Attempted but failed to create number or variable expression";   }
-
-    # return expression or undefined
-    return $expr;
+    die "Expression::newNumOrVar() - Attempted but failed to create number or variable expression";
 }
 
 
@@ -1311,7 +1295,7 @@ sub evaluate_local
         {   # anonymous function..
             my $fcn = $name;
             # get locally evaluated function
-            my ($local_fcn, $elim_args) = $fcn->evaluate_local( $local_expr->Arglist, $plist, $level+1 );
+            my $local_fcn = $fcn->evaluate_local( $local_expr->Arglist, $plist, $level+1 );
 
             # if the local_fcn does not refer to observables of named functions,
             # then we can convert it to a constant expression
@@ -1325,9 +1309,6 @@ sub evaluate_local
             else
             {   # point this fcn call to the local expr
                 $local_expr->Arglist->[0] = $local_fcn;
-                # eliminate unused arguments
-                foreach my $iarg (@$elim_args)
-                {   splice @{$local_expr->Arglist}, $iarg, 1;   }
             }
         }
         elsif ( exists $functions{$name} )
@@ -1343,7 +1324,7 @@ sub evaluate_local
             if ( $fcn_param->Type eq 'Function' )
             {                    
                 # get locally evaluated function
-                my ($local_fcn, $elim_args) = $fcn_param->Ref->evaluate_local( $local_expr->Arglist, $plist, $level+1 );
+                my $local_fcn = $fcn_param->Ref->evaluate_local( $local_expr->Arglist, $plist, $level+1 );
 
                 # if the local_fcn does not refer to observables of named functions,
                 # then we can convert it to a constant expression
@@ -1357,9 +1338,6 @@ sub evaluate_local
                 else
                 {   # point this fcn call to the local expr
                     $local_expr->Arglist->[0] = $local_fcn;
-                    # eliminate unused arguments
-                    foreach my $iarg (@$elim_args)
-                    {   splice @{$local_expr->Arglist}, $iarg, 1;   }
                 }
             }
             # This function is Really an Observable!!    
@@ -2456,7 +2434,6 @@ sub getVariables
         else
         {   # named function
             my ($param, $err) = $plist->lookup( $expr->Arglist->[0] );
-#			if (defined $param)
             if (defined $param && defined $param->Type)
             {   # add named function to rethash
                 $rethash->{$param->Type}->{$param->Name} = $param;

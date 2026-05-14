@@ -338,36 +338,48 @@ sub writeSBMLReactions
             my $sfirstdot;
             my $tfirstdot;
             my $counter = 0;
+
+            # Construct mapF target hash outside of the loop for efficiency
+            my %mapF_by_target;
+            foreach my $source ( sort keys %{ $rxn->MapF } ) {
+                my $dots = $source =~ tr/././; #number of dots
+                #molecule information (2 dots is for component information)
+                if($dots == 1){
+                    my $target = $rxn->MapF->{$source};
+
+                    my $sfirstdot = index($source, ".");
+                    my $smolecule = substr($source, $sfirstdot+1, length($source));
+                    my $parsed_source = substr($source, 0, $sfirstdot);
+
+                    my $tfirstdot = index($target, ".");
+                    my $tmolecule = substr($target, $tfirstdot+1, length($target));
+                    my $parsed_target = substr($target, 0, $tfirstdot);
+
+                    if ($parsed_target =~ /^\d+?$/) {
+                        push @{ $mapF_by_target{$parsed_target} }, {
+                            source    => $parsed_source,
+                            smolecule => $smolecule,
+                            target    => $parsed_target,
+                            tmolecule => $tmolecule,
+                        };
+                    }
+                }
+            }
+
             foreach my $i (@pindices)
             {
 
                 my %productHash = %{dclone(\%{$speciesIdHash_ref->{'References'}})};
 
-                #FIXME: If i want to be efficient i should be constructing this outside of the loop and making a 
-                #hash containg this information
                 my $tmpSBML = '';
-                foreach my $source ( sort keys %{ $rxn->MapF } )
-                {
+                if (exists $mapF_by_target{$counter}) {
+                    foreach my $mapping ( @{ $mapF_by_target{$counter} } )
+                    {
+                        my $source    = $mapping->{source};
+                        my $smolecule = $mapping->{smolecule};
+                        my $target    = $mapping->{target};
+                        my $tmolecule = $mapping->{tmolecule};
 
-                    my $dots = $source =~ tr/././; #number of dots
-
-                    #molecule information (2 dots is for component information)
-                    if($dots == 1){
-
-                        my $target = $rxn->MapF->{$source};
-
-                        my $sfirstdot = index($source, ".");
-                        my $smolecule = substr($source, $sfirstdot+1, length($source));
-                        $source = substr($source, 0, $sfirstdot);
-                        
-
-                        my $tfirstdot = index($target, ".");
-                        my $tmolecule = substr($target, $tfirstdot+1, length($target));
-
-                        $target = substr($target, 0, $tfirstdot);
-                        unless ($target =~ /^\d+?$/) {
-                           next;
-                        }
                         if($target == $counter){
 
                             my $rspeciesType;
