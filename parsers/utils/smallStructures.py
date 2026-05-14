@@ -78,12 +78,9 @@ class Rule:
         self.actions.extend(actionList)
         
     def __str__(self):
-        finalStr = ''
-        if self.label != '':
-            finalStr += '{0}: '.format(self.label)
+        label = f"{self.label}: " if self.label != '' else ""
         arrow = ' <-> ' if self.bidirectional else ' -> '
-        finalStr += ' + '.join([str(x) for x in self.reactants]) + arrow + ' + '.join([str(x) for x in self.products]) + ' ' + ','.join(self.rates)
-        return finalStr
+        return f"{label}{' + '.join([str(x) for x in self.reactants])}{arrow}{' + '.join([str(x) for x in self.products])} {','.join(self.rates)}"
 class Species:
     def __init__(self):
         self.molecules = []

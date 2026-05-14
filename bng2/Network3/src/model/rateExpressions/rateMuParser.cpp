@@ -62,12 +62,6 @@ double RateMuParser::getRate(vector<double> X){
 	// Rate calculation
 	double rate = this->p->Eval();
 	for (unsigned int i=0;i < X.size();i++){
-		// Error check
-//		if (X[i] < 0.0){
-//			cout << "Error in RateMuParser::getRate(): Negative population detected (X[" << i << "] = " << X[i]
-//			     << "). Exiting." << endl;
-//			exit(1);
-//		}
 		// Loop over stoichiometric factor
 		int stoich = std::abs(this->rStoich[i]);
 		for (int j=0;j < stoich;j++){

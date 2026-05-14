@@ -3344,12 +3344,15 @@ sub build_reaction
     
 	# Add any reactants with Fixed attribute to products list
 	# to insure concentration does not change
-    # TODO: the Fixed reactant feature will be depreacted in a future release
 	my $ri = 0;
+	our $warned_fixed_reactant;
 	foreach my $rpatt ( @{$rr->Reactants} )
 	{
 		if ( $rpatt->Fixed )
-		{   push @$product_species, $reactant_species->[$ri];   }
+		{
+			send_warning("The Fixed reactant feature will be deprecated in a future release.") unless $warned_fixed_reactant++;
+			push @$product_species, $reactant_species->[$ri];
+		}
 		++$ri;
 	}
         

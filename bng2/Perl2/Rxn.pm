@@ -73,7 +73,6 @@ sub toString
     $string .= " #";
 
     # write source RxnRule
-#    if (defined $rxn->RxnRule) {  $string .= $rxn->RxnRule->Name;  }
 	if (defined $rxn->RxnRule)
 	{
 		my $i = 0;
@@ -375,20 +374,9 @@ sub getMDLrxn
     #   First prcoess reaction multipliers (statistical factor, compartment volumes, etc)
     my $err = undef;
     
-    #my $rxn_mult_temp=""; 
-    #if (scalar @{$rxn->Reactants} >1){
-       #my $i = 0; 
-       #foreach (@{$rxn->Reactants}){
-             #$i = 1 if ($_->SpeciesGraph->Compartment->SpatialDimensions == 3); 
-	     #}
-      #$rxn_mult_temp = ($i == 1) ? "*Nav" : "/rxn_layer_t";      
-      #}
-      
-   
     my $rxn_mult = undef; 
 
     # get ratelaw string
-    #$string .= sprintf("   [%s$rxn_mult_temp]",$rxn->RateLaw->toString( $rxn_mult, 1, $plist ));
     my $rate_expr = sprintf("%s",$rxn->RateLaw->toString($rxn->StatFactor, 1, $plist)); 
     $string .= "    [".$rate_expr."]"; 
     $py_string .= "\"fwd_rate\":\"".$rate_expr."\"}"; 

@@ -42,15 +42,19 @@ sub GetBNGOptions
 	
 	local $SIG{'__DIE__'} = sub { };
 	local $SIG{'__WARN__'} = sub { };
-	eval 'use '.$self->config->{ModelID};
+
+	my $module = $self->config->{ModelID};
+	my $module_file = $module . ".pm";
+	$module_file =~ s/::/\//g;
+
+	eval {
+		require $module_file;
+		$module->import();
+	};
 	if ($@) {
 		@_ = split( "\n", $@ );
 		$_ = join( "\n\t", @_ );
         error("Module $self->config->{ModelID} not loaded because: \n\t$_");
-	}
-	else
-	{
-		eval 'use '.$self->config->{ModelID};
 	}
 	
 	for my $file(@ARGV)

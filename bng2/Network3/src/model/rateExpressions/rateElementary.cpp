@@ -70,11 +70,6 @@ double RateElementary::getRate(vector<double> X){
 	// Rate calculation
 	double rate = this->c;
 	for (unsigned int i=0;i < X.size();i++){
-		// Error check
-//		if (X[i] < 0.0){
-//			cout << "Error in RateElementary::getRate(): Negative population detected (X[" << i << "] = " << X[i] << "). Exiting." << endl;
-//			exit(1);
-//		}
 		// Loop over stoichiometric factor
 		int stoich = std::abs(this->rStoich[i]);
 		for (int j=0;j < stoich;j++){
@@ -97,12 +92,6 @@ double RateElementary::get_dRate_dX(unsigned int which, vector<double> X){
 	//
 	double dRate = this->c;
 	for (unsigned int i=0;i < X.size();i++){
-		// Error check
-//		if (X[i] < 0.0){
-//			cout << "Error in RateElementary::get_dRate_dX(): Negative population detected (X[" << i << "] = " << X[i] << "). Exiting.\n";
-//			exit(1);
-//		}
-		//
 		int stoich = std::abs(this->rStoich[i]);
 		if (i != which){
 			for (int j=0;j < stoich;j++){
