@@ -352,7 +352,7 @@ sub writeSBMLReactions
                     my $parsed_source = substr($source, 0, $sfirstdot);
 
                     my $tfirstdot = index($target, ".");
-                    my $tmolecule = substr($target, $sfirstdot+1, length($target));
+                    my $tmolecule = substr($target, $tfirstdot+1, length($target));
                     my $parsed_target = substr($target, 0, $tfirstdot);
 
                     if ($parsed_target =~ /^\d+?$/) {
@@ -407,11 +407,17 @@ sub writeSBMLReactions
                                 # that said, the index here is a $local$ index within the repeated elements of the same molecule type in a species
                                 #get the sbml multi id associated with this graph pattern's component id in the species type
 
-                                $rreverseReference = "cmp_" . $reactantHash->{$rspeciesType}{'moleculeReverseReferences'}{$reactantName}[0];
+                                my $rlocal_idx = 0;
+                                for (my $idx = 0; $idx < $smolecule; $idx++) {
+                                    if (@{$reactant->Molecules}[$idx]->Name eq $reactantName) {
+                                        $rlocal_idx++;
+                                    }
+                                }
+
+                                $rreverseReference = "cmp_" . $reactantHash->{$rspeciesType}{'moleculeReverseReferences'}{$reactantName}[$rlocal_idx];
                                 
                                 #fixme: once again it is not necessarely the first one that we are removing
                                 #we used this component so remove it from the available components pool
-                                splice(@{$reactantHash->{$rspeciesType}{'moleculeReverseReferences'}{$reactantName}}, 0, 1);
                             }
                             else{
                                 $rreverseReference =  $speciesIdHash_ref->{'Molecules'}->{@{$reactant->Molecules}[0]->Name};
@@ -420,8 +426,15 @@ sub writeSBMLReactions
                             if(scalar(@{$product->Molecules}) > 1){
                                 $pspeciesType = $speciesIdHash_ref->{'SpeciesType'}->{$psbmlMultiSpeciesTypeStr};
                                 my $productName = @{$product->Molecules}[$tmolecule]->Name;
-                                $preverseReference = "cmp_" . $productHash{$pspeciesType}{'moleculeReverseReferences'}{$productName}[0];
-                                splice(@{$productHash{$pspeciesType}{'moleculeReverseReferences'}{$productName}}, 0, 1);
+
+                                my $plocal_idx = 0;
+                                for (my $idx = 0; $idx < $tmolecule; $idx++) {
+                                    if (@{$product->Molecules}[$idx]->Name eq $productName) {
+                                        $plocal_idx++;
+                                    }
+                                }
+
+                                $preverseReference = "cmp_" . $productHash{$pspeciesType}{'moleculeReverseReferences'}{$productName}[$plocal_idx];
                             }
                             else{
                                 $preverseReference =  $speciesIdHash_ref->{'Molecules'}->{@{$product->Molecules}[0]->Name};   
