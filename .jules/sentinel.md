@@ -1,4 +1,0 @@
-## 2025-02-15 - Unsafe and Unchecked System Call
-**Vulnerability:** Execution of an external command (`sbmlTranslator`) using `system(@cmd)` without using the indirect object syntax `system { $cmd[0] } @cmd` and without checking the return value of the system call.
-**Learning:** `system(@cmd)` may fall back to using the shell if there is only one element in `@cmd` containing shell metacharacters, potentially leading to command injection vulnerabilities. Also, failing to handle the return status (`$?`) can hide execution failures, signal deaths, or non-zero exit statuses, creating silent failures.
-**Prevention:** Use `system { $cmd[0] } @cmd` syntax to guarantee execution without shell interpretation on all platforms, and explicitly check `$?` for `-1` (failure to execute), `& 127` (signal death), and `>> 8` (non-zero exit value).
