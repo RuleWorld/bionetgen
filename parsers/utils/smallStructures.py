@@ -488,12 +488,10 @@ class Molecule:
         
     def __str__(self):
         self.components = sorted(self.components,key = lambda st:st.name)
-        finalStr =  self.name
-        if len(self.components) > 0:
-            finalStr += '(' + ','.join([str(x) for x in self.components]) + ')' 
-        if self.compartment != '':
-            finalStr += '@' + self.compartment
-        return finalStr
+        components_str = '(' + ','.join([str(x) for x in self.components]) + ')' if self.components else ''
+        compartment_str = '@' + self.compartment if self.compartment else ''
+        # ⚡ Bolt: Use single f-string to prevent intermediate string allocations
+        return f"{self.name}{components_str}{compartment_str}"
         
     def toString(self):
         return self.__str__()
@@ -638,12 +636,10 @@ class Component:
         return True
         
     def getRuleStr(self):
-        tmp = self.name
-        if len(self.bonds) > 0:
-            tmp += '!' + '!'.join([str(x) for x in self.bonds])
-        if self.activeState != '':
-            tmp += '~' + self.activeState
-        return tmp
+        bonds_str = '!' + '!'.join([str(x) for x in self.bonds]) if self.bonds else ''
+        state_str = '~' + self.activeState if self.activeState else ''
+        # ⚡ Bolt: Use single f-string to prevent intermediate string allocations
+        return f"{self.name}{bonds_str}{state_str}"
         
     def getTotalStr(self):
         return self.name + '~'.join(self.states)
@@ -655,12 +651,10 @@ class Component:
         return self.getRuleStr()
         
     def str2(self):
-        tmp = self.name
-        if len(self.bonds) > 0:
-            tmp += '!' + '!'.join([str(x) for x in self.bonds])
-        if len(self.states) > 0:
-            tmp += '~' + '~'.join([str(x) for x in self.states])
-        return tmp        
+        bonds_str = '!' + '!'.join([str(x) for x in self.bonds]) if self.bonds else ''
+        states_str = '~' + '~'.join([str(x) for x in self.states]) if self.states else ''
+        # ⚡ Bolt: Use single f-string to prevent intermediate string allocations
+        return f"{self.name}{bonds_str}{states_str}"
         
     def __hash__(self):
         return self.name
