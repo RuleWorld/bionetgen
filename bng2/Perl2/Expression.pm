@@ -1079,10 +1079,12 @@ sub depends
         my @arglist = @{ $expr->Arglist };
         # Skip function name if this is a function
         if ( $type eq 'FunctionCall' ) {  shift @arglist;  }
-        foreach my $expr (@arglist)
+        foreach my $arg (@arglist)
         {
-            ($retval, $err) = $expr->depends($plist, $varname, $level + 1, $dep);
-            last if $retval;
+            if (ref($arg) and $arg->can('depends')) {
+                ($retval, $err) = $arg->depends($plist, $varname, $level + 1, $dep);
+                last if $retval;
+            }
         }
     }
 
@@ -1554,7 +1556,14 @@ sub toString
         if ( $expand )
         {   # descend recursively into parameter!
             ( my $param, $err ) = $plist->lookup( $expr->Arglist->[0] );
-             $string = $param->toString( $plist, $level+1, $expand );
+            if (defined $param)
+            {
+                $string = $param->toString( $plist, $level+1, $expand );
+            }
+            else
+            {
+                $string = $expr->Arglist->[0];
+            }
         }
         else
         {   # just write the parameter name
@@ -1570,7 +1579,13 @@ sub toString
         {   # expand the function
             my @sarr = ($expr->Arglist->[0]);
             foreach my $i ( 1 .. $#{$expr->Arglist} )
-            {   push @sarr, $expr->Arglist->[$i]->toString($plist, $level+1, $expand);   }
+            {
+                my $arg = $expr->Arglist->[$i];
+                if ( ref $arg )
+                {   push @sarr, $arg->toString($plist, $level+1, $expand);   }
+                else
+                {   push @sarr, $arg;   }
+            }
 
             if (ref $name eq "Function")
             {   # anonymous function
@@ -1594,7 +1609,11 @@ sub toString
             my @sarr = ();
             foreach my $i ( 1 .. $#{$expr->Arglist} )
             {
-                push @sarr, $expr->Arglist->[$i]->toString( $plist, $level + 1 );
+                my $arg = $expr->Arglist->[$i];
+                if ( ref $arg )
+                {   push @sarr, $arg->toString( $plist, $level + 1 );   }
+                else
+                {   push @sarr, $arg;   }
             }
             $string = $name . '(' . join( ',', @sarr ) . ')';
         }
@@ -1605,7 +1624,10 @@ sub toString
         {
             my @sarr = ();
             foreach my $e ( @{ $expr->Arglist } ) {
-                push @sarr, $e->toString( $plist, $level+1, $expand );
+                if ( ref $e )
+                {   push @sarr, $e->toString( $plist, $level+1, $expand );   }
+                else
+                {   push @sarr, $e;   }
             }
             if ( $#sarr > 0 )
             {   $string = join( $type, @sarr );   }
@@ -2410,14 +2432,17 @@ sub getVariables
     elsif ( $type eq 'VAR' )
     {
         my ($param, $err) = $plist->lookup( $expr->Arglist->[0] );
-        if ($err) { die $err };    # Shouldn't be an undefined variable name here
-        if ( defined $param->Type )
-        {   # add parameter name to type hash
-            $rethash->{$param->Type}->{$param->Name} = $param;
-        }
-        else
-        {   # this parameter has undefined type!
-            $rethash->{'UNDEF'}->{$param->Name} = $param;
+        # if ($err) { die $err };    # Shouldn't be an undefined variable name here
+        if ($param)
+        {
+            if ( defined $param->Type )
+            {   # add parameter name to type hash
+                $rethash->{$param->Type}->{$param->Name} = $param;
+            }
+            else
+            {   # this parameter has undefined type!
+                $rethash->{'UNDEF'}->{$param->Name} = $param;
+            }
         }
     }
     elsif ( $type eq 'FunctionCall' )
@@ -2443,14 +2468,21 @@ sub getVariables
         # handle the function arguments
         foreach my $i ( 1 .. $#{$expr->Arglist} )
         {
-            $expr->Arglist->[$i]->getVariables($plist, $level+1, $rethash);
+            my $arg = $expr->Arglist->[$i];
+            if ( ref($arg) && $arg->can('getVariables') )
+            {
+                $arg->getVariables($plist, $level+1, $rethash);
+            }
         }
     }
     else
     {
         foreach my $e ( @{$expr->Arglist} )
         {
-            $e->getVariables($plist, $level + 1, $rethash);
+            if ( ref($e) && $e->can('getVariables') )
+            {
+                $e->getVariables($plist, $level + 1, $rethash);
+            }
         }
     }
 

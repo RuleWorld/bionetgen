@@ -2280,7 +2280,6 @@ sub toSBMLMultiSpecies
 
 sub toSBMLMultiSpeciesType
 {
-    die "IT RAN toSBMLMultiSpeciesType";
     my $sg         = shift @_;
     my $mtlist     = shift @_;
     my $indent     = shift @_;

@@ -723,6 +723,8 @@ sub simulate
     close Reader;
     close Err;
     waitpid( $pid, 0 );
+    my $exit_status = $? >> 8;
+    my $signal = $? & 127;
 
     # clear child pid
     $::CHILD_PID = undef;
@@ -731,14 +733,17 @@ sub simulate
     if ($edge_warning)
     {   send_warning("Edge species of truncated network became populated $edge_warning times.");   }
 
-    if (@err)
+    if (@err || $? != 0)
     {   # print any errors received from 
         print @err;
-        return sprintf("%s\n  did not run successfully.", join(" ", @command));
+        my $err_str = join("", @err);
+        return sprintf("Command execution failed:\n%s\nExit status: %d, Signal: %d\nStderr output:\n%s", join(" ", @command), $exit_status, $signal, $err_str);
     }
 
     unless ( $last_msg =~ /^Program times:/ )
-    {   return sprintf("%s\n  did not run successfully.", join(" ", @command));  }
+    {   
+        return sprintf("Command execution did not complete successfully (missing 'Program times:' message):\n%s\nExit status: %d, Signal: %d", join(" ", @command), $exit_status, $signal);  
+    }
 
 
 
