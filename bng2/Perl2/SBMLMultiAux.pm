@@ -324,7 +324,7 @@ sub writeSBMLReactions
             {
                 $SBML .= sprintf  "          <speciesReference id=\"RR%d_R%d\" species=\"S%d\" constant=\"false\"/>\n", $index,$localCounter+1, $i;
                 $reactantHashHash{$localCounter}{'id'} = sprintf("RR%d_R%d",$index,$localCounter+1);
-                $reactantHashHash{$localCounter}{'sg'} = \%{dclone(\%{$speciesIdHash_ref->{'References'}})};
+                $reactantHashHash{$localCounter}{'sg'} = $speciesIdHash_ref->{'References'};
                 $localCounter += 1;
             }
             $SBML .=  "        </listOfReactants>\n";
@@ -368,8 +368,6 @@ sub writeSBMLReactions
 
             foreach my $i (@pindices)
             {
-
-                my %productHash = %{dclone(\%{$speciesIdHash_ref->{'References'}})};
 
                 my $tmpSBML = '';
                 if (exists $mapF_by_target{$counter}) {
@@ -434,7 +432,7 @@ sub writeSBMLReactions
                                     }
                                 }
 
-                                $preverseReference = "cmp_" . $productHash{$pspeciesType}{'moleculeReverseReferences'}{$productName}[$plocal_idx];
+                                $preverseReference = "cmp_" . $speciesIdHash_ref->{'References'}->{$pspeciesType}{'moleculeReverseReferences'}{$productName}[$plocal_idx];
                             }
                             else{
                                 $preverseReference =  $speciesIdHash_ref->{'Molecules'}->{@{$product->Molecules}[0]->Name};   
