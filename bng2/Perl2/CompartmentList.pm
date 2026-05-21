@@ -22,7 +22,7 @@ struct CompartmentList =>
 {
     Array => '@',   # list of Compartments
     Hash  => '%',   # map from Compartment name to compartment object ref.
-    Used  => '$'    # Flag to indicate that compartment attribute is set in 1 or more species in model 
+    Used  => '$'    # Flag to indicate that compartments are defined in the model
 };
 
 
@@ -40,7 +40,7 @@ sub copy
         push @{$clist_copy->Array}, $comp_copy;
         $clist_copy->Hash->{$comp_copy->Name} = $comp_copy;
     }
-    $clist_copy->Used($clist->Used);  # TODO: is this the best assumption?
+    $clist_copy->Used($clist->Used);
         
     # fix links to inside and outside neighbors
     foreach my $comp ( @{$clist_copy->Array} )
