@@ -199,51 +199,103 @@ sub rxn2text
         $products  = join(" + ", map {"S$_"} split(",", $rxn->[2]) );
     }
 
-    # evaluate the reaction rate in crude fashion..
-    # TODO: implement a more reliable way to do this (but don't make it
-    # depend on the BNG expression parser, as it might produce the same bugs.)
-    my $rate = $rxn->[3];    
-    my $last_rate = $rate;
-    my $iter = 0;
-    my $max_iter = 100;
-    while ($iter < $max_iter)
-    {
-        while ( my ($par,$val) = each %$params )
-        {   # substitute this parameter
-            $rate =~ s/(^|[\+\-\/\*\^\(\)\ ])$par([\+\-\/\*\^\(\)\ ]|$)/$1($val)$2/g;
-        }
-
-        # try to substitute log for ln
-        $rate =~ s/(^|[\+\-\/\*\^\(\ ])ln\(/$1log(/g;
-
-        # try to substitute ** for ^
-        $rate =~ s/([\w\)\.\ ])\^([\w\+\-\.\(\ ])/$1**$2/g;
-
-        ++$iter;
-        last if ($rate eq $last_rate);
-        $last_rate = $rate;
-    }
-
-    if ( looks_like_number($rate) )
-    {   # limit resolution to avoid round-off errors
-        $rate = sprintf "%.8g", $rate;
-    }
-    else
-    {   # try to evaluate safely
-        my $cpt = Safe->new;
-        $cpt->permit(qw(atan2 sin cos exp log sqrt pow entereval));
-        $cpt->share('tan', 'asin', 'acos', 'atan', 'sinh', 'cosh', 'tanh', 'asinh', 'acosh', 'atanh', 'pi');
-        my $eval_rate = $cpt->reval($rate);
-
-        if (defined $eval_rate)
-        {   $rate = $eval_rate;   }
-   
-        if ( looks_like_number($rate) )
-        {   $rate = sprintf( "%.8g", $rate);   }
-    }
+    my $rate = evaluate_rate($rxn->[3], $params);
 
     # generate rxn string
     return "$reactants -> $products at $rate";
+}
+
+sub evaluate_rate {
+    my ($expr, $params) = @_;
+
+    my %eval_cache;
+    my %evaluating;
+
+    my %allowed_funcs = map { $_ => 1 } qw(
+        sin cos tan exp log ln sqrt pow
+        asin acos atan sinh cosh tanh
+        asinh acosh atanh pi atan2 abs
+    );
+
+    my $resolve;
+    $resolve = sub {
+        my ($val_expr) = @_;
+
+        my @tokens;
+        while ($val_expr =~ /\G\s*(
+            [A-Za-z_][A-Za-z0-9_]*                   | # identifiers
+            [0-9]+(?:\.[0-9]*)?(?:[eE][+\-]?[0-9]+)? | # numbers
+            \.[0-9]+(?:[eE][+\-]?[0-9]+)?            | # numbers starting with dot
+            \*\*                                     | # exponentiation
+            [+\-*\/^(),]                             | # operators
+            !=|==|<=|>=|<|>                          | # comparison
+            .                                          # anything else
+        )\s*/gcx) {
+            push @tokens, $1;
+        }
+
+        my @substituted;
+        for my $t (@tokens) {
+            if ($t =~ /^[A-Za-z_][A-Za-z0-9_]*$/) {
+                if ($t eq 'ln') {
+                    push @substituted, 'log';
+                }
+                elsif (exists $params->{$t}) {
+                    if (!exists $eval_cache{$t}) {
+                        die "Circular dependency in rate evaluation for parameter: $t\n" if $evaluating{$t};
+                        $evaluating{$t} = 1;
+                        $eval_cache{$t} = $resolve->($params->{$t});
+                        delete $evaluating{$t};
+                    }
+                    push @substituted, '(', $eval_cache{$t}, ')';
+                }
+                else {
+                    # Not a parameter. Is it a function?
+                    if (!$allowed_funcs{$t}) {
+                        die "Unknown parameter or function: $t\n";
+                    }
+                    push @substituted, $t;
+                }
+            }
+            elsif ($t eq '^') {
+                push @substituted, '**';
+            }
+            else {
+                push @substituted, $t;
+            }
+        }
+
+        my $new_expr = join(' ', @substituted);
+
+        if (looks_like_number($new_expr)) {
+            return $new_expr;
+        }
+
+        my $cpt = Safe->new;
+        $cpt->permit(qw(atan2 sin cos exp log sqrt pow entereval));
+        $cpt->share('tan', 'asin', 'acos', 'atan', 'sinh', 'cosh', 'tanh', 'asinh', 'acosh', 'atanh', 'pi');
+
+        my $val = $cpt->reval($new_expr);
+        if ($@) {
+            die "Evaluation failed for $new_expr: $@";
+        }
+        return $val if defined $val;
+        die "Evaluation returned undefined for $new_expr\n";
+    };
+
+    my $res = eval { $resolve->($expr) };
+
+    # break circular reference
+    undef $resolve;
+
+    if ($@) {
+        return $expr;
+    }
+
+    if (looks_like_number($res)) {
+        $res = sprintf("%.8g", $res);
+    }
+    return $res;
 }
 
 
