@@ -133,9 +133,9 @@ sub read_file
 
                 # parse reaction
                 my ($index, $reac, $prod, $rate) = split ' ', $line;
-                ## TODO: is this a good idea??
-                #$reac = join( ',', sort {$a<=>$b} split(',',$reac) );
-                #$prod = join( ',', sort {$a<=>$b} split(',',$prod) );
+
+                $reac = join( ',', sort {$a<=>$b} split(',',$reac) );
+                $prod = join( ',', sort {$a<=>$b} split(',',$prod) );
                 # remove empty argument list from ratelaW
                 $rate =~ s/\(\)//g;
                 # compute numeric
