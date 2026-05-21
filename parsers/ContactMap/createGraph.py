@@ -269,7 +269,7 @@ ranksep='1.5',rankdir='LR',compound='true')
         
     
     #output      
-    print '%s.dot' % fileName
+    print('%s.dot' % fileName)
     graph.write('%s.dot' % fileName)
     #graph = pgv.AGraph('%s.dot' % fileName)
     #graph.layout(prog='fdp')
@@ -323,7 +323,7 @@ def main(fileName):
     #                       reactionCenter=True, context=True, products=True)
     
     for element in [2]:
-        print element
+        print(element)
         createBiPartite(rules, [element], 'simple%i' % element, 
                     reactionCenter=True, context=True, products=True)
 
@@ -332,7 +332,7 @@ def main(fileName):
                             reactionCenter=True, context=True, products=True)
             
         except:
-            print 'xxx'
+            print('xxx')
             continue
     
 if __name__ == "__main__":
