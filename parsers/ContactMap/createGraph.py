@@ -34,10 +34,8 @@ def extractMolecules(action,site1,site2,chemicalArray):
         #for element in ta:
         #    atomicPatterns.add(element)
         atomicPatterns.update(ta)
-        for element in tr:
-            reactionCenter.add(element)
-        for element in tc:
-            context.add(element)
+        reactionCenter.update(tr)
+        context.update(tc)
         
     
     return atomicPatterns,reactionCenter,context
