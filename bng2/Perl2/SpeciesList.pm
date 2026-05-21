@@ -726,8 +726,6 @@ sub getMatlabSpeciesNames
     my $species_names = '';
     my $species_init = '';
     my $indent = '    ';
-    
-    # TODO: this matlab output is a hack.  improve this.  --justin
 
     # generate a map from param names to matlab references
     my $ref_map = {};
@@ -762,11 +760,10 @@ sub getMatlabSpeciesNames
     }
     
     # replace param names with Matlab references   
-    foreach my $pname ( keys %$ref_map )
+    foreach my $pname ( sort { length($b) <=> length($a) } keys %$ref_map )
     {
         my $matlab_ref = $ref_map->{$pname};
-        my $regex = 
-        $species_init =~ s/(^|\W)$pname(\W|$)/$1$matlab_ref$2/g;
+        $species_init =~ s/\b\Q$pname\E\b/$matlab_ref/g;
     }
     
     return (  join(', ', @species_names), $species_init, $err );
