@@ -126,9 +126,13 @@ def extractTransformations(rules):
     # resolving bond wildcards
     wildcards = [x for x in atomicArray if '!+' in x]
     bondedpatterns = [x for x in atomicArray if '!' in x and x not in wildcards]
+    prefix_cache = {}
     for item in wildcards:
-    	loc = string.find(item,'+')
-    	selected_bondedpatterns = [x for x in bondedpatterns if item[0:loc] in x]
+	loc = item.find('+')
+	prefix = item[:loc]
+	if prefix not in prefix_cache:
+		prefix_cache[prefix] = [x for x in bondedpatterns if prefix in x]
+	selected_bondedpatterns = prefix_cache[prefix]
 
     	for idx,set1 in enumerate(transformationContext):
     		if item in set1:
