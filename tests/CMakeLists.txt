@@ -108,3 +108,12 @@ target_link_libraries(test_action_dispatch PRIVATE
     antlr4_static
 )
 catch_discover_tests(test_action_dispatch)
+
+add_executable(test_GraphTypeRegistry ast/test_GraphTypeRegistry.cpp)
+target_include_directories(test_GraphTypeRegistry PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/ast
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/core
+)
+target_link_libraries(test_GraphTypeRegistry PRIVATE Catch2::Catch2WithMain Catch2::Catch2 bng_ast bng_core)
+catch_discover_tests(test_GraphTypeRegistry)
