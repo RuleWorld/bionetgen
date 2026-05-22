@@ -5,6 +5,8 @@ Created on Mon Sep  2 18:11:35 2013
 @author: proto
 """
 
+import shutil
+
 import pexpect
 import subprocess
 import os
@@ -30,7 +32,9 @@ def bngl2xml(bnglFile,timeout=60):
         bngconsole.expect('BNG>')
         bngconsole.close() 
     except pexpect.TIMEOUT:
-        subprocess.call(['/usr/bin/killall', 'bngdev'], shell=False)
+        killall_path = shutil.which('killall')
+        if killall_path:
+            subprocess.call([killall_path, 'bngdev'], shell=False)  # nosec
 
 def bngl2sbml(bnglFile,timeout=60):
     try:
@@ -44,7 +48,9 @@ def bngl2sbml(bnglFile,timeout=60):
         bngconsole.expect('BNG>')
         bngconsole.close() 
     except pexpect.TIMEOUT:
-        subprocess.call(['/usr/bin/killall', 'bngdev'], shell=False)
+        killall_path = shutil.which('killall')
+        if killall_path:
+            subprocess.call([killall_path, 'bngdev'], shell=False)  # nosec
     
 def correctness(bnglFile):
     bngconsole = pexpect.spawn('{0} --console'.format(getBngExecutable()))

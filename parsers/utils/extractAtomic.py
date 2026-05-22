@@ -27,11 +27,8 @@ def extractMolecules(action, site1, site2, chemicalArray):
     for reactant in chemicalArray:
         ta, tr, tc = reactant.extractAtomicPatterns(action, site1, site2)
         atomicPatterns.update(ta)
-        for element in tr:
-            reactionCenter.add(element)
-
-        for element in tc:
-            context.add(element)
+        reactionCenter.update(tr)
+        context.update(tc)
 
         reactionCenterC.update(tr)
         contextC.update(tc)
@@ -46,15 +43,23 @@ def solveWildcards(atomicArray):
     can potentially resolve to
     """
     name_to_atomics = {}
-    for a in [x for x in atomicArray if '+' not in x and len(atomicArray[x].molecules) > 1]:
-        for name in set(m.name for m in atomicArray[a].molecules):
-            name_to_atomics.setdefault(name, []).append(atomicArray[a])
+    wildcards = []
+
+    for key, value in atomicArray.items():
+        if '+' in key:
+            wildcards.append((key, value))
+        elif len(value.molecules) > 1:
+            for name in set(m.name for m in value.molecules):
+                name_to_atomics.setdefault(name, []).append(value)
 
     standinArray = {}
-    for w in [x for x in atomicArray if '+' in x]:
-        w_name = atomicArray[w].molecules[0].name
+    cached_lists = {}
+    for w_key, w_value in wildcards:
+        w_name = w_value.molecules[0].name
         if w_name in name_to_atomics:
-            standinArray[w] = list(name_to_atomics[w_name])
+            if w_name not in cached_lists:
+                cached_lists[w_name] = list(name_to_atomics[w_name])
+            standinArray[w_key] = cached_lists[w_name]
 
     atomicArray.update(standinArray)
 

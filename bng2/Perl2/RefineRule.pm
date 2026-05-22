@@ -759,13 +759,25 @@ sub restrict_rule
     }
 
 
-    # Account for differences in symmetry between the parent rule and the expanded child rule
-    # (Addresses TODO: determine if we need to make any changes to handle MultScale)
+    # Properly handle the 'MultScale' factor when accounting for differences in symmetry between parent and child rules
     my $mult_factor = 1.0;
-    if ( defined $rr->MultScale && defined $child_rule->MultScale && $child_rule->MultScale != 0 )
+
+    my $parent_scale = $rr->MultScale;
+    my $child_scale  = $child_rule->MultScale;
+
+    if ( defined $parent_scale && defined $child_scale )
     {
-        $mult_factor = $rr->MultScale / $child_rule->MultScale;
+        if ( $child_scale != 0 )
+        {
+            $mult_factor = $parent_scale / $child_scale;
+        }
+        else
+        {
+            # Defensive check to handle cases where child MultScale is 0
+            $mult_factor = 1.0;
+        }
     }
+
     $child_rule->RateLaw->Factor( $mult_factor );
       
     # add this child rule to RxnLabels
