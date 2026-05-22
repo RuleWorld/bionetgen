@@ -538,20 +538,30 @@ sub copy_dir
     foreach my $file (@files)
     {
 
-        # TODO: using catfile is questionable, since file may be a subdirectory
-        my $source_file = File::Spec->catfile( $source_dir, $file );
-        my $dest_file   = File::Spec->catfile( $dest_dir,   $file );
-
-        if ( -d $source_file )
+        my $is_dir = 0;
+        # Use catdir to construct the path and check if it's a directory.
+        # Fallback to catfile just in case the OS requires file semantics for the -d check.
+        if ( -d File::Spec->catdir( $source_dir, $file ) || -d File::Spec->catfile( $source_dir, $file ) )
         {
+            $is_dir = 1;
+        }
+
+        if ( $is_dir )
+        {
+            my $source_path = File::Spec->catdir( $source_dir, $file );
+            my $dest_path   = File::Spec->catdir( $dest_dir,   $file );
+
             if ($recursive)
             {   # copy subdirectory
-                my $err = copy_dir( $source_file, $dest_file, $recursive, $exclude_files, @copy_flags );
+                my $err = copy_dir( $source_path, $dest_path, $recursive, $exclude_files, @copy_flags );
                 if (defined $err) {  return $err;  }
             }
         }
         else
         {   # copy file
+            my $source_file = File::Spec->catfile( $source_dir, $file );
+            my $dest_file   = File::Spec->catfile( $dest_dir,   $file );
+
             #print "  $file\n";
             my @args = ( $sys_copy, @copy_flags, $source_file, $dest_file );
             unless( system({$args[0]} @args)==0 )
