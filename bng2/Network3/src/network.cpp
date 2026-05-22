@@ -1093,9 +1093,10 @@ Elt_array* read_Elt_array(FILE* datfile, int* line_number, char* name, int* n_re
 				char buf[1000], c;
 
 				// Look for prefactor
-				if (sscanf(tokens[n_tok], "%lf*%s", &factor, buf) != 2) {
+				if (sscanf(tokens[n_tok], "%lf*%999s", &factor, buf) != 2) {
 					factor = 1;
-					strcpy(buf, tokens[n_tok]);
+					strncpy(buf, tokens[n_tok], 999);
+					buf[999] = '\0';
 				}
 
 				// Try to obtain numerical value for elt, or lookup parameter
@@ -1331,14 +1332,15 @@ Group* read_Groups(Group* glist, FILE* datfile, Elt_array* earray, int* line_num
 				double factor;
 				char buf[1000];
 
-				if (sscanf(tokens[n_tok], "%lf*%s", &factor, buf) == 2) {
+				if (sscanf(tokens[n_tok], "%lf*%999s", &factor, buf) == 2) {
 					if (!elt_factor) {
 						elt_factor = ALLOC_VECTOR(n_elt);
 						INIT_VECTOR(elt_factor, 1.0, n_elt);
 					}
 					elt_factor[i] = factor;
 				} else {
-					strcpy(buf, tokens[n_tok]);
+					strncpy(buf, tokens[n_tok], 999);
+					buf[999] = '\0';
 				}
 
 				if (sscanf(buf, "%d", elt_index + i) != 1) {
@@ -2070,8 +2072,9 @@ Rxn_array* read_Rxn_array(FILE* datfile, int* line_number, int* n_read, Elt_arra
 			}
 			++n_tok;
 			// Find optional statistical factor for reaction
-			if (sscanf(tokens[n_tok], "%lf*%s", &stat_factor, buf) == 2) {
-				strcpy(tokens[n_tok], buf);
+			if (sscanf(tokens[n_tok], "%lf*%999s", &stat_factor, buf) == 2) {
+				strncpy(tokens[n_tok], buf, strlen(tokens[n_tok]));
+				tokens[n_tok][strlen(tokens[n_tok])] = '\0';
 			}
 			else {
 				stat_factor = 1.0;
