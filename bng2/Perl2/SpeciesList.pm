@@ -145,7 +145,11 @@ sub add
     my $spec = Species->new;
     push @{$slist->Array}, $spec;
     push @{$slist->Hash->{$sg->StringID}}, $spec;
-     # Can only be one entry. TODO: generate exit_error if there is a clash!
+
+    if (exists $slist->Hash_exact->{$sg->StringExact}) {
+        exit_error( "Species '" . $sg->StringExact . "' already exists in SpeciesList." );
+    }
+
     $slist->Hash_exact->{$sg->StringExact} = $spec;
     $spec->SpeciesGraph($sg);
     $spec->Concentration($conc);
