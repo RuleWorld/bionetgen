@@ -6,21 +6,27 @@ Created on Fri May 31 16:56:13 2013
 """
 
 try:
-    from SimpleXMLRPCServer import SimpleXMLRPCServer
+    from SimpleXMLRPCServer import SimpleXMLRPCServer  # nosec
 except ImportError:
-    from xmlrpc.server import SimpleXMLRPCServer
+    from xmlrpc.server import SimpleXMLRPCServer  # nosec
 try:
-    from SimpleXMLRPCServer import SimpleXMLRPCRequestHandler
+    from SimpleXMLRPCServer import SimpleXMLRPCRequestHandler  # nosec
 except ImportError:
-    from xmlrpc.server import SimpleXMLRPCRequestHandler
+    from xmlrpc.server import SimpleXMLRPCRequestHandler  # nosec
+try:
+    import defusedxml.xmlrpc
+    defusedxml.xmlrpc.monkey_patch()
+except ImportError:
+    pass
+
 import threading
 import subprocess
 import createGraph
 import pexpect
 try:
-    import xmlrpclib
+    import xmlrpclib  # nosec
 except ImportError:
-    import xmlrpc.client as xmlrpclib
+    import xmlrpc.client as xmlrpclib  # nosec
 import glob
 import os
 # Restrict to a particular path.

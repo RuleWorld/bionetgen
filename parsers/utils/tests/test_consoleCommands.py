@@ -21,9 +21,10 @@ sys.modules['pexpect'] = mock_pexpect
 from parsers.utils.consoleCommands import correctness, bngl2xml
 
 class TestConsoleCommands(unittest.TestCase):
+    @patch('parsers.utils.consoleCommands.shutil.which', return_value='/mock/path/killall')
     @patch('parsers.utils.consoleCommands.pexpect.spawn')
     @patch('parsers.utils.consoleCommands.getBngExecutable', return_value='dummy_bng')
-    def test_correctness_success(self, mock_getBngExecutable, mock_spawn):
+    def test_correctness_success(self, mock_getBngExecutable, mock_spawn, mock_which):
         mock_bngconsole = MagicMock()
         mock_bngconsole.before = 'Some output without error'
         mock_spawn.return_value = mock_bngconsole
@@ -31,9 +32,10 @@ class TestConsoleCommands(unittest.TestCase):
         result = correctness('dummy.bngl')
         self.assertTrue(result)
 
+    @patch('parsers.utils.consoleCommands.shutil.which', return_value='/mock/path/killall')
     @patch('parsers.utils.consoleCommands.pexpect.spawn')
     @patch('parsers.utils.consoleCommands.getBngExecutable', return_value='dummy_bng')
-    def test_correctness_error(self, mock_getBngExecutable, mock_spawn):
+    def test_correctness_error(self, mock_getBngExecutable, mock_spawn, mock_which):
         mock_bngconsole = MagicMock()
         mock_bngconsole.before = 'Some output with ERROR inside'
         mock_spawn.return_value = mock_bngconsole
@@ -42,8 +44,9 @@ class TestConsoleCommands(unittest.TestCase):
         self.assertFalse(result)
 
     @patch('parsers.utils.consoleCommands.subprocess.call')
+    @patch('parsers.utils.consoleCommands.shutil.which', return_value='/mock/path/killall')
     @patch('parsers.utils.consoleCommands.pexpect.spawn')
-    def test_bngl2xml_timeout(self, mock_spawn, mock_subprocess_call):
+    def test_bngl2xml_timeout(self, mock_spawn, mock_which, mock_subprocess_call):
         # Configure the mock to raise pexpect.TIMEOUT when spawn is called
         mock_spawn.side_effect = mock_pexpect.TIMEOUT('Timeout occurred')
 
@@ -51,7 +54,7 @@ class TestConsoleCommands(unittest.TestCase):
         bngl2xml('dummy.bngl')
 
         # Assert that subprocess.call was called with the correct arguments
-        mock_subprocess_call.assert_called_once_with(['/usr/bin/killall', 'bngdev'], shell=False)
+        mock_subprocess_call.assert_called_once_with(['/mock/path/killall', 'bngdev'], shell=False)
 
 if __name__ == '__main__':
     unittest.main()

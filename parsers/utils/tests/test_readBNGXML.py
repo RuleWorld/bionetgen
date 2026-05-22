@@ -9,7 +9,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # The issue requested parsing a simple XML string to an element.
 # While lxml is not installed, we can simulate its parsing behavior
 # with the standard xml.etree.ElementTree and a small wrapper to handle getchildren().
-import xml.etree.ElementTree as ET
+import xml.etree.ElementTree as ET  # nosec
 
 class LxmlElementWrapper:
     """A wrapper for ET elements to provide lxml-like getchildren() behavior needed by the parser."""
@@ -62,7 +62,7 @@ class TestParseComponent(unittest.TestCase):
         """Test parseComponent with a component that has no states."""
         # Parsing a simple XML string to an element
         xml_str = '<Component id="comp1" />'
-        element = ET.fromstring(xml_str)
+        element = ET.fromstring(xml_str)  # nosec
         wrapped_element = LxmlElementWrapper(element)
 
         # Call the function
@@ -85,7 +85,7 @@ class TestParseComponent(unittest.TestCase):
             </ns:ListOfAllowedStates>
         </Component>
         '''
-        element = ET.fromstring(xml_str)
+        element = ET.fromstring(xml_str)  # nosec
         wrapped_element = LxmlElementWrapper(element)
 
         # Call the function
