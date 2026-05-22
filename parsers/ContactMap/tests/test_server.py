@@ -4,8 +4,11 @@ import sys
 import os
 
 # Mock dependencies before import to avoid errors since this runs in a constrained environment
-sys.modules['createGraph'] = MagicMock()
 sys.modules['pexpect'] = MagicMock()
+sys.modules['pygraphviz'] = MagicMock()
+sys.modules['lxml'] = MagicMock()
+sys.modules['lxml.etree'] = MagicMock()
+sys.modules['readBNGXML'] = MagicMock()
 
 # Add ContactMap to path so we can import server
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -16,8 +19,9 @@ class TestServer(unittest.TestCase):
     @patch('server.os.remove')
     @patch('server.glob.glob')
     @patch('builtins.open', new_callable=mock_open, read_data=b'dummy')
+    @patch('server.createGraph')
     @patch.object(server.BipartiteServer, 'bngl2xml')
-    def test_bipartite_oserror_path(self, mock_bngl2xml, mock_file, mock_glob, mock_remove):
+    def test_bipartite_oserror_path(self, mock_bngl2xml, mock_createGraph, mock_file, mock_glob, mock_remove):
         """
         Tests the error path in bipartite where os.remove throws an OSError,
         verifying that it is caught and ignored gracefully.

@@ -15,6 +15,8 @@ def findBond(bondDefinitions, component):
     Returns an appropiate bond number when veryfying how 
     to molecules connect in a species
     '''
+    if isinstance(bondDefinitions, dict):
+        return bondDefinitions.get(component)
     for idx, bond in enumerate(bondDefinitions.getchildren()):
         if component in [bond.get('site1'), bond.get('site2')]: 
             return str(idx+1)
@@ -46,8 +48,17 @@ def createSpecies(pattern):
     species.idx = pattern.get('id')
     mol = pattern.find('.//{http://www.sbml.org/sbml/level3}ListOfMolecules')
     bonds = pattern.find('.//{http://www.sbml.org/sbml/level3}ListOfBonds')
+
+    bond_map = {}
+    if bonds is not None:
+        for idx, bond in enumerate(bonds.getchildren()):
+            bond_map[bond.get('site1')] = str(idx + 1)
+            bond_map[bond.get('site2')] = str(idx + 1)
+    else:
+        bond_map = None
+
     for molecule in mol.getchildren():
-        molecule, nameDict = createMolecule(molecule, bonds)
+        molecule, nameDict = createMolecule(molecule, bond_map)
         tmpDict.update(nameDict)
         species.addMolecule(molecule)
         if bonds != None:

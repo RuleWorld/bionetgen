@@ -62,8 +62,9 @@ int main(int argc, char* argv[]){
         strncat(cstrTemp, outFileAppend, strlen(outFileAppend));
 	}
     else{
-        cstrTemp = new char[strlen(fileName) + strlen(outFileAppend) + 1];
-        strcpy(cstrTemp, fileName);
+        size_t bufSize = strlen(fileName) + strlen(outFileAppend) + 1;
+        cstrTemp = new char[bufSize];
+        strncpy(cstrTemp, fileName, bufSize);
         strncat(cstrTemp, outFileAppend, strlen(outFileAppend));
     }
 

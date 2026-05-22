@@ -24,9 +24,6 @@ use RefineRule;
 
 
 
-# TODO: implement TotalRate feature for Network simulations
-# (currently implemented only for XML network-free output)
-#   --Justin  2dec2010
 
 struct RxnRule =>
 {
@@ -3734,8 +3731,10 @@ sub apply_operations
 			# Should add pointer from product pattern to new molecules in $g
 
 			# save molecule addition for canonical labeling
-			# TODO: get real canonical label for molecule!!
-			push @$stack, $newMol->toString;
+			my $sg_tmp = SpeciesGraph->new();
+			push @{$sg_tmp->Molecules}, $newMol->copy();
+			$sg_tmp->sortLabel();
+			push @$stack, $sg_tmp->StringExact;
 		}
 
 		# add molecule addition operations to the canonical label

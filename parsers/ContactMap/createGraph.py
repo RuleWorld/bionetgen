@@ -34,10 +34,8 @@ def extractMolecules(action,site1,site2,chemicalArray):
         #for element in ta:
         #    atomicPatterns.add(element)
         atomicPatterns.update(ta)
-        for element in tr:
-            reactionCenter.add(element)
-        for element in tc:
-            context.add(element)
+        reactionCenter.update(tr)
+        context.update(tc)
         
     
     return atomicPatterns,reactionCenter,context
@@ -46,8 +44,11 @@ def extractMolecules(action,site1,site2,chemicalArray):
 def getMapping(mapp,site):
     for mapping in mapp:
         if site in mapping:
-            # ⚡ Bolt: Use next() with generator instead of list comprehension + [0] for O(1) best-case early exit
-            return next((x for x in mapping if x != site), None)
+            # ⚡ Bolt: Use simple for loop instead of generator expression to avoid generator initialization overhead, providing a much faster O(1) early exit
+            for x in mapping:
+                if x != site:
+                    return x
+            return None
 
 
 def solveWildcards(atomicArray):

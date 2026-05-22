@@ -90,6 +90,16 @@ target_include_directories(test_evaluate_expression_string PRIVATE
 target_link_libraries(test_evaluate_expression_string PRIVATE Catch2::Catch2WithMain Catch2::Catch2 bng_engine bng_ast bng_core antlr4_static)
 catch_discover_tests(test_evaluate_expression_string)
 
+add_executable(test_regulatory_graph_writer test_regulatory_graph_writer.cpp)
+target_include_directories(test_regulatory_graph_writer PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/parser
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/parser/generated
+    ${antlr4_runtime_SOURCE_DIR}/runtime/Cpp/runtime/src
+)
+target_link_libraries(test_regulatory_graph_writer PRIVATE Catch2::Catch2WithMain Catch2::Catch2 bng_engine bng_ast bng_core antlr4_static)
+catch_discover_tests(test_regulatory_graph_writer)
+
 add_executable(test_action_dispatch test_action_dispatch.cpp)
 target_include_directories(test_action_dispatch PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../src
@@ -108,3 +118,12 @@ target_link_libraries(test_action_dispatch PRIVATE
     antlr4_static
 )
 catch_discover_tests(test_action_dispatch)
+
+add_executable(test_GraphTypeRegistry ast/test_GraphTypeRegistry.cpp)
+target_include_directories(test_GraphTypeRegistry PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/ast
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/core
+)
+target_link_libraries(test_GraphTypeRegistry PRIVATE Catch2::Catch2WithMain Catch2::Catch2 bng_ast bng_core)
+catch_discover_tests(test_GraphTypeRegistry)

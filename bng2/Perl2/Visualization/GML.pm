@@ -596,6 +596,7 @@ sub printGraphML
 	# all attributes we want to store
 	$allstring .= '<key id="d0" for="node" yfiles.type="nodegraphics"/>'."\n";
 	$allstring .= '<key id="d1" for="edge" yfiles.type="edgegraphics"/>'."\n";
+	$allstring .= '<key id="d2" for="node" attr.name="embed" attr.type="string"/>'."\n";
 	$allstring .= '  <graph edgedefault="directed" id="G">'."\n";
 
 	my $wc = 4;
@@ -648,10 +649,6 @@ sub printGraphML
 	# close up the graph
 	$allstring .= '  </graph>'."\n";
 	$allstring .= '</graphml>'."\n";
-
-	# TODO: HANDLE 
-	# defined $node->{'embed'}
-	# see line 942
 
 	return $allstring;
 }
@@ -726,6 +723,30 @@ sub printGraphMLNode
 		$nodestr .= " "x$wcn.'</data>'."\n"; # 
 	}
 	
+	if(defined $pnode->{'embed'})
+	{
+		my $somegraph = $pnode->{'embed'};
+		my $type = ref $somegraph;
+		my $string3 = '';
+		if($type eq 'StructureGraph')
+		{
+			if($somegraph->{'Type'} eq 'Rule')
+				{$string3 = toGML_rule_operation($somegraph, "graphml");}
+			else
+				{$string3 = toGML_pattern($somegraph, "graphml");}
+		}
+		elsif($type eq 'NetworkGraph')
+		{ $string3 = toGML_rule_network($somegraph, "graphml");}
+
+		if ($string3 ne '') {
+			$string3 =~ s/&/&amp;/g;
+			$string3 =~ s/</&lt;/g;
+			$string3 =~ s/>/&gt;/g;
+			$string3 =~ s/"/&quot;/g;
+			$nodestr .= " "x$wcn.'<data key="d2">'.$string3.'</data>'."\n";
+		}
+	}
+
 	# if we have children, write those now
 	my $nctr = 0;
 	if (scalar @cnodes > 0) {
@@ -766,6 +787,7 @@ sub printGraphML2
 	# all attributes we want to store
 	$allstring .= '<key id="d0" for="node" yfiles.type="nodegraphics"/>'."\n";
 	$allstring .= '<key id="d1" for="edge" yfiles.type="edgegraphics"/>'."\n";
+	$allstring .= '<key id="d2" for="node" attr.name="embed" attr.type="string"/>'."\n";
 	$allstring .= '  <graph edgedefault="directed" id="G">'."\n";
 
 	my $wc = 4;
@@ -875,6 +897,30 @@ sub printGraphMLNode2
 		$nodestr .= " "x$wcn.'</data>'."\n"; # 
 	}
 	
+	if(defined $pnode->{'embed'})
+	{
+		my $somegraph = $pnode->{'embed'};
+		my $type = ref $somegraph;
+		my $string3 = '';
+		if($type eq 'StructureGraph')
+		{
+			if($somegraph->{'Type'} eq 'Rule')
+				{$string3 = toGML_rule_operation($somegraph, "graphml");}
+			else
+				{$string3 = toGML_pattern($somegraph, "graphml");}
+		}
+		elsif($type eq 'NetworkGraph')
+		{ $string3 = toGML_rule_network($somegraph, "graphml");}
+
+		if ($string3 ne '') {
+			$string3 =~ s/&/&amp;/g;
+			$string3 =~ s/</&lt;/g;
+			$string3 =~ s/>/&gt;/g;
+			$string3 =~ s/"/&quot;/g;
+			$nodestr .= " "x$wcn.'<data key="d2">'.$string3.'</data>'."\n";
+		}
+	}
+
 	# if we have children, write those now
 	my $nctr = 0;
 	if (scalar @cnodes > 0) {

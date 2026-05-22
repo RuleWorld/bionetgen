@@ -4,6 +4,7 @@ import sys
 import os
 
 # We need to mock lxml, networkx, pygraphviz, pyparsing before importing collapsedContactMap
+sys.modules['readBNGXML'] = Mock()
 sys.modules['lxml'] = Mock()
 sys.modules['lxml.etree'] = Mock()
 sys.modules['networkx'] = Mock()

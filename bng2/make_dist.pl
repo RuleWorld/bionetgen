@@ -353,7 +353,7 @@ if (defined $bindir)
         {
             print "extracting ${libfile} . . .\n";
             my @args = ($sys_tarzip, @tarzip_flags, $abs_libfile);
-            unless( system(@args)==0 )
+            unless( system({$args[0]} @args)==0 )
             {  print "make_dist.pl error:\ncannot extract library archive file ($?)";  exit -1;  }
         }
     }
@@ -362,7 +362,7 @@ if (defined $bindir)
     print "generating $build_subdir configuration scripts . . .\n";
     my @args = ($sys_autoconf, @autoconf_flags);
     print "command: ", join(" ", @args), "\n";
-    unless( system(@args)==0 )
+    unless( system({$args[0]} @args)==0 )
     {  print "make_dist.pl error:\nsome problem running autoconf ($?)";  exit -1; }
 
     if ($build)
@@ -371,7 +371,7 @@ if (defined $bindir)
             print "configuring $build_subdir . . .\n";
             my @args = ($sys_shell, $sys_configure, @configure_flags, "--prefix=${abs_dist_dir}");
             print "command: ", join(" ", @args), "\n";
-            unless( system(@args)==0 )
+            unless( system({$args[0]} @args)==0 )
             {  print "make_dist.pl error:\nsome problem configuring ${build_subdir} ($?)";  exit -1; }
         }
 
@@ -379,7 +379,7 @@ if (defined $bindir)
             print "making $build_subdir . . .\n";
             my @args = ($sys_make, @make_flags);
             print "command: ", join(" ", @args), "\n";
-            unless( system(@args)==0 )
+            unless( system({$args[0]} @args)==0 )
             {  print "make_dist.pl error:\nsome problem making ${build_subdir} ($?)";  exit -1; }
         }
 
@@ -387,7 +387,7 @@ if (defined $bindir)
             print "installing $build_subdir . . .\n";
             my @args = ($sys_make, "install" );
             print "command: ", join(" ", @args), "\n";
-            unless( system(@args)==0 )
+            unless( system({$args[0]} @args)==0 )
             {  print "make_dist.pl error:\nsome problem installing ${build_subdir} ($?)";  exit -1;  }
         }
 
@@ -428,7 +428,7 @@ if (defined $bindir)
     print "Current working directory is now: \n";
     print getcwd() . "\n";
 
-    system($sys_make, "clean");
+    system({$sys_make} $sys_make, "clean");
     chdir "..";
     chdir "..";
     print "Current working directory is now: \n";
@@ -462,7 +462,7 @@ if (defined $bindir)
         print "validating ${dist_name} . . .\n";
         my @args = ($sys_perl, $abs_validate_script, @validate_flags );
         print "command: ", join(" ", @args), "\n";
-        unless( system(@args)==0 )
+        unless( system({$args[0]} @args)==0 )
         {
             print "make_dist.pl error:\nsome problem validating ${dist_name} ($?)\n\n\n\n";
 
@@ -485,7 +485,7 @@ if ($archive)
     # create tar-archive
     print "\nCreating distribution archive:\n";
     print "tar cvzf ${archive_file} ${dist_dir}\n";
-    `tar cvzf ${archive_file} ${dist_dir}`;
+    system({"tar"} "tar", "cvzf", $archive_file, $dist_dir);
 }
 
 
@@ -538,29 +538,39 @@ sub copy_dir
     foreach my $file (@files)
     {
 
-        # TODO: using catfile is questionable, since file may be a subdirectory
-        my $source_file = File::Spec->catfile( $source_dir, $file );
-        my $dest_file   = File::Spec->catfile( $dest_dir,   $file );
-
-        if ( -d $source_file )
+        my $is_dir = 0;
+        # Use catdir to construct the path and check if it's a directory.
+        # Fallback to catfile just in case the OS requires file semantics for the -d check.
+        if ( -d File::Spec->catdir( $source_dir, $file ) || -d File::Spec->catfile( $source_dir, $file ) )
         {
+            $is_dir = 1;
+        }
+
+        if ( $is_dir )
+        {
+            my $source_path = File::Spec->catdir( $source_dir, $file );
+            my $dest_path   = File::Spec->catdir( $dest_dir,   $file );
+
             if ($recursive)
             {   # copy subdirectory
-                my $err = copy_dir( $source_file, $dest_file, $recursive, $exclude_files, @copy_flags );
+                my $err = copy_dir( $source_path, $dest_path, $recursive, $exclude_files, @copy_flags );
                 if (defined $err) {  return $err;  }
             }
         }
         else
         {   # copy file
+            my $source_file = File::Spec->catfile( $source_dir, $file );
+            my $dest_file   = File::Spec->catfile( $dest_dir,   $file );
+
             #print "  $file\n";
             my @args = ( $sys_copy, @copy_flags, $source_file, $dest_file );
-            unless( system(@args)==0 )
+            unless( system({$args[0]} @args)==0 )
             {  return "copy_dir: cannot copy file ($?)";  }
 
             if ($dest_file =~ /\.${executable_suffix}$/)
             {   # try to set executable flag
                 my @args = ( $sys_chmod, $chmod_flags, $dest_file );
-                unless( system(@args)==0 )
+                unless( system({$args[0]} @args)==0 )
                 {  return "copy_dir: cannot set executable flag ($?)";  }
             }
         }

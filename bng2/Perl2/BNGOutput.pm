@@ -1248,7 +1248,8 @@ sub writeSBML
     # for the species and the volume that's used here is expected for 
     # kinetic laws. Without this correction, the dynamics of BNG and 
     # SBML tools (e.g. COPASI, libroadrunner) does not match. 
-		( $rstring, $err ) = $rxn->RateLaw->toMathMLString( \@rindices, \@pindices, $rxn->StatFactor, $comp_name );
+		my $sf = ($rxn->RxnRule && $rxn->RxnRule->TotalRate) ? 1 : $rxn->StatFactor;
+		( $rstring, $err ) = $rxn->RateLaw->toMathMLString( \@rindices, \@pindices, $sf, $comp_name );
 		if ($err) { return $err; }
 
 		foreach my $line ( split "\n", $rstring )
@@ -4169,7 +4170,8 @@ EOF
         {
 			++$S{ $p->Index }{$irxn};
 		}
-		my ($flux, $err) = $rxn->RateLaw->toLatexString( $rxn->Reactants, $rxn->StatFactor,
+		my $sf = ($rxn->RxnRule && $rxn->RxnRule->TotalRate) ? 1 : $rxn->StatFactor;
+		my ($flux, $err) = $rxn->RateLaw->toLatexString( $rxn->Reactants, $sf,
 			                                               $model->ParamList );
 		if ($err) { return $err; }
 		push @fluxes, $flux;
