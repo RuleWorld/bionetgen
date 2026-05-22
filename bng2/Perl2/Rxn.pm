@@ -67,7 +67,7 @@ sub toString
 
     # Write the Ratelaw...
     if (defined $rxn->RateLaw)
-    {   $string .= $rxn->RateLaw->toString($rxn->StatFactor, 1, $plist, $conv_expr);   }   
+    {   my $sf = ($rxn->RxnRule && $rxn->RxnRule->TotalRate) ? 1 : $rxn->StatFactor; $string .= $rxn->RateLaw->toString($sf, 1, $plist, $conv_expr);   }
 
     # append comments
     $string .= " #";
@@ -274,7 +274,8 @@ sub getCVodeRate
     if ( $rxn->RxnRule )
     {   $rrefs = $rxn->RxnRule->RRefs;   }
     # get ratelaw string   
-    return $rxn->RateLaw->toCVodeString( $rxn->StatFactor, $rxn->Reactants, $rrefs, $plist, $conv_expr );
+    my $sf = ($rxn->RxnRule && $rxn->RxnRule->TotalRate) ? 1 : $rxn->StatFactor;
+    return $rxn->RateLaw->toCVodeString( $sf, $rxn->Reactants, $rrefs, $plist, $conv_expr );
 }
 
 
@@ -300,7 +301,8 @@ sub getMatlabRate
     if ( $rxn->RxnRule )
     {   $rrefs = $rxn->RxnRule->RRefs;   }
     # get ratelaw string  
-    return $rxn->RateLaw->toMatlabString( $rxn->StatFactor, $rxn->Reactants, $rrefs, $plist, $conv_expr );
+    my $sf = ($rxn->RxnRule && $rxn->RxnRule->TotalRate) ? 1 : $rxn->StatFactor;
+    return $rxn->RateLaw->toMatlabString( $sf, $rxn->Reactants, $rrefs, $plist, $conv_expr );
 }
 
 
@@ -377,7 +379,8 @@ sub getMDLrxn
     my $rxn_mult = undef; 
 
     # get ratelaw string
-    my $rate_expr = sprintf("%s",$rxn->RateLaw->toString($rxn->StatFactor, 1, $plist)); 
+    my $sf = ($rxn->RxnRule && $rxn->RxnRule->TotalRate) ? 1 : $rxn->StatFactor;
+    my $rate_expr = sprintf("%s",$rxn->RateLaw->toString($sf, 1, $plist));
     $string .= "    [".$rate_expr."]"; 
     $py_string .= "\"fwd_rate\":\"".$rate_expr."\"}"; 
     push (@{$py_reactions}, $py_string); 

@@ -24,9 +24,6 @@ use RefineRule;
 
 
 
-# TODO: implement TotalRate feature for Network simulations
-# (currently implemented only for XML network-free output)
-#   --Justin  2dec2010
 
 struct RxnRule =>
 {
