@@ -196,9 +196,18 @@ def createTransformationPairs(t2pReactant,t2pProduct,t2pContext):
 	tr_id_list.update([x for x,y in t2pProduct])
 	reactDict = dict()
 	prodDict = dict()
+
+	# Pre-group elements to avoid O(N^2) lists comprehensions inside the loop
+	reactant_grouped = {}
+	for x, y in t2pReactant:
+		reactant_grouped.setdefault(x, []).append(y)
+	product_grouped = {}
+	for x, y in t2pProduct:
+		product_grouped.setdefault(x, []).append(y)
+
 	for tr in tr_id_list:
-		r = [y for x,y in t2pReactant if x==tr]
-		p = [y for x,y in t2pProduct if x==tr]
+		r = reactant_grouped.get(tr, [])
+		p = product_grouped.get(tr, [])
 		#print r,p
 		
 		reactDict[tr] = r
@@ -241,11 +250,20 @@ def remapToTransformationPairs(trPairs,t2pReactant,t2pProduct,t2pContext):
 	rc = []
 	fi = []
 	ri = []
+
+	# Pre-group context and reactants to avoid O(N^2) list comprehensions
+	reactant_grouped = {}
+	for x, y in t2pReactant:
+		reactant_grouped.setdefault(x, []).append(y)
+	context_grouped = {}
+	for x, y in t2pContext:
+		context_grouped.setdefault(x, []).append(y)
+
 	for trPair in trPairs:
-		fc_items = [y for x,y in t2pReactant if x==trPair[0]]
-		rc_items = [y for x,y in t2pReactant if x==trPair[1]]
-		fi_items = [y for x,y in t2pContext if x==trPair[0]]
-		ri_items = [y for x,y in t2pContext if x==trPair[1]]	
+		fc_items = reactant_grouped.get(trPair[0], [])
+		rc_items = reactant_grouped.get(trPair[1], [])
+		fi_items = context_grouped.get(trPair[0], [])
+		ri_items = context_grouped.get(trPair[1], [])
 		for item in fc_items:
 			fc.append([tuple(trPair),item])
 		for item in rc_items:

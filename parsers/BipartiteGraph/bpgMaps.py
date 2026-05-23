@@ -722,6 +722,12 @@ def getLevels(start,end,names,all_maps):
 	tp_levels = dict()
 	maps = all_maps.tp.tp2p_forwardreactant+all_maps.tp.tp2p_reversereactant+all_maps.tp.tp2p_delcontext+all_maps.tp.tp2p_syncontext
 
+	# Precompute mappings for O(1) lookups
+	maps_by_x = {}
+	for x, y in maps:
+		if y in p_levels:
+			maps_by_x.setdefault(x, []).append(p_levels[y])
+
 	p_levels_vals = list(p_levels.values())
 	if p_levels_vals:
 		max_p_levels = max(p_levels_vals)
@@ -732,7 +738,7 @@ def getLevels(start,end,names,all_maps):
 
 	remaining_tp = [x for x in list(names.tp.values()) if x not in tp_levels]
 	for tp in remaining_tp:
-		possiblelevels = [p_levels[y] for x,y in maps if x==tp and y in p_levels]
+		possiblelevels = maps_by_x.get(tp, [])
 		if len(possiblelevels)>0:
 			possiblelevels_set = set(possiblelevels)
 			if max_p_levels in possiblelevels_set:
@@ -743,9 +749,15 @@ def getLevels(start,end,names,all_maps):
 				tp_levels[tp] = min(possiblelevels)
 	irr_levels = dict()
 	maps2 = all_maps.t.t2p_reactant+all_maps.t.t2p_product+all_maps.t.t2p_syndelcontext
+
+	maps2_by_x = {}
+	for x, y in maps2:
+		if y in p_levels:
+			maps2_by_x.setdefault(x, []).append(p_levels[y])
+
 	remaining_irr = [x for x in list(names.irr.values()) if x not in irr_levels]
 	for irr in remaining_irr:
-		possiblelevels = [p_levels[y] for x,y in maps2 if x==irr and y in p_levels]
+		possiblelevels = maps2_by_x.get(irr, [])
 		if len(possiblelevels)>0:
 			possiblelevels_set = set(possiblelevels)
 			if max_p_levels in possiblelevels_set:
@@ -758,15 +770,26 @@ def getLevels(start,end,names,all_maps):
 
 	# Second round of assigning levels to patterns
 	maps = all_maps.tp.tp2p_forwardreactant+all_maps.tp.tp2p_delcontext + all_maps.tp.tp2p_forwardcontext + all_maps.tp.tp2p_reversecontext
+	maps_by_y = {}
+	for x, y in maps:
+		if x in tp_levels:
+			maps_by_y.setdefault(y, []).append(tp_levels[x])
+
 	remaining_p = [x for x in list(names.p.values()) if x not in p_levels]
 	for p in remaining_p:
-		possiblelevels = [tp_levels[x] for x,y in maps if y==p and x in tp_levels]
+		possiblelevels = maps_by_y.get(p, [])
 		if len(possiblelevels) > 0:
 			p_levels[p] = min(possiblelevels)
 	maps2 = all_maps.t.t2p_reactant+all_maps.t.t2p_product+all_maps.t.t2p_syndelcontext + all_maps.t.t2p_context
+
+	maps2_by_y = {}
+	for x, y in maps2:
+		if x in irr_levels:
+			maps2_by_y.setdefault(y, []).append(irr_levels[x])
+
 	remaining_p = [x for x in list(names.p.values()) if x not in p_levels]
 	for p in remaining_p:
-		possiblelevels = [irr_levels[x] for x,y in maps2 if y==p and x in irr_levels]
+		possiblelevels = maps2_by_y.get(p, [])
 		if len(possiblelevels) > 0:
 			p_levels[p] = min(possiblelevels)
 			
