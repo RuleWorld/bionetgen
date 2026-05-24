@@ -41,8 +41,11 @@ def extractMolecules(action,site1,site2,chemicalArray):
 def getMapping(mapp,site):
     for mapping in mapp:
         if site in mapping:
-            # ⚡ Bolt: Use next() with generator instead of list comprehension + [0] for O(1) best-case early exit
-            return next((x for x in mapping if x != site), None)
+            # ⚡ Bolt: Use simple for loop instead of generator expression to avoid generator initialization overhead, providing a much faster O(1) early exit
+            for x in mapping:
+                if x != site:
+                    return x
+            return None
 
          
 def extractTransformations(rules):
@@ -302,9 +305,15 @@ def summarizeModel(patternDict,transformationDict,atomicPatternAnnotations,trans
 		# Summarizing Context Annotations	
 		invPatternDict = dict((v,k) for k,v in patternDict.items())
 		f.write('Model interactions:\n')
+
+		# Pre-group context items by transformation ID to convert O(N*M) list comprehensions into O(1) lookups
+		t2pContext_grouped = {}
+		for item in t2pContext:
+			t2pContext_grouped.setdefault(item[0], []).append(item[1])
+
 		for tr,tr_id in transformationDict.items():
 			f.write("Process: "+transformationAnnotations[tr]+"(" + str(tr_id) + ")\n")
-			annot_list = [(str(atomicPatternAnnotations[invPatternDict[item[1]]])+ "(" + str(item[1]) + ")" ) for item in t2pContext if item[0]==tr_id]
+			annot_list = [(str(atomicPatternAnnotations[invPatternDict[p_id]])+ "(" + str(p_id) + ")" ) for p_id in t2pContext_grouped.get(tr_id, [])]
 			f.write("Kinetic Modifiers: " + ', '.join(annot_list)+"\n\n")
 		
 def writeAnnotationFiles(atomicPatternAnnotations,transformationAnnotations,patternDict,transformationDict):
@@ -633,16 +642,17 @@ if __name__ == "__main__":
 					print lev
 						
 			
-			options_string = ''
+			options_list = []
 			if args.use_annot:
-				options_string = options_string + 'a'	
+				options_list.append('a')
 
 			if not args.no_r:
-				options_string = options_string + 'r'
+				options_list.append('r')
 			if not args.no_c:
-				options_string = options_string + 'c'
+				options_list.append('c')
 			if not args.no_p:
-				options_string = options_string + 'p'
+				options_list.append('p')
+			options_string = ''.join(options_list)
 			print "Generating dot file."
 			writeDot(patternDict,transformationDict,atomicPatternAnnotations,transformationAnnotations,t2pReactant, t2pProduct, t2pContext,options_string)
 			
