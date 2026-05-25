@@ -26,12 +26,10 @@ using namespace BNGcore;
     Gb( _Gb ),
     pa( Ga.size() ),
     pb( Gb.size() ),
-    M_vec( pa, ullmann_M_t() ),
+    M_vec( pa, ullmann_M_t( pa, node_container_t() ) ),
+    M( pa, node_container_t() ),
     targets_mask( pb, false )
  {
-     // cast constant pointer to graphs as non-constant pointer
-     //  otherwise we won't be able to use the pointers later
-     //  BUT, Ullmann itself shouldn't modify graphs.    
      map.set_source_graph( (PatternGraph *)&Ga );
      map.set_target_graph( (PatternGraph *)&Gb );
  
@@ -41,30 +39,15 @@ using namespace BNGcore;
      for (it = Gb.begin(); it != Gb.end(); ++it, ++i) {
          (*it)->set_index(i);
      }
+
+     // Assign temporary indices and collect Ga nodes
+     Ga_nodes.reserve(pa);
+     i = 0;
+     for (it = Ga.begin(); it != Ga.end(); ++it, ++i) {
+         (*it)->set_index(i);
+         Ga_nodes.push_back(*it);
+     }
  }
-
-
-
-// base destructor
-UllmannBase::~UllmannBase ( )
-{
-    row_iter_t row_iter;
-    std::vector < ullmann_M_t >::iterator  M_vec_iter;    
-    
-    // clear M
-    for ( row_iter_t row_iter = M.begin();  row_iter != M.end();  ++row_iter )
-        delete row_iter->second;
-    M.clear();
-        
-    // clear M_vec
-    for ( M_vec_iter = M_vec.begin();  M_vec_iter != M_vec.end();  ++M_vec_iter )
-    {
-        // loop over maps
-        for ( row_iter = M_vec_iter->begin();  row_iter != M_vec_iter->end();  ++row_iter )
-            delete row_iter->second;
-    }
-    M_vec.clear();
-}
 
 
 
@@ -72,16 +55,14 @@ UllmannBase::~UllmannBase ( )
 void
 UllmannBase::initialize_M_vec ( )
 {
-    node_const_iter_t  node_iter;
-    std::vector < ullmann_M_t >::iterator  M_vec_iter;
-
-    // iterator over elements of Mvec
-    for ( M_vec_iter = M_vec.begin();  M_vec_iter != M_vec.end();  ++M_vec_iter )
-    {
-        // loop over nodes in G_alpha
-        for ( node_iter = Ga.begin(); node_iter != Ga.end(); ++node_iter )
-            (*M_vec_iter).insert ( std::pair <Node*, node_container_t*> (*node_iter, new node_container_t) );
-    }    
+    // M and M_vec are already sized in the constructor initializer list.
+    // We just clear their internal vectors to make them ready for build_M0.
+    for (size_t i = 0; i < pa; ++i) {
+        M[i].clear();
+        for (size_t d = 0; d < pa; ++d) {
+            M_vec[d][i].clear();
+        }
+    }
 }
 
 
@@ -90,26 +71,20 @@ UllmannBase::initialize_M_vec ( )
 void
 UllmannBase::print_M ( ullmann_M_t & M )
 {
-    std::cout << std::endl << " M = " << std::endl;;
+    std::cout << std::endl << " M = " << std::endl;
     
     // loop over nodes in Ga
-    row_iter_t   row_iter_m1;
-    col_iter_t   col_end, col_iter_m1;
-    node_const_iter_t  node_iter_a, node_iter_b;
-    for ( node_iter_a = Ga.begin();  node_iter_a != Ga.end();  ++node_iter_a )
+    for ( size_t i = 0; i < pa; ++i )
     {
-        // set row iter to Ith row of M
-        row_iter_m1 = M.find( *node_iter_a );        
-        // get iter to last element in column of Ith row
-        col_end = row_iter_m1->second->end();
+        const node_container_t & possible_matches = M[i];
         
         // loop over nodes in Gb
+        node_const_iter_t node_iter_b;
         for ( node_iter_b = Gb.begin();  node_iter_b != Gb.end();  ++node_iter_b )
         {
             // see if M_ij=1
-            col_iter_m1 = std::find( row_iter_m1->second->begin(), row_iter_m1->second->end(), *node_iter_b );
-            //col_iter_m1 = row_iter_m1->second->find( *node_iter_b );
-            if ( col_iter_m1 != col_end )
+            auto col_iter_m1 = std::find( possible_matches.begin(), possible_matches.end(), *node_iter_b );
+            if ( col_iter_m1 != possible_matches.end() )
                 std::cout << "1,";
             else
                 std::cout << "0,";
@@ -125,38 +100,8 @@ UllmannBase::print_M ( ullmann_M_t & M )
 void
 UllmannBase::copy_M ( ullmann_M_t & orig, ullmann_M_t & copy )
 {
-    // IMPORTANT: assumes the row keys are the same in orig and copy, so
-    // we can just iterate through both simultaneously
-
-    // Copy contents from original.
-    row_iter_t  row_iter1 = orig.begin();
-    row_iter_t  row_iter2 = copy.begin();
-    while (  row_iter1 != orig.end()  )
-    {   
-        *(row_iter2->second) = *(row_iter1->second);
-        ++row_iter1;  ++row_iter2;
-    }
-}
-
-
-
-// copy orig M onto ullmann_M_t structure reference given by copy,
-//  beginning at row_iter (row_iter should point into rows of copy!!)
-//  
-void
-UllmannBase::copy_M ( ullmann_M_t & orig, ullmann_M_t & copy, row_iter_t row_iter )
-{
-    // IMPORTANT: assumes the row keys are the same in orig and copy, so
-    // we can just iterate through both simultaneously
-
-    // Copy contents from original.
-    row_rev_iter_t  row_iter1 = orig.rbegin();
-    row_rev_iter_t  row_iter2 = copy.rbegin();
-    while (  row_iter2.base() != row_iter  )
-    {   
-        *(row_iter2->second) = *(row_iter1->second);
-        ++row_iter1;  ++row_iter2;
-    }
+    // Fast vector copy assignment
+    copy = orig;
 }
 
 
@@ -178,64 +123,45 @@ UllmannSGIso::find_maps ( List <Map> & maps )
     
     // build M0
     return_val = build_M0 ( );        
-    
-    // debug
-    //std::cout << "construct M0: " << std::endl;
-    //print_M();
+    if ( !return_val ) return 0;
                        
     // refine M
     return_val = refine_M ( );
     if ( !return_val )  return 0;
     
-    // debug
-    //std::cout << "first refinement results: " << std::endl;
-    //print_M();
-    
     // call recursive core of the subgraph isomorphism algorithm
-    row_iter_t row_iter = M.begin();
-    return next_node( 0, row_iter, maps );
+    return next_node( 0, maps );
 }
 
 
 
 // core recursive algorithm
 size_t
-UllmannSGIso::next_node ( size_t d, row_iter_t & row_iter, List <Map> & maps )
+UllmannSGIso::next_node ( size_t d, List <Map> & maps )
 {
     size_t num_sg_iso = 0;
-    Node *node_a = row_iter->first;
+    Node *node_a = Ga_nodes[d];
 
-    // note: first index of vectors is 0, rather than 1.
-    //std::cout << "next_node, level: " << d << std::endl;
- 
     // put a pristine copy of M at M_vec[d];
-    //push_M();
     copy_M( M, M_vec[d] );
     
     // look for next way to map node Ga_d into graph Gb
-    node_container_t  *possible_matches = row_iter->second;
-    col_iter_t  col_iter = possible_matches->begin();
+    node_container_t & possible_matches = M[d];
+    col_iter_t  col_iter = possible_matches.begin();
     
-    // debug
-    //if ( d == 4 ) print_M();
-    
-    while (  find_next_match( col_iter, possible_matches->end() )  )
+    while (  find_next_match( col_iter, possible_matches.end() )  )
     {           
         // get match node_b first (before we screw with possible_matches set)
         Node *node_b = *col_iter;
     
         // delete possible matches, except for col_node
         //  NOTE: this will be restored later when we call copy_M
-        possible_matches->clear();
-        //possible_matches->insert( node_b );
-        possible_matches->push_back( node_b );
+        possible_matches.clear();
+        possible_matches.push_back( node_b );
         
         // refine M and continue, if possible
         if ( refine_M() )
         {
-            // debug
-            //if ( d==4 ) print_M(); 
-         
             // extend subgraph isomorphism map
             map.insert( node_a, node_b );
             // flag col_node as mapped
@@ -244,8 +170,7 @@ UllmannSGIso::next_node ( size_t d, row_iter_t & row_iter, List <Map> & maps )
         
             if ( d+1 < pa )
             {   // goto next row_node      
-                num_sg_iso += next_node( d+1, ++row_iter, maps );
-                --row_iter;
+                num_sg_iso += next_node( d+1, maps );
             }
             else
             {   // we have a subgraph isomorphism!!
@@ -262,21 +187,13 @@ UllmannSGIso::next_node ( size_t d, row_iter_t & row_iter, List <Map> & maps )
 
         // advance column iterator        
         // retrieve a pristine copy of M from storage
-        //refresh_M ( );
         copy_M( M_vec[d], M );
         
         // restore col_iter! NOTE that we don't need to restore possible matches since this
         //  happens as a side-effect of copy_M
-        //col_iter = possible_matches->find( node_b );
-        col_iter = std::find( possible_matches->begin(), possible_matches->end(), node_b );
+        col_iter = std::find( possible_matches.begin(), possible_matches.end(), node_b );
         ++col_iter;
     }
-    
-    //debug
-    //std::cout << "return from level " << d << std::endl;
-    
-    // remove stored M from the stack
-    //pop_M( );
     
     return num_sg_iso;
 }
@@ -311,28 +228,19 @@ UllmannSGIso::build_M0 ( )
     //     (2)   in_degree(ga_i) <= in_degree(gb_j)
     //     (3)   out_degree(ga_i) <= out_degree(gb_j)
     
-    node_const_iter_t  node_iter_a, node_iter_b;
+    node_const_iter_t  node_iter_b;
     Node         *node_a, *node_b;
     size_t       in_deg_a, out_deg_a;
-    col_iter_t   col_iter;
     
     // loop over nodes in G_alpha
-    for ( node_iter_a = Ga.begin(); node_iter_a != Ga.end(); ++node_iter_a )
+    for ( size_t i = 0; i < pa; ++i )
     {
-        node_a = *node_iter_a;
+        node_a = Ga_nodes[i];
         in_deg_a  = node_a->in_degree();
         out_deg_a = node_a->out_degree();
         
-        // Reuse or allocate container for row node_a
-        node_container_t * possible_match_nodes;
-        row_iter_t row_finder = M.find(node_a);
-        if (row_finder == M.end()) {
-            possible_match_nodes = new node_container_t;
-            M.insert ( std::pair <Node*, node_container_t*> (node_a, possible_match_nodes) );
-        } else {
-            possible_match_nodes = row_finder->second;
-            possible_match_nodes->clear();
-        }
+        node_container_t & possible_match_nodes = M[i];
+        possible_match_nodes.clear();
            
         // loop over nodes in G_beta
         for ( node_iter_b = Gb.begin(); node_iter_b != Gb.end(); ++node_iter_b )
@@ -341,7 +249,7 @@ UllmannSGIso::build_M0 ( )
             // check degree 
             if (  (in_deg_a <= node_b->in_degree())  &&  (out_deg_a <= node_b->out_degree())  &&  (*node_a == *node_b)  )
                 // add node_b as a possible match to node_a 
-                possible_match_nodes->push_back(node_b);
+                possible_match_nodes.push_back(node_b);
         }
     }
     return true;
@@ -353,12 +261,7 @@ UllmannSGIso::build_M0 ( )
 bool
 UllmannSGIso::refine_M ( )
 {
-    //std::cout << "refine_M: " << std::endl;
-
-    // declare some local iterators (be safe)
-    row_iter_t        row_iter, row_end;
-    col_iter_t        col_iter, col_end, col_next;
-    node_container_t  possible_matches;
+    col_iter_t        col_iter;
 
     // refine M until converged
     bool converged = false;
@@ -368,22 +271,21 @@ UllmannSGIso::refine_M ( )
         converged = true;
         
         // loop over nodes in Ga (i.e. rows of M)
-        row_end  = M.end();
-        for ( row_iter = M.begin();  row_iter != row_end;  ++row_iter  )
+        for ( size_t i = 0; i < pa; ++i )
         {
             // loop over possible matches in Gb
-            node_container_t * possible_matches = row_iter->second;
-            col_iter = possible_matches->begin();
-            while ( col_iter != possible_matches->end() )
+            node_container_t & possible_matches = M[i];
+            col_iter = possible_matches.begin();
+            while ( col_iter != possible_matches.end() )
             {
                 // refine M for each possible match
-                if ( !refine_M( row_iter, col_iter ) )
+                if ( !refine_M( i, col_iter ) )
                 {
                     // this match is no good — erase returns valid iterator to next element
-                    col_iter = possible_matches->erase( col_iter );
+                    col_iter = possible_matches.erase( col_iter );
 
                     //  check if this search branch is futile
-                    if (  possible_matches->size() == 0  )
+                    if (  possible_matches.size() == 0  )
                         return false;
 
                     converged = false;
@@ -400,11 +302,10 @@ UllmannSGIso::refine_M ( )
 
 // determine if node_a matched to node_b is valid
 bool
-UllmannSGIso::refine_M ( row_iter_t & row_iter, col_iter_t & col_iter )
-//Ullmann::refine_M ( Node * node_a , Node * node_b  )
+UllmannSGIso::refine_M ( size_t row_idx, col_iter_t & col_iter )
 {
     // get nodes
-    Node * node_a = row_iter->first;
+    Node * node_a = Ga_nodes[row_idx];
     Node * node_b = *col_iter;
 
     // declare some iterators
@@ -419,8 +320,9 @@ UllmannSGIso::refine_M ( row_iter_t & row_iter, col_iter_t & col_iter )
     adj_a_end = node_a->edges_out_end();
     for ( adj_a_iter = node_a->edges_out_begin();  adj_a_iter != adj_a_end;  ++adj_a_iter )
     {
-        // get set of possible matches to adj_a
-        possible_adj_a_matches = M.find( *adj_a_iter )->second;
+        // get set of possible matches to adj_a via direct O(1) vector index
+        possible_adj_a_matches = &M[(*adj_a_iter)->get_index()];
+        
         // only change to true if we find a possible match to adj_a that is adjacent to node_b
         a_match_b = false;
         // loop over possible matches of adj_a
@@ -447,10 +349,11 @@ UllmannSGIso::refine_M ( row_iter_t & row_iter, col_iter_t & col_iter )
     adj_a_end = node_a->edges_in_end();
     for ( adj_a_iter = node_a->edges_in_begin();  adj_a_iter != adj_a_end;  ++adj_a_iter )
     {
-        row_iter_t adj_row = M.find( *adj_a_iter );
-        if ( adj_row == M.end() )
+        size_t adj_idx = (*adj_a_iter)->get_index();
+        if ( adj_idx >= pa )
             continue;  // in-neighbor not in pattern (subgraph matching) — skip
-        possible_adj_a_matches = adj_row->second;
+            
+        possible_adj_a_matches = &M[adj_idx];
         a_match_b = false;
         matches_end = possible_adj_a_matches->end();
         for ( matches_iter = possible_adj_a_matches->begin();
@@ -467,6 +370,3 @@ UllmannSGIso::refine_M ( row_iter_t & row_iter, col_iter_t & col_iter )
     }
     return true;
 }
-
-
-

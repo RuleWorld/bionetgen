@@ -665,6 +665,35 @@ void OdeIntegrator::compile() {
             constantRxnIndices_.push_back(i);
         }
     }
+
+    // 4. Compile functionMap_ for fast function lookup
+    functionMap_.clear();
+    for (const auto& func : model_.getFunctions()) {
+        functionMap_[func.getName()] = &func.getExpression();
+    }
+
+    // 5. Build reaction dependency graph for SSA
+    std::vector<std::set<std::size_t>> asReactant(nSpecies_);
+    for (std::size_t r = 0; r < compiledRxns_.size(); ++r) {
+        for (const auto idx : compiledRxns_[r].reactantIndices) {
+            asReactant[idx].insert(r);
+        }
+    }
+    ssaRxnUpdateRxn_.resize(compiledRxns_.size());
+    for (std::size_t r = 0; r < compiledRxns_.size(); ++r) {
+        std::set<std::size_t> depRxns;
+        for (const auto idx : compiledRxns_[r].reactantIndices) {
+            for (const auto depR : asReactant[idx]) {
+                depRxns.insert(depR);
+            }
+        }
+        for (const auto idx : compiledRxns_[r].productIndices) {
+            for (const auto depR : asReactant[idx]) {
+                depRxns.insert(depR);
+            }
+        }
+        ssaRxnUpdateRxn_[r].assign(depRxns.begin(), depRxns.end());
+    }
 }
 
 void OdeIntegrator::compileGroups() {
@@ -865,11 +894,10 @@ void OdeIntegrator::derivs(double t, const double* y, double* dydt) const {
                 return groupValues_[it->second];
             }
 
-            // Check user-defined functions (Bug 2 fix)
-            for (const auto& func : model_.getFunctions()) {
-                if (func.getName() == name) {
-                    return func.getExpression().evaluate(resolver, t);
-                }
+            // Check user-defined functions (Bug 2 fix) via O(1) functionMap_
+            auto funcIt = functionMap_.find(name);
+            if (funcIt != functionMap_.end()) {
+                return funcIt->second->evaluate(resolver, t);
             }
 
             // Otherwise try as parameter
@@ -966,8 +994,8 @@ OdeResult OdeIntegrator::integrateEuler(const OdeOptions& opts) {
             std::vector<double> dydt(nSpecies_);
             derivs(t, y.data(), dydt.data());
 
-            // Check steady-state condition (BNG2 parity)
-            if (opts.steadyState && step > 0) {
+            // Check steady-state condition (BNG2 parity) - sub-sampled every 10 steps for performance
+            if (opts.steadyState && step > 0 && (step % 10 == 0 || step == opts.nSteps - 1)) {
                 double sumSq = 0.0;
                 for (std::size_t i = 0; i < nSpecies_; ++i) {
                     sumSq += dydt[i] * dydt[i];
@@ -1069,8 +1097,8 @@ OdeResult OdeIntegrator::integrateRK4(const OdeOptions& opts) {
             std::vector<double> dydt(nSpecies_);
             derivs(t, y.data(), dydt.data());
 
-            // Steady-state detection (BNG2 parity)
-            if (opts.steadyState) {
+            // Steady-state detection (BNG2 parity) - sub-sampled every 10 steps for performance
+            if (opts.steadyState && (outputStep % 10 == 0 || outputStep == opts.nSteps - 1)) {
                 double sumSq = 0.0;
                 for (std::size_t i = 0; i < nSpecies_; ++i) {
                     sumSq += dydt[i] * dydt[i];
@@ -1497,6 +1525,30 @@ double OdeIntegrator::computePropensity(const CompiledReaction& rxn, const std::
 }
 
 OdeResult OdeIntegrator::integrateSSA(const OdeOptions& opts) {
+    struct FenwickTree {
+        std::vector<double> tree;
+        std::size_t size;
+        FenwickTree(std::size_t n) : tree(n + 1, 0.0), size(n) {}
+        void update(std::size_t idx, double delta) {
+            for (std::size_t i = idx + 1; i <= size; i += i & -i) {
+                tree[i] += delta;
+            }
+        }
+        std::size_t find(double target) const {
+            std::size_t idx = 0;
+            std::size_t len = 1;
+            while (len <= size) len <<= 1;
+            len >>= 1;
+            for (std::size_t step = len; step > 0; step >>= 1) {
+                if (idx + step <= size && tree[idx + step] < target) {
+                    target -= tree[idx + step];
+                    idx += step;
+                }
+            }
+            return idx;
+        }
+    };
+
     // Direct Gillespie algorithm (matches BNG2 implementation)
     std::mt19937_64 rng;
     if (opts.seed > 0) {
@@ -1522,19 +1574,26 @@ OdeResult OdeIntegrator::integrateSSA(const OdeOptions& opts) {
     std::size_t nextOutputStep = 0;
     std::size_t ssaStepCount = 0;  // track internal SSA steps for output_step_interval
 
-    // Compute initial propensities
-    std::vector<double> propensities(compiledRxns_.size());
+    // Compute initial propensities and populate Fenwick Tree
+    std::vector<double> propensities(compiledRxns_.size(), 0.0);
     double totalPropensity = 0.0;
+    FenwickTree ssaTree(compiledRxns_.size());
 
-    auto recomputePropensities = [&]() {
+    for (std::size_t r = 0; r < compiledRxns_.size(); ++r) {
+        propensities[r] = computePropensity(compiledRxns_[r], y);
+        totalPropensity += propensities[r];
+        ssaTree.update(r, propensities[r]);
+    }
+
+    auto fullRecomputePropensities = [&]() {
         totalPropensity = 0.0;
+        ssaTree = FenwickTree(compiledRxns_.size());
         for (std::size_t r = 0; r < compiledRxns_.size(); ++r) {
             propensities[r] = computePropensity(compiledRxns_[r], y);
             totalPropensity += propensities[r];
+            ssaTree.update(r, propensities[r]);
         }
     };
-
-    recomputePropensities();
 
     // Record initial state
     if (opts.outputStepInterval > 0) {
@@ -1573,23 +1632,13 @@ OdeResult OdeIntegrator::integrateSSA(const OdeOptions& opts) {
 
         t += tau;
 
-        // Select next reaction
+        // Select next reaction in O(log M) using the Fenwick Tree
         double r2 = uniform(rng);
-        double cumulative = 0.0;
         double target = r2 * totalPropensity;
-        std::size_t selectedRxn = compiledRxns_.size();
-
-        for (std::size_t r = 0; r < compiledRxns_.size(); ++r) {
-            cumulative += propensities[r];
-            if (cumulative >= target) {
-                selectedRxn = r;
-                break;
-            }
-        }
+        std::size_t selectedRxn = ssaTree.find(target);
 
         if (selectedRxn >= compiledRxns_.size()) {
-            // Shouldn't happen unless roundoff error
-            break;
+            selectedRxn = compiledRxns_.size() - 1;
         }
 
         // Fire the selected reaction
@@ -1602,9 +1651,19 @@ OdeResult OdeIntegrator::integrateSSA(const OdeOptions& opts) {
             y[idx] += 1.0;
         }
 
-        // Recompute propensities
-        // Optimization: could track which reactions are affected by this species change
-        recomputePropensities();
+        // Incremental propensity updates via reaction dependency graph
+        for (const auto depR : ssaRxnUpdateRxn_[selectedRxn]) {
+            double oldProp = propensities[depR];
+            double newProp = computePropensity(compiledRxns_[depR], y);
+            propensities[depR] = newProp;
+            totalPropensity += (newProp - oldProp);
+            ssaTree.update(depR, newProp - oldProp);
+        }
+
+        // Recalculate full propensities if total goes negative due to floating point drift
+        if (totalPropensity < 0.0) {
+            fullRecomputePropensities();
+        }
 
         // output_step_interval: record output every N internal SSA steps
         ++ssaStepCount;

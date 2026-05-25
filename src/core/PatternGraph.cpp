@@ -164,11 +164,11 @@ PatternGraph::delete_node ( Node * node )
 
     // remove in edges
     for ( node_const_iter = node->edges_in_begin();  node_const_iter != node->edges_in_end();  ++node_const_iter  )
-        delete_edge ( *node_iter, node  );
+        delete_edge ( *node_const_iter, node  );
 
     // remove out edges
     for ( node_const_iter = node->edges_out_begin();  node_const_iter != node->edges_out_end();  ++node_const_iter  )
-        delete_edge ( node, *node_iter );
+        delete_edge ( node, *node_const_iter );
     
     // erase node from graph
     delete node;
@@ -1016,10 +1016,10 @@ PatternGraph::splice ( PatternGraph & g2, Map & overlap_map )
         node1 = node_map.mapf( node2 );  
         // add inbound edges
         for ( node_const_iter = node2->edges_in_begin();  node_const_iter != node2->edges_in_end();  ++node_const_iter )
-            g1.add_edge ( node_map.mapf( *node_iter ), node1 );
+            g1.add_edge ( node_map.mapf( *node_const_iter ), node1 );
         // add outbound edges
         for ( node_const_iter = node2->edges_out_begin();  node_const_iter != node2->edges_out_end();  ++node_const_iter )
-            g1.add_edge ( node1, node_map.mapf( *node_iter ) );
+            g1.add_edge ( node1, node_map.mapf( *node_const_iter ) );
         // NOTE: some edges may be added twice, but this won't cause any problems (edges will simply be
         //  ignored when added the second time).
     }

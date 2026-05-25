@@ -15,14 +15,13 @@ namespace BNGcore
         public:
             // structors
             UllmannBase  ( const PatternGraph & _Ga, const PatternGraph & _Gb  );
-            virtual ~UllmannBase ( );
+            virtual ~UllmannBase ( ) = default;
           
             virtual size_t  find_mappings ( List <Map> & maps ) { return 0; };
 
         protected:       
             void  initialize_M_vec ( );
             void  copy_M ( ullmann_M_t & orig, ullmann_M_t & copy );
-            void  copy_M ( ullmann_M_t & orig, ullmann_M_t & copy, row_iter_t row_iter );
             void  print_M ( ullmann_M_t & M );
 
             // Ga is the subgraph, Gb is the graph
@@ -39,6 +38,9 @@ namespace BNGcore
             node_container_t  targets;
             std::vector<bool> targets_mask;
             Map               map;
+
+            // pre-assigned node lists and vectors
+            std::vector<Node*> Ga_nodes;
     };         
 
 
@@ -62,11 +64,11 @@ namespace BNGcore
             void set_max_maps ( size_t max ) { max_maps_ = max; };
 
         protected:
-            size_t   next_node ( size_t d, row_iter_t & row_iter, List <Map> & sg_iso_maps );
+            size_t   next_node ( size_t d, List <Map> & sg_iso_maps );
             bool     find_next_match ( col_iter_t & col_iter, const col_iter_t & col_end );
             bool     build_M0  ( );
             bool     refine_M  ( );
-            bool     refine_M ( row_iter_t & row_iter, col_iter_t & col_iter );
+            bool     refine_M ( size_t row_idx, col_iter_t & col_iter );
             size_t   max_maps_ = 0;  // 0 = unlimited
     };   
    
