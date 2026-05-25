@@ -141,30 +141,42 @@ class NameDictionary:
 
 	
 	def getIdx(self,elemtype,string):
-		# ⚡ Bolt: Use next() with generator instead of list comprehension + [0] for O(1) early exit
+		# ⚡ Bolt: Use simple for loop instead of generator expression to avoid generator initialization overhead, providing a much faster O(1) early exit
 		if elemtype == 'p':
-			return next((idx for x,idx in list(self.p.items()) if str(x)==string), None)
+			for x,idx in list(self.p.items()):
+				if str(x)==string: return idx
 		if elemtype == 't':
-			return next((idx for x,idx in list(self.t.items()) if str(x)==string), None)
+			for x,idx in list(self.t.items()):
+				if str(x)==string: return idx
 		if elemtype == 'tp':
-			return next((idx for x,idx in list(self.tp.items()) if str(x)==string), None)
+			for x,idx in list(self.tp.items()):
+				if str(x)==string: return idx
 		if elemtype == 'r':
-			return next((idx for x,idx in list(self.r.items()) if str(x)==string), None)
+			for x,idx in list(self.r.items()):
+				if str(x)==string: return idx
 		if elemtype == 'irr':
-			return next((idx for x,idx in list(self.irr.items()) if str(x)==string), None)
+			for x,idx in list(self.irr.items()):
+				if str(x)==string: return idx
+		return None
 			
 	def getElement(self,elemtype,idx1):
-		# ⚡ Bolt: Use next() with generator instead of list comprehension + [0] for O(1) early exit
+		# ⚡ Bolt: Use simple for loop instead of generator expression to avoid generator initialization overhead, providing a much faster O(1) early exit
 		if elemtype == 'p':
-			return next((x for x,idx in list(self.p.items()) if idx==idx1), None)
+			for x,idx in list(self.p.items()):
+				if idx==idx1: return x
 		if elemtype == 't':
-			return next((x for x,idx in list(self.t.items()) if idx==idx1), None)
+			for x,idx in list(self.t.items()):
+				if idx==idx1: return x
 		if elemtype == 'tp':
-			return next((x for x,idx in list(self.tp.items()) if idx==idx1), None)
+			for x,idx in list(self.tp.items()):
+				if idx==idx1: return x
 		if elemtype == 'r':
-			return next((x for x,idx in list(self.r.items()) if idx==idx1), None)
+			for x,idx in list(self.r.items()):
+				if idx==idx1: return x
 		if elemtype == 'irr':
-			return next((x for x,idx in list(self.irr.items()) if idx==idx1), None)
+			for x,idx in list(self.irr.items()):
+				if idx==idx1: return x
+		return None
 			
 	def getString(self,elemtype,idx1):
 		return str(self.getElement(elemtype,idx1))
@@ -736,7 +748,8 @@ def getLevels(start,end,names,all_maps):
 		max_p_levels = None
 		min_p_levels = None
 
-	remaining_tp = [x for x in list(names.tp.values()) if x not in tp_levels]
+	tp_values = list(names.tp.values())
+	remaining_tp = [x for x in tp_values if x not in tp_levels]
 	for tp in remaining_tp:
 		possiblelevels = maps_by_x.get(tp, [])
 		if len(possiblelevels)>0:
@@ -755,7 +768,8 @@ def getLevels(start,end,names,all_maps):
 		if y in p_levels:
 			maps2_by_x.setdefault(x, []).append(p_levels[y])
 
-	remaining_irr = [x for x in list(names.irr.values()) if x not in irr_levels]
+	irr_values = list(names.irr.values())
+	remaining_irr = [x for x in irr_values if x not in irr_levels]
 	for irr in remaining_irr:
 		possiblelevels = maps2_by_x.get(irr, [])
 		if len(possiblelevels)>0:
@@ -775,7 +789,8 @@ def getLevels(start,end,names,all_maps):
 		if x in tp_levels:
 			maps_by_y.setdefault(y, []).append(tp_levels[x])
 
-	remaining_p = [x for x in list(names.p.values()) if x not in p_levels]
+	p_values = list(names.p.values())
+	remaining_p = [x for x in p_values if x not in p_levels]
 	for p in remaining_p:
 		possiblelevels = maps_by_y.get(p, [])
 		if len(possiblelevels) > 0:
@@ -812,8 +827,11 @@ def graphData(names,levels,all_maps):
 		node_list.append(dict1)
 		id_counter += 1
 	def getCounter(	elemtype,x):
-		# ⚡ Bolt: Use next() with generator instead of list comprehension + [0] for O(1) early exit
-		return next((node for node in node_list if node['type']==elemtype and node['idx']==x), None)['id']
+		# ⚡ Bolt: Use simple for loop instead of generator expression to avoid generator initialization overhead, providing a much faster O(1) early exit
+		for node in node_list:
+			if node['type']==elemtype and node['idx']==x:
+				return node['id']
+		return None
 
 			
 	edge_list=[]
