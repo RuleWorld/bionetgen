@@ -24,9 +24,29 @@ using Perm = std::map<int, int>;
 namespace hnauty_detail {
 
 // ---- intersection ----
-// Set intersection of two int vectors using an allocation-light lookup table
+// Set intersection of two int vectors using an allocation-light lookup table.
+// Uses an $O(|A| + |B|)$ allocation-free two-pointer method if both are sorted (common in HNauty).
 inline std::vector<int> intersection(const std::vector<int>& a, const std::vector<int>& b) {
     if (a.empty() || b.empty()) return {};
+    
+    if (std::is_sorted(a.begin(), a.end()) && std::is_sorted(b.begin(), b.end())) {
+        std::vector<int> result;
+        result.reserve(std::min(a.size(), b.size()));
+        size_t i = 0, j = 0;
+        while (i < a.size() && j < b.size()) {
+            if (a[i] == b[j]) {
+                result.push_back(a[i]);
+                i++;
+                j++;
+            } else if (a[i] < b[j]) {
+                i++;
+            } else {
+                j++;
+            }
+        }
+        return result;
+    }
+    
     int maxVal = 0;
     for (int v : b) {
         if (v > maxVal) maxVal = v;

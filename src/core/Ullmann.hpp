@@ -41,6 +41,10 @@ namespace BNGcore
 
             // pre-assigned node lists and vectors
             std::vector<Node*> Ga_nodes;
+
+            // O(1) adjacency matrices for Gb
+            std::vector<std::vector<bool>> adj_matrix_out;
+            std::vector<std::vector<bool>> adj_matrix_in;
     };         
 
 

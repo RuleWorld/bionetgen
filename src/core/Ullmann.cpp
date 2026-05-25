@@ -47,6 +47,28 @@ using namespace BNGcore;
          (*it)->set_index(i);
          Ga_nodes.push_back(*it);
      }
+
+     // Build fast O(1) adjacency lookup matrices for Gb
+     adj_matrix_out.assign(pb, std::vector<bool>(pb, false));
+     adj_matrix_in.assign(pb, std::vector<bool>(pb, false));
+     for (node_const_iter_t it_u = Gb.begin(); it_u != Gb.end(); ++it_u) {
+         Node *u = *it_u;
+         int u_idx = u->get_index();
+         for (node_const_iter_t it_v = u->edges_out_begin(); it_v != u->edges_out_end(); ++it_v) {
+             adj_matrix_out[u_idx][(*it_v)->get_index()] = true;
+         }
+         for (node_const_iter_t it_v = u->edges_in_begin(); it_v != u->edges_in_end(); ++it_v) {
+             adj_matrix_in[u_idx][(*it_v)->get_index()] = true;
+         }
+     }
+
+     // Pre-reserve capacities to completely eliminate heap reallocations during backtracking
+     for (size_t i = 0; i < pa; ++i) {
+         M[i].reserve(pb);
+         for (size_t d = 0; d < pa; ++d) {
+             M_vec[d][i].reserve(pb);
+         }
+     }
  }
 
 
@@ -331,7 +353,7 @@ UllmannSGIso::refine_M ( size_t row_idx, col_iter_t & col_iter )
                 matches_iter != matches_end;  ++matches_iter  )
         {
             // see if there is an edge from  node_b to match
-            if (  node_b->find_out_edge( *matches_iter )  !=  node_b->edges_out_end()  )
+            if (  adj_matrix_out[node_b->get_index()][(*matches_iter)->get_index()]  )
             {
                 a_match_b = true;
                 break;
@@ -359,7 +381,7 @@ UllmannSGIso::refine_M ( size_t row_idx, col_iter_t & col_iter )
         for ( matches_iter = possible_adj_a_matches->begin();
                 matches_iter != matches_end;  ++matches_iter  )
         {
-            if (  node_b->find_in_edge( *matches_iter )  !=  node_b->edges_in_end()  )
+            if (  adj_matrix_in[node_b->get_index()][(*matches_iter)->get_index()]  )
             {
                 a_match_b = true;
                 break;
