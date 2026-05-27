@@ -138,3 +138,73 @@ TEST_CASE("withinStoichLimits enforces molecule counts", "[NetworkGenerator]") {
         REQUIRE(withinStoichLimits(graph, limits) == true);
     }
 }
+
+TEST_CASE("parseOverwrite behaves correctly", "[NetworkGenerator]") {
+    bng::ast::Model model;
+
+    SECTION("returns true by default (no actions)") {
+        REQUIRE(parseOverwrite(model) == true);
+    }
+
+    SECTION("returns true if no generate_network action exists") {
+        bng::ast::Action action;
+        action.name = "simulate";
+        action.arguments["method"] = "ode";
+        model.addAction(action);
+        REQUIRE(parseOverwrite(model) == true);
+    }
+
+    SECTION("returns true if generate_network exists but no overwrite argument") {
+        bng::ast::Action action;
+        action.name = "generate_network";
+        action.arguments["print_iter"] = "1";
+        model.addAction(action);
+        REQUIRE(parseOverwrite(model) == true);
+    }
+
+    SECTION("returns true if overwrite is set to true") {
+        bng::ast::Action action;
+        action.name = "generate_network";
+        action.arguments["overwrite"] = "1";
+        model.addAction(action);
+        REQUIRE(parseOverwrite(model) == true);
+    }
+
+    SECTION("returns false if overwrite is set to false") {
+        bng::ast::Action action;
+        action.name = "generate_network";
+        action.arguments["overwrite"] = "0";
+        model.addAction(action);
+        REQUIRE(parseOverwrite(model) == false);
+    }
+
+    SECTION("ignores generate_network without overwrite and finds the one with overwrite") {
+        bng::ast::Action action1;
+        action1.name = "generate_network";
+        action1.arguments["print_iter"] = "1";
+        model.addAction(action1);
+
+        bng::ast::Action action2;
+        action2.name = "generate_network";
+        action2.arguments["overwrite"] = "0";
+        model.addAction(action2);
+
+        REQUIRE(parseOverwrite(model) == false);
+    }
+
+    SECTION("handles other boolean-like value 'yes' for overwrite") {
+        bng::ast::Action action;
+        action.name = "generate_network";
+        action.arguments["overwrite"] = "yes";
+        model.addAction(action);
+        REQUIRE(parseOverwrite(model) == true);
+    }
+
+    SECTION("handles other boolean-like value 'no' for overwrite") {
+        bng::ast::Action action;
+        action.name = "generate_network";
+        action.arguments["overwrite"] = "no";
+        model.addAction(action);
+        REQUIRE(parseOverwrite(model) == false);
+    }
+}
