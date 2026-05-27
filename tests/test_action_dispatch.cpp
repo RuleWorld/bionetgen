@@ -64,6 +64,9 @@ TEST_CASE("ActionDispatch parseScalarValue", "[ActionDispatch]") {
     SECTION("Error handling") {
         REQUIRE_THROWS_AS(parseScalarValue("NonExistent", model), std::runtime_error);
         REQUIRE_THROWS_AS(parseScalarValue("1+NonExistent", model), std::runtime_error);
+        REQUIRE_THROWS_AS(parseScalarValue("(A+NonExistent)/2", model), std::runtime_error);
+        REQUIRE_THROWS_AS(parseScalarValue("A / / 2", model), std::runtime_error);
+        REQUIRE_THROWS_AS(parseScalarValue("2 * (A + 1", model), std::runtime_error);
     }
 }
 
