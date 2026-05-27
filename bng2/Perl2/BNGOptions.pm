@@ -54,7 +54,7 @@ sub GetBNGOptions
 	if ($@) {
 		@_ = split( "\n", $@ );
 		$_ = join( "\n\t", @_ );
-        error("Module $self->config->{ModelID} not loaded because: \n\t$_");
+        error("Module $module not loaded because: \n\t$_");
 	}
 	
 	for my $file(@ARGV)
