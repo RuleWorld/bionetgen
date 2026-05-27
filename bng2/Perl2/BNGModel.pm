@@ -1314,18 +1314,9 @@ sub readSBML
 
             }
                 else
-                {   # Try to execute general PERL code (Dangerous!!)
-                    if ( $model->Params->{allow_perl} )
-                    {
-                        # General Perl code
-                        eval $string;
-                        if ($@) { $err = errgen($@);  goto EXIT; }
-                    }
-                    else
-                    {
-                        send_warning( errgen("Unidentified input! Will not attempt to execute as Perl.") );
-                        next;
-                    }
+                {
+                    send_warning( errgen("Unidentified input! Arbitrary Perl execution is disabled for security reasons.") );
+                    next;
                 }
             }
             } # end read BNGL or NET
