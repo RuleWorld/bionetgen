@@ -48,7 +48,7 @@ def solveWildcards(atomicArray):
     molecule_to_atomics = {}
     for atomic_key, atomic_val in atomicArray.items():
         if '+' not in atomic_key and len(atomic_val.molecules) > 1:
-            names = set(m.name for m in atomic_val.molecules)
+            names = {m.name for m in atomic_val.molecules}
             for name in names:
                 molecule_to_atomics.setdefault(name, []).append(atomic_val)
 

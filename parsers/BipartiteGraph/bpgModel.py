@@ -315,7 +315,7 @@ class AtomizedRule:
 								self.context.append(AtomicPattern(makeBondWildcardPattern(mol,comp)))
 							else:
 								bonds.append([mol,comp,comp.bonds[0]])
-			bondnames = set([b for m,c,b in bonds])
+			bondnames = {b for m,c,b in bonds}
 			for bond in bondnames:
 				mc = [ [m,c] for m,c,b in bonds if b==bond]
 				if len(mc)==2:

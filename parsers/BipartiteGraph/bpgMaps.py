@@ -229,13 +229,13 @@ class RuleMap:
 		dictPatterns = dictNames.p
 		dictTransformations = dictNames.t
 		
-		self.r2t = set( [ (dictRules[r],dictTransformations[t]) for r in dictRules for t in r.transformations ] )
-		self.r2p_transfcenter = set( [ (dictRules[r],dictPatterns[p]) for r in dictRules for item in r.transf_center_lhs for p in item ] )
-		self.r2p_context = set( [ (dictRules[r],dictPatterns[p]) for r in dictRules for p in r.context ] )
-		self.r2p_syndelcontext = set( [ (dictRules[r],dictPatterns[p]) for r in dictRules for item in r.syndel_context for p in item ] )
+		self.r2t = {(dictRules[r],dictTransformations[t]) for r in dictRules for t in r.transformations}
+		self.r2p_transfcenter = {(dictRules[r],dictPatterns[p]) for r in dictRules for item in r.transf_center_lhs for p in item}
+		self.r2p_context = {(dictRules[r],dictPatterns[p]) for r in dictRules for p in r.context}
+		self.r2p_syndelcontext = {(dictRules[r],dictPatterns[p]) for r in dictRules for item in r.syndel_context for p in item}
 		#moving to syncontext and delcontext
-		self.r2p_syncontext = set( [ (dictRules[r],dictPatterns[p]) for r in dictRules for item in r.syncontext for p in item ] )
-		self.r2p_delcontext = set( [ (dictRules[r],dictPatterns[p]) for r in dictRules for item in r.delcontext for p in item ] )
+		self.r2p_syncontext = {(dictRules[r],dictPatterns[p]) for r in dictRules for item in r.syncontext for p in item}
+		self.r2p_delcontext = {(dictRules[r],dictPatterns[p]) for r in dictRules for item in r.delcontext for p in item}
 
  
 class TransformationMap:
@@ -250,8 +250,8 @@ class TransformationMap:
 		
 		self.t2action = dict([(dictTransformations[t],t.action) for t in dictTransformations])
 	
-		self.t2p_reactant = list(set( [ (dictTransformations[t],dictPatterns[p]) for t in dictTransformations for p in t.getLHS()] ))
-		self.t2p_product = list(set( [ (dictTransformations[t],dictPatterns[p]) for t in dictTransformations for p in t.getRHS()] ))
+		self.t2p_reactant = list({(dictTransformations[t],dictPatterns[p]) for t in dictTransformations for p in t.getLHS()})
+		self.t2p_product = list({(dictTransformations[t],dictPatterns[p]) for t in dictTransformations for p in t.getRHS()})
 		
 		self.t2p_context = set()
 		self.t2p_context.update((dictTransformations[t], dictPatterns[p]) for r in dictRules for t in r.transformations for p in r.context)

@@ -49,7 +49,7 @@ def solveWildcards(atomicArray):
         if '+' in key:
             wildcards.append((key, value))
         elif len(value.molecules) > 1:
-            for name in set(m.name for m in value.molecules):
+            for name in {m.name for m in value.molecules}:
                 name_to_atomics.setdefault(name, []).append(value)
 
     standinArray = {}

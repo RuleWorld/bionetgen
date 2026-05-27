@@ -63,7 +63,7 @@ def solveWildcards(atomicArray):
     # Inverted index: map molecule name to a list of atomics that contain it
     mol_name_to_atomics = {}
     for atomic in atomics:
-        for mol_name in set(m.name for m in atomicArray[atomic].molecules):
+        for mol_name in {m.name for m in atomicArray[atomic].molecules}:
             if mol_name not in mol_name_to_atomics:
                 mol_name_to_atomics[mol_name] = []
             mol_name_to_atomics[mol_name].append(atomicArray[atomic])
