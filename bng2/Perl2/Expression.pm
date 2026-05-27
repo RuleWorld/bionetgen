@@ -1191,10 +1191,12 @@ sub evaluate
             elsif ( $operator eq '!' ) { $val = !$v ? 1 : 0; }
             else {
                 # fallback for math functions if they somehow end up here
-                my $eval_string = "$operator(\$v)";
-                local $SIG{__WARN__} = sub {};
-                $val = eval "$eval_string";
-                if ($@) { die $@; }
+                if ( exists $functions{$operator} ) {
+                    my $f = $functions{$operator}->{FPTR};
+                    $val = $f->($v);
+                } else {
+                    die "Expression->evaluate: Unrecognized unary operator $operator\n";
+                }
             }
         }
         else
