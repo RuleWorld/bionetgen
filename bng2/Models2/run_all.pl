@@ -28,5 +28,5 @@ my @files = map { "./$_" } <*.bngl>;
 # run BNG on all files
 my @command = ($perlbin, $bngexec, "--log", "--", @files);
 print join( " ", @command ), "\n";
-system(@command)==0 or die "Some problem running BioNetGen";
+system({$command[0]} @command)==0 or die "Some problem running BioNetGen";
 

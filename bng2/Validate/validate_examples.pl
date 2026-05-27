@@ -210,7 +210,7 @@ if ($check_nfsim)
 {
     print " -> checking for NFsim executable\n";
     my @args = ( $perlbin, $bngexec, '--findbin', 'NFsim' ); 
-    system(@args);
+    system({$args[0]} @args);
     if ($? == -1) {  exit_error("failed to execute ($!)");  }
     # check return value: 0 means NFsim was found successfully
     if ( ($?>>8)==0 )
@@ -233,7 +233,7 @@ if ($check_atomizer)
 {
     print " -> checking for sbmlTranslator executable\n";
     my @args = ( $perlbin, $bngexec, '--findbin', 'sbmlTranslator' ); 
-    system(@args);
+    system({$args[0]} @args);
     if ($? == -1) {  exit_error("failed to execute ($!)");  }
     # check return value: 0 means NFsim was found successfully
     if ( ($?>>8)==0 )
