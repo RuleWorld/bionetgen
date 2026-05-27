@@ -136,7 +136,7 @@ def createCollapsedContact(rules,species,transformations,fileName):
                 nonatomicset = True
             elif rule.actions[idx].action in ['AddBond']:
 
-                bondpartners = [x.split('(')[0] for x in transformationCenter[idx]]
+                bondpartners = [x.split('(', 1)[0] for x in transformationCenter[idx]]
                 if len(bondpartners) == 2:
                     graph.add_edge(bondpartners[0],bondpartners[1],graphics={'fill':"#000000"})
                 else:
@@ -147,8 +147,12 @@ def createCollapsedContact(rules,species,transformations,fileName):
                     if x in activeProducts:
                         activeProducts.remove(x)
             elif rule.actions[idx].action in ['StateChange']:
-                molecule = [x.split('(')[0] for x in transformationCenter[idx]]
-                state = [x.split('(')[1].split('~')[0] for x in transformationCenter[idx]]
+                molecule = []
+                state = []
+                for x in transformationCenter[idx]:
+                    mol, rest = x.split('(', 1)
+                    molecule.append(mol)
+                    state.append(rest.split('~', 1)[0])
                 graph.add_node(molecule[0] +'_'+state[0],graphics={'type': "circle",'fill':"#CCFFCC"})
                 processNodes.append(state[0])
                 graph.add_edge(molecule[0]+'_'+state[0],molecule[0],graphics={'fill':"#000000"})
