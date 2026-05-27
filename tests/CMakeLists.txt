@@ -127,3 +127,22 @@ target_include_directories(test_GraphTypeRegistry PRIVATE
 )
 target_link_libraries(test_GraphTypeRegistry PRIVATE Catch2::Catch2WithMain Catch2::Catch2 bng_ast bng_core)
 catch_discover_tests(test_GraphTypeRegistry)
+
+add_executable(test_ode_integrator test_ode_integrator.cpp)
+target_include_directories(test_ode_integrator PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/parser
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/parser/generated
+    ${antlr4_runtime_SOURCE_DIR}/runtime/Cpp/runtime/src
+    ${sundials_SOURCE_DIR}/include
+    ${sundials_BINARY_DIR}/include
+)
+target_link_libraries(test_ode_integrator PRIVATE
+    Catch2::Catch2WithMain
+    Catch2::Catch2
+    bng_engine
+    bng_ast
+    bng_core
+    antlr4_static
+)
+catch_discover_tests(test_ode_integrator)
