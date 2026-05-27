@@ -633,13 +633,6 @@ PatternGraph::find_canonical_order ( bool preserve_prior_order ) const
     // sort nodes
     std::stable_sort ( node_vec.begin(), node_vec.end(), Node::less );
     
-    #if BNGCORE_DEBUG_NAUTY==1
-    //std::cout << "preliminary_node_sort:" << std::endl;
-    //for ( node_iter = node_vec.begin();  node_iter != node_vec.end();  ++node_iter )
-    //    std::cout << (*node_iter)->get_label() << ",";
-    //std::cout << std::endl;
-    #endif
-    
     // number of vertices and directed edges
     nv = size();
     nde = 0;
