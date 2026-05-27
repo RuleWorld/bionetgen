@@ -303,7 +303,7 @@ void OdeIntegrator::compile() {
         }
 
         if (!foundDerived) {
-            // No derived parameter — apply volume scaling factor (Bug 3 fix)
+            // No derived parameter — apply volume scaling factor
             const auto unitFactor = bng::io::NetWriter::computeUnitConversionFactor(rxn, model_, network_);
             if (unitFactor.has_value()) {
                 rateStrBuilder << *unitFactor << "*";
@@ -317,7 +317,7 @@ void OdeIntegrator::compile() {
         std::string rateStr = rateStrBuilder.str();
         const std::string rawRateLaw = rxn.getRateLaw();
 
-        // --- Bug 1 fix: Detect Sat/MM/Hill rate law types ---
+        // Detect Sat/MM/Hill rate law types
         // Format in .net: "Sat kcat Km" or "MM kcat Km" or "Hill Vmax Kh n"
         bool isSatMMHill = false;
         bool isMM = false;  // True when rate law is MM (Michaelis-Menten), not Sat
@@ -483,7 +483,7 @@ void OdeIntegrator::compile() {
                 }
             }
 
-            // --- Bug 2 fix: Check for user-defined function references ---
+            // Check for user-defined function references
             std::string matchedFuncName;
             if (!isFunctional) {
                 const std::string rawRL = rxn.getRateLaw();
@@ -522,7 +522,7 @@ void OdeIntegrator::compile() {
             }
         }
 
-        // Bug 2 fix: Also check for user-defined function references OUTSIDE the rateExpr block
+        // Also check for user-defined function references OUTSIDE the rateExpr block
         // This catches cases where rateExpr is nullopt but the rate law string references a function
         if (!crxn.isFunctional) {
             const std::string rawRL = rxn.getRateLaw();
@@ -894,7 +894,7 @@ void OdeIntegrator::derivs(double t, const double* y, double* dydt) const {
                 return groupValues_[it->second];
             }
 
-            // Check user-defined functions (Bug 2 fix) via O(1) functionMap_
+            // Check user-defined functions via O(1) functionMap_
             auto funcIt = functionMap_.find(name);
             if (funcIt != functionMap_.end()) {
                 return funcIt->second->evaluate(resolver, t);
