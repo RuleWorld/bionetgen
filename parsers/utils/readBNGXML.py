@@ -17,7 +17,7 @@ def findBond(bondDefinitions, component):
     '''
     if isinstance(bondDefinitions, dict):
         return bondDefinitions.get(component)
-    for idx, bond in enumerate(bondDefinitions.getchildren()):
+    for idx, bond in enumerate(bondDefinitions):
         if component in [bond.get('site1'), bond.get('site2')]: 
             return str(idx)
 
@@ -55,13 +55,13 @@ def createSpecies(pattern):
 
     bond_map = {}
     if bonds is not None:
-        for idx, bond in enumerate(bonds.getchildren()):
+        for idx, bond in enumerate(bonds):
             bond_map[bond.get('site1')] = str(idx)
             bond_map[bond.get('site2')] = str(idx)
     else:
         bond_map = None
 
-    for molecule in mol.getchildren():
+    for molecule in mol:
         molecule, nameDict = createMolecule(molecule, bond_map)
         tmpDict.update(nameDict)
         species.addMolecule(molecule)
@@ -150,7 +150,7 @@ def parseMolecules(molecules):
     components = \
       molecules.find('.//{http://www.sbml.org/sbml/level3}ListOfComponentTypes')
     if components != None:
-        for component in components.getchildren():
+        for component in components:
             comp = parseComponent(component)
             mol.addComponent(comp)
     return mol       
@@ -162,7 +162,7 @@ def parseComponent(component):
     comp = st.Component(component.get('id'),component.get('id'))
     states = component.find('.//{http://www.sbml.org/sbml/level3}ListOfAllowedStates')
     if states != None:
-        for state in states.getchildren():
+        for state in states:
             comp.addState(state.get('id'))
     return comp
     
