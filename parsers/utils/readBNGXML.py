@@ -9,6 +9,17 @@ import smallStructures as st
  #http://igraph.sourceforge.net/documentation.html
 #----------------------------------------------------------------------
 
+def _fast_find(element, tag_name):
+    """
+    Performance optimization: attempting direct child lookup first is O(children)
+    compared to the recursive .// search which is O(tree).
+    """
+    res = element.find('{http://www.sbml.org/sbml/level3}' + tag_name)
+    if res is None:
+        res = element.find('.//{http://www.sbml.org/sbml/level3}' + tag_name)
+    return res
+
+
 
 def findBond(bondDefinitions, component):
     '''
@@ -29,7 +40,7 @@ def createMolecule(molecule, bonds):
     if molecule.get('compartment') not in ['',None]:
         mol.setCompartment(molecule.get('compartment'))
     nameDict[molecule.get('id')] = molecule.get('name')
-    listOfComponents =  molecule.find('.//{http://www.sbml.org/sbml/level3}ListOfComponents')
+    listOfComponents =  _fast_find(molecule, 'ListOfComponents')
     if listOfComponents != None:
         for element in listOfComponents:
             component = st.Component(element.get('name'),element.get('id'))
@@ -50,8 +61,8 @@ def createSpecies(pattern):
     tmpDict = {}
     species = st.Species()
     species.idx = pattern.get('id')
-    mol = pattern.find('.//{http://www.sbml.org/sbml/level3}ListOfMolecules')
-    bonds = pattern.find('.//{http://www.sbml.org/sbml/level3}ListOfBonds')
+    mol = _fast_find(pattern, 'ListOfMolecules')
+    bonds = _fast_find(pattern, 'ListOfBonds')
 
     bond_map = {}
     if bonds is not None:
@@ -78,11 +89,11 @@ def parseRule(rule,parameterDict):
     Returns: a list of the reactants and products used, followed by the mapping
     between the two and the list of operations that were performed
     '''
-    rp = rule.find('.//{http://www.sbml.org/sbml/level3}ListOfReactantPatterns')
-    pp = rule.find('.//{http://www.sbml.org/sbml/level3}ListOfProductPatterns')
-    mp = rule.find('.//{http://www.sbml.org/sbml/level3}Map')
-    op = rule.find('.//{http://www.sbml.org/sbml/level3}ListOfOperations')
-    rt = rule.find('.//{http://www.sbml.org/sbml/level3}RateLaw')
+    rp = _fast_find(rule, 'ListOfReactantPatterns')
+    pp = _fast_find(rule, 'ListOfProductPatterns')
+    mp = _fast_find(rule, 'Map')
+    op = _fast_find(rule, 'ListOfOperations')
+    rt = _fast_find(rule, 'RateLaw')
     nameDict = {}
     reactants = []
     products = []
@@ -119,7 +130,7 @@ def parseRule(rule,parameterDict):
     for mapping in mp:
         tmpMap = (mapping.get('sourceID'), mapping.get('targetID'))
         mappings.append(tmpMap)
-    rateConstants = rt.find('.//{http://www.sbml.org/sbml/level3}ListOfRateConstants')
+    rateConstants = _fast_find(rt, 'ListOfRateConstants')
     if rateConstants == None:
         rateConstants = rt.get('name')
     else:
@@ -148,7 +159,7 @@ def parseMolecules(molecules):
 
     mol = st.Molecule(molecules.get('id'),molecules.get('id'))
     components = \
-      molecules.find('.//{http://www.sbml.org/sbml/level3}ListOfComponentTypes')
+      _fast_find(molecules, 'ListOfComponentTypes')
     if components != None:
         for component in components:
             comp = parseComponent(component)
@@ -160,7 +171,7 @@ def parseComponent(component):
     parses  a bngxml molecule types section
     '''
     comp = st.Component(component.get('id'),component.get('id'))
-    states = component.find('.//{http://www.sbml.org/sbml/level3}ListOfAllowedStates')
+    states = _fast_find(component, 'ListOfAllowedStates')
     if states != None:
         for state in states:
             comp.addState(state.get('id'))

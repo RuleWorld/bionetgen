@@ -28,6 +28,9 @@ class LxmlElementWrapper:
     def getchildren(self):
         return [LxmlElementWrapper(child) for child in self._et_element]
 
+    def __iter__(self):
+        return iter([LxmlElementWrapper(child) for child in self._et_element])
+
 
 class TestParseComponent(unittest.TestCase):
 
