@@ -41,6 +41,25 @@ target_link_libraries(test_pla_simulator PRIVATE
 )
 catch_discover_tests(test_pla_simulator)
 
+add_executable(test_psa_simulator test_psa_simulator.cpp)
+target_include_directories(test_psa_simulator PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/parser
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/parser/generated
+    ${antlr4_runtime_SOURCE_DIR}/runtime/Cpp/runtime/src
+    ${sundials_SOURCE_DIR}/include
+    ${sundials_BINARY_DIR}/include
+)
+target_link_libraries(test_psa_simulator PRIVATE
+    Catch2::Catch2WithMain
+    Catch2::Catch2
+    bng_engine
+    bng_ast
+    bng_core
+    antlr4_static
+)
+catch_discover_tests(test_psa_simulator)
+
 add_executable(test_hybrid_model_generator test_hybrid_model_generator.cpp)
 target_link_libraries(test_hybrid_model_generator PRIVATE Catch2::Catch2WithMain Catch2::Catch2 bng_engine bng_ast)
 add_test(NAME test_hybrid_model_generator COMMAND test_hybrid_model_generator)
