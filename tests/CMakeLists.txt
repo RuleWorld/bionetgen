@@ -222,6 +222,15 @@ target_include_directories(test_matlab_writer PRIVATE
 target_link_libraries(test_matlab_writer PRIVATE Catch2::Catch2WithMain Catch2::Catch2 bng_engine bng_ast bng_core antlr4_static)
 catch_discover_tests(test_matlab_writer)
 
+add_executable(test_console test_console.cpp)
+target_include_directories(test_console PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/console
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/ast
+)
+target_link_libraries(test_console PRIVATE Catch2::Catch2WithMain Catch2::Catch2 bng_engine bng_ast bng_core antlr4_static)
+catch_discover_tests(test_console)
+
 add_executable(benchmark benchmark.cpp)
 target_include_directories(benchmark PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../src
