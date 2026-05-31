@@ -248,7 +248,7 @@ class TransformationMap:
 		dictPatterns = dictNames.p
 		dictTransformations = dictNames.t
 		
-		self.t2action = dict([(dictTransformations[t],t.action) for t in dictTransformations])
+		self.t2action = {dictTransformations[t]: t.action for t in dictTransformations}
 	
 		self.t2p_reactant = list({(dictTransformations[t],dictPatterns[p]) for t in dictTransformations for p in t.getLHS()})
 		self.t2p_product = list({(dictTransformations[t],dictPatterns[p]) for t in dictTransformations for p in t.getRHS()})
@@ -301,10 +301,10 @@ class TransformationPairMap:
 		dictTransformations = dictNames.t
 		dictTransformationPairs = dictNames.tp	
 	
-		self.tp2actions = dict([(dictTransformationPairs[tp],[tp.forward.action,tp.reverse.action]) for tp in dictTransformationPairs])
+		self.tp2actions = {dictTransformationPairs[tp]: [tp.forward.action, tp.reverse.action] for tp in dictTransformationPairs}
 	
-		self.tp2t_forward = dict([ [dictTransformationPairs[tp], dictTransformations[tp.forward]] for tp in dictTransformationPairs ] )
-		self.tp2t_reverse = dict([ [dictTransformationPairs[tp], dictTransformations[tp.reverse]] for tp in dictTransformationPairs ] )
+		self.tp2t_forward = {dictTransformationPairs[tp]: dictTransformations[tp.forward] for tp in dictTransformationPairs}
+		self.tp2t_reverse = {dictTransformationPairs[tp]: dictTransformations[tp.reverse] for tp in dictTransformationPairs}
 
 		# ⚡ Bolt: Build reverse mappings (t_id -> p_ids) using dictionaries for O(1) lookups instead of O(N*M) nested loops
 		t_to_reactants = {}

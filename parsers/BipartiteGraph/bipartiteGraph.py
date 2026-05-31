@@ -236,7 +236,7 @@ def createTransformationPairs(t2pReactant,t2pProduct,t2pContext):
 def sortTransformationPairs(trPairs,transformationDict):
 
 	trPairs2 = []
-	tDict = dict([[v,k] for k,v in transformationDict.items()])
+	tDict = {v: k for k, v in transformationDict.items()}
 	for tr1,tr2 in trPairs:
 		lhs = tDict[tr1][0]
 		rhs = tDict[tr1][1]
@@ -303,7 +303,7 @@ def summarizeModel(patternDict,transformationDict,atomicPatternAnnotations,trans
 		f.write('\n\n')
 			
 		# Summarizing Context Annotations	
-		invPatternDict = dict((v,k) for k,v in patternDict.items())
+		invPatternDict = {v: k for k, v in patternDict.items()}
 		f.write('Model interactions:\n')
 
 		# Pre-group context items by transformation ID to convert O(N*M) list comprehensions into O(1) lookups

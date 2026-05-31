@@ -558,7 +558,7 @@ def makeMoleculePattern(mol):
 def getTransfCenterIDs(act,maps):
 	'''Finds components in both reactant and product that are part of the transformation center
 	'''
-	inv_maps = dict([(y,x) for x,y in list(maps.items())])
+	inv_maps = {y: x for x, y in maps.items()}
 	temp = []
 	
 	if act.action in ['AddBond','DeleteBond','StateChange']:
