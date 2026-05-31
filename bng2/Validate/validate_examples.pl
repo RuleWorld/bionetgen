@@ -54,11 +54,6 @@
 #    reported in the literature, or simulations generated from independent
 #    platforms (e.g. MATLAB).
 #
-# TODO: Add validations for the following
-#   non-equilibrium stochastic validation (multirun validation)
-#   Syntax error checking
-#   Canonical labeling
-#   On-the-fly simulation
 
 use strict;
 use warnings;
