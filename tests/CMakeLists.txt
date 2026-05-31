@@ -260,6 +260,14 @@ target_include_directories(test_Species PRIVATE
 target_link_libraries(test_Species PRIVATE Catch2::Catch2WithMain Catch2::Catch2 bng_ast bng_core)
 catch_discover_tests(test_Species)
 
+add_executable(test_MoleculeType ast/test_MoleculeType.cpp)
+target_include_directories(test_MoleculeType PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/ast
+)
+target_link_libraries(test_MoleculeType PRIVATE Catch2::Catch2WithMain Catch2::Catch2 bng_ast)
+catch_discover_tests(test_MoleculeType)
+
 add_executable(benchmark benchmark.cpp)
 target_include_directories(benchmark PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../src
