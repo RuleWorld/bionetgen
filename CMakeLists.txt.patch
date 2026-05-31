@@ -1,0 +1,8 @@
+<<<<<<< SEARCH
+catch_discover_tests(test_action_dispatch)
+=======
+catch_discover_tests(test_action_dispatch)
+
+add_executable(benchmark benchmark.cpp)
+target_link_libraries(benchmark PRIVATE Catch2::Catch2WithMain bng_engine bng_ast bng_parser antlr4_static libsundials_cvode libsundials_nvecserial libsundials_sunmatrixband libsundials_sunlinsolband)
+>>>>>>> REPLACE

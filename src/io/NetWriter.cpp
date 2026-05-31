@@ -625,6 +625,12 @@ std::optional<double> NetWriter::computeUnitConversionFactor(
 std::unordered_map<std::string, DerivedRateInfo> NetWriter::buildDerivedRateParams(
     const ast::Model& model,
     const engine::GeneratedNetwork& network) {
+    // Cache for parsed observable patterns to avoid re-parsing and re-building graphs
+    std::unordered_map<std::string, BNGcore::PatternGraph> parsedObservableCache;
+
+
+
+
     std::unordered_map<std::string, DerivedRateInfo> derived;
     int rateLawCounter = 1;
 
@@ -803,8 +809,11 @@ std::unordered_map<std::string, DerivedRateInfo> NetWriter::buildDerivedRatePara
                                 for (const auto& patternText : obs.getPatterns()) {
                                     const auto& speciesGraph = network.species.get(speciesIdx).getSpeciesGraph().getGraph();
                                     if (speciesGraph.empty()) continue;
-                                    auto pattern = parseObservablePattern(patternText, const_cast<ast::Model&>(model));
-                                    BNGcore::UllmannSGIso matcher(pattern, speciesGraph);
+                                    auto cacheIt = parsedObservableCache.find(patternText);
+                                    if (cacheIt == parsedObservableCache.end()) {
+                                        cacheIt = parsedObservableCache.emplace(patternText, parseObservablePattern(patternText, const_cast<ast::Model&>(model))).first;
+                                    }
+                                    BNGcore::UllmannSGIso matcher(cacheIt->second, speciesGraph);
                                     BNGcore::List<BNGcore::Map> maps;
                                     obsCount += matcher.find_maps(maps);
                                 }
@@ -940,8 +949,11 @@ std::unordered_map<std::string, DerivedRateInfo> NetWriter::buildDerivedRatePara
                                         for (const auto& patternText : obs.getPatterns()) {
                                             const auto& speciesGraph = network.species.get(speciesIdx).getSpeciesGraph().getGraph();
                                             if (speciesGraph.empty()) continue;
-                                            auto pattern = parseObservablePattern(patternText, const_cast<ast::Model&>(model));
-                                            BNGcore::UllmannSGIso matcher(pattern, speciesGraph);
+                                            auto cacheIt = parsedObservableCache.find(patternText);
+                                            if (cacheIt == parsedObservableCache.end()) {
+                                                cacheIt = parsedObservableCache.emplace(patternText, parseObservablePattern(patternText, const_cast<ast::Model&>(model))).first;
+                                            }
+                                            BNGcore::UllmannSGIso matcher(cacheIt->second, speciesGraph);
                                             BNGcore::List<BNGcore::Map> maps;
                                             obsCount += matcher.find_maps(maps);
                                         }
@@ -1188,6 +1200,12 @@ void NetWriter::write(const std::filesystem::path& outputPath, ast::Model& model
 }
 
 void NetWriter::write(std::ostream& out, ast::Model& model, const engine::GeneratedNetwork& network) {
+    // Cache for parsed observable patterns to avoid re-parsing and re-building graphs
+    std::unordered_map<std::string, std::pair<BNGcore::PatternGraph, std::string>> parsedObservableCache;
+
+
+
+
 
     out << "# Created by bng_cpp\n";
     if (!model.getVersion().empty()) {
@@ -1595,7 +1613,12 @@ void NetWriter::write(std::ostream& out, ast::Model& model, const engine::Genera
         for (std::size_t speciesIndex = 0; speciesIndex < network.species.size(); ++speciesIndex) {
             std::size_t weight = 0;
             for (const auto& patternText : observable.getPatterns()) {
-                auto [pattern, patternCompartment] = parseObservablePatternWithCompartment(patternText, model);
+                auto cacheIt = parsedObservableCache.find(patternText);
+                if (cacheIt == parsedObservableCache.end()) {
+                    cacheIt = parsedObservableCache.emplace(patternText, parseObservablePatternWithCompartment(patternText, model)).first;
+                }
+                auto& pattern = cacheIt->second.first;
+                auto& patternCompartment = cacheIt->second.second;
 
                 // Compartment matching strategy:
                 // 1. Molecule-level compartment (e.g., SARM()@Cyt) -- compartment is

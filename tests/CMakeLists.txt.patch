@@ -1,0 +1,10 @@
+--- tests/CMakeLists.txt	2023-10-24 10:00:00.000000000 -0700
++++ tests/CMakeLists.txt	2023-10-24 10:00:00.000000000 -0700
+@@ -141,3 +141,12 @@
+     antlr4_static
+ )
+ catch_discover_tests(test_ode_integrator)
++
++add_executable(benchmark benchmark.cpp)
++target_link_libraries(benchmark PRIVATE Catch2::Catch2WithMain Catch2::Catch2 bng_engine bng_ast bng_parser antlr4_static libsundials_cvode libsundials_nvecserial libsundials_sunmatrixband libsundials_sunlinsolband)
++catch_discover_tests(benchmark)
