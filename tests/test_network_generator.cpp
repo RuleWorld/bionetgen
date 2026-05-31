@@ -1,4 +1,5 @@
 #include <catch2/catch_test_macros.hpp>
+#include <filesystem>
 #include <cstdlib>
 #include "../src/engine/NetworkGenerator.hpp"
 #include "../src/ast/Model.hpp"
@@ -209,19 +210,41 @@ TEST_CASE("parseOverwrite behaves correctly", "[NetworkGenerator]") {
     }
 }
 
+TEST_CASE("NetworkGenerator::generate behaves correctly", "[NetworkGenerator]") {
+    bng::ast::Model model;
+    bng::engine::NetworkGenerator generator(model);
+
+    SECTION("writes to file when path is provided") {
+        auto tempDir = std::filesystem::temp_directory_path();
+        auto bnglPath = tempDir / "test_model_for_generate.bngl";
+        auto expectedNetPath = tempDir / "test_model_for_generate.net";
+
+        if (std::filesystem::exists(expectedNetPath)) {
+            std::filesystem::remove(expectedNetPath);
+        }
+
+        generator.generate(bnglPath);
+
+        REQUIRE(std::filesystem::exists(expectedNetPath));
+
+        std::filesystem::remove(expectedNetPath);
+    }
+
+    SECTION("does not write to file when path is empty") {
+        REQUIRE_NOTHROW(generator.generate(std::filesystem::path("")));
+    }
+}
+
 TEST_CASE("generateNative drives network generation", "[NetworkGenerator]") {
     Model model;
 
-    // Molecule types A and B
     model.addMoleculeType(MoleculeType("A", {}));
     model.addMoleculeType(MoleculeType("B", {}));
 
-    // Seed species: A()
     SpeciesGraph seedGraph = makeSpeciesGraph("A()", model);
     model.addSeedSpecies(SeedSpecies(seedGraph.getGraph().get_raw_string(), Expression::number(100.0), false, "", makeSpeciesGraph("A()", model).getGraph()));
 
     SECTION("Rule expansion with convergence") {
-        // Rule: A() -> B()
         std::vector<SpeciesGraph> reactantPatterns;
         reactantPatterns.push_back(makeSpeciesGraph("A()", model));
 
@@ -238,8 +261,5 @@ TEST_CASE("generateNative drives network generation", "[NetworkGenerator]") {
 
         REQUIRE(network.species.size() == 2);
         REQUIRE(network.reactions.size() == 1);
-
-        // Use SpeciesGraph formatting properly instead of manually guessing.
-        // Actually, just checking size == 2 and reactions == 1 proves the generate loop generated 1 new species & stopped.
     }
 }
