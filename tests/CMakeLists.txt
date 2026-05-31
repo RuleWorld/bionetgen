@@ -173,6 +173,14 @@ catch_discover_tests(test_Species)
 
 catch_discover_tests(test_GraphTypeRegistry)
 
+add_executable(test_Observable ast/test_Observable.cpp)
+target_include_directories(test_Observable PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/ast
+)
+target_link_libraries(test_Observable PRIVATE Catch2::Catch2WithMain Catch2::Catch2 bng_ast)
+catch_discover_tests(test_Observable)
+
 add_executable(test_ode_integrator test_ode_integrator.cpp)
 target_include_directories(test_ode_integrator PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../src
