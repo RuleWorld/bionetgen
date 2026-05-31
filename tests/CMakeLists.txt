@@ -251,6 +251,15 @@ target_include_directories(test_sbml_writer PRIVATE
 target_link_libraries(test_sbml_writer PRIVATE Catch2::Catch2WithMain Catch2::Catch2 bng_engine bng_ast bng_core antlr4_static)
 catch_discover_tests(test_sbml_writer)
 
+add_executable(test_Species ast/test_Species.cpp)
+target_include_directories(test_Species PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/ast
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/core
+)
+target_link_libraries(test_Species PRIVATE Catch2::Catch2WithMain Catch2::Catch2 bng_ast bng_core)
+catch_discover_tests(test_Species)
+
 add_executable(benchmark benchmark.cpp)
 target_include_directories(benchmark PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../src

@@ -1,13 +1,15 @@
 #include <catch2/catch_test_macros.hpp>
 #include "ast/Species.hpp"
 #include "ast/SpeciesGraph.hpp"
+#include "core/BNGcore.hpp"
 
 using namespace bng::ast;
 
-TEST_CASE("Species: Basic properties", "[ast][Species]") {
-    SpeciesGraph sg;
+TEST_CASE("Species functionality", "[ast][Species]") {
+    BNGcore::PatternGraph pg;
+    SpeciesGraph sg(pg);
 
-    SECTION("Default construction") {
+    SECTION("Default construction and initial values") {
         Species s(sg);
 
         REQUIRE(s.getAmount() == 0.0);
@@ -17,25 +19,21 @@ TEST_CASE("Species: Basic properties", "[ast][Species]") {
         REQUIRE(s.rulesApplied() == false);
     }
 
-    SECTION("Custom initialization") {
+    SECTION("Constructor with parameters") {
         Species s(sg, 10.5, true, "cytosol");
 
         REQUIRE(s.getAmount() == 10.5);
         REQUIRE(s.isConstant() == true);
         REQUIRE(s.getCompartment() == "cytosol");
-
-        // Compartment propagation to SpeciesGraph
         REQUIRE(s.getSpeciesGraph().getCompartment() == "cytosol");
     }
 
-    SECTION("Constructor compartment logic") {
-        // If SpeciesGraph already has a compartment, Species doesn't overwrite it
-        SpeciesGraph sg_comp;
-        sg_comp.setCompartment("nucleus");
-        Species s(sg_comp, 5.0, false, "cytosol");
+    SECTION("Constructor with non-empty SpeciesGraph compartment") {
+        SpeciesGraph sg_comp(pg, "existing");
+        Species s(sg_comp, 5.0, false, "new_comp");
 
-        REQUIRE(s.getCompartment() == "cytosol");
-        REQUIRE(s.getSpeciesGraph().getCompartment() == "nucleus");
+        REQUIRE(s.getCompartment() == "new_comp");
+        REQUIRE(s.getSpeciesGraph().getCompartment() == "existing");
     }
 
     SECTION("Getters and Setters") {
@@ -54,9 +52,13 @@ TEST_CASE("Species: Basic properties", "[ast][Species]") {
         REQUIRE(s.rulesApplied() == true);
     }
 
-    SECTION("Non-const getSpeciesGraph") {
+    SECTION("SpeciesGraph references") {
         Species s(sg);
+
+        const Species& cs = s;
+        REQUIRE(cs.getSpeciesGraph().getCompartment().empty());
+
         s.getSpeciesGraph().setCompartment("membrane");
-        REQUIRE(s.getSpeciesGraph().getCompartment() == "membrane");
+        REQUIRE(cs.getSpeciesGraph().getCompartment() == "membrane");
     }
 }
