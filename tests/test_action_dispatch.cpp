@@ -245,3 +245,22 @@ TEST_CASE("ActionDispatch snapshot and restore concentrations", "[ActionDispatch
         REQUIRE_THAT(network.species.get(1).getAmount(), Catch::Matchers::WithinAbs(40.0, 1e-6));
     }
 }
+
+TEST_CASE("ActionDispatch execute basic", "[ActionDispatch]") {
+    bng::ast::Model model;
+
+    bng::ast::Action a;
+    a.name = "generate_network";
+    a.arguments["overwrite"] = "1";
+    model.addAction(a);
+
+    std::filesystem::path sourcePath("test_execute.bngl");
+
+    REQUIRE_NOTHROW(bng::actions::ActionDispatch::execute(model, sourcePath, false));
+
+    // Check that test_execute.net is generated
+    REQUIRE(std::filesystem::exists("test_execute.net"));
+
+    // Cleanup
+    std::filesystem::remove("test_execute.net");
+}
