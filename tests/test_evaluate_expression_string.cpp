@@ -83,6 +83,15 @@ TEST_CASE("evaluateExpressionString", "[netwriter]") {
         REQUIRE(evaluateExpressionString("exp(0) + sqrt(16) * 2", resolver) == 9.0);
     }
 
+    SECTION("Non-numeric and edge cases") {
+        // Throws invalid_argument in stod, falls back to parameter resolution
+        REQUIRE(evaluateExpressionString("not_a_number", resolver) == 0.0);
+        // Throws out_of_range in stod, falls back to parameter resolution
+        REQUIRE(evaluateExpressionString("1e10000", resolver) == 0.0);
+        // Partially parses as number but fails pos == size check, falls back to parameter
+        REQUIRE(evaluateExpressionString("123foo", resolver) == 0.0);
+    }
+
     SECTION("Error conditions") {
         REQUIRE_THROWS_AS(evaluateExpressionString("10 / 0", resolver), std::runtime_error);
         REQUIRE_THROWS_AS(evaluateExpressionString("10 / (2 - 2)", resolver), std::runtime_error);
