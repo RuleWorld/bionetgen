@@ -96,7 +96,6 @@ Map::image ( node_const_iter_t  nodes_begin,
     {
         node_image = mapf( *node_iter );
         if ( node_image != 0 )  image.push_back( node_image );
-        ++node_iter;
     }
 }
 

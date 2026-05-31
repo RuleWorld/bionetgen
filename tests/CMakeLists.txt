@@ -200,6 +200,14 @@ target_link_libraries(test_ode_integrator PRIVATE
 )
 catch_discover_tests(test_ode_integrator)
 
+add_executable(test_map test_map.cpp)
+target_include_directories(test_map PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/core
+)
+target_link_libraries(test_map PRIVATE Catch2::Catch2WithMain Catch2::Catch2 bng_core)
+catch_discover_tests(test_map)
+
 add_executable(benchmark benchmark.cpp)
 target_include_directories(benchmark PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../src
