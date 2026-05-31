@@ -803,7 +803,6 @@ sub inferSpeciesCompartment
 # if the Compartment cannot be inferred or is invalid.  Sets err=1 if Species
 # Compartment is invalid and err=0 otherwise.
 #
-# TODO: What about verifying that all compartments are specified?
 {
 	my $sg = shift;
 
