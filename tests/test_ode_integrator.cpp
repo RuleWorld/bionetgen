@@ -71,3 +71,50 @@ TEST_CASE("OdeIntegrator handles expression parsing fallback", "[OdeIntegrator]"
     REQUIRE_THAT(result.concentrations.back()[0], Catch::Matchers::WithinAbs(0.9, 1e-6));
     REQUIRE_THAT(result.concentrations.back()[1], Catch::Matchers::WithinAbs(0.1, 1e-6));
 }
+
+TEST_CASE("OdeIntegrator handles destruction", "[OdeIntegrator]") {
+    bng::ast::Model model;
+    GeneratedNetwork network;
+    network.species.setCheckIso(false);
+
+    // We just want to test if it can be constructed and destroyed without leaks or issues.
+    auto integrator = std::make_unique<OdeIntegrator>(model, network);
+
+    // Resetting it will call the destructor.
+    REQUIRE_NOTHROW(integrator.reset());
+}
+
+TEST_CASE("OdeIntegrator handles cvode simulation", "[OdeIntegrator]") {
+    bng::ast::Model model;
+    GeneratedNetwork network;
+    network.species.setCheckIso(false);
+
+    bng::ast::SpeciesGraph sg;
+    network.species.add(bng::ast::Species(sg, 1.0)); // S is index 0
+
+    bng::ast::SpeciesGraph sg2;
+    network.species.add(bng::ast::Species(sg2, 0.0)); // P is index 1
+
+    std::vector<std::size_t> reactants = {0};
+    std::vector<std::size_t> products = {1};
+    bng::ast::Rxn rxn("R1", reactants, products, "1.0", 1.0, "dummy_rule");
+
+    network.reactions.add(rxn);
+
+    OdeIntegrator integrator(model, network);
+
+    OdeOptions options;
+    options.method = "cvode";
+    options.tStart = 0.0;
+    options.tEnd = 0.1;
+    options.nSteps = 1;
+
+    OdeResult result;
+    REQUIRE_NOTHROW(result = integrator.integrate(options));
+
+    REQUIRE(result.concentrations.size() == 2);
+    REQUIRE(result.concentrations.back().size() == 2);
+
+    REQUIRE_THAT(result.concentrations.back()[0], Catch::Matchers::WithinAbs(0.904837, 1e-5)); // e^-0.1
+    REQUIRE_THAT(result.concentrations.back()[1], Catch::Matchers::WithinAbs(0.095162, 1e-5)); // 1 - e^-0.1
+}

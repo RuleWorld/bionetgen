@@ -126,6 +126,9 @@ OdeIntegrator::OdeIntegrator(const ast::Model& model, const GeneratedNetwork& ne
     compile();
 }
 
+OdeIntegrator::~OdeIntegrator() {
+}
+
 void OdeIntegrator::compile() {
     nSpecies_ = network_.species.size();
     fixedSpecies_.resize(nSpecies_, false);

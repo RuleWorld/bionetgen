@@ -43,6 +43,7 @@ struct OdeResult {
 class OdeIntegrator {
 public:
     OdeIntegrator(const ast::Model& model, const GeneratedNetwork& network);
+    ~OdeIntegrator();
 
     OdeResult integrate(const OdeOptions& options);
     void writeOutputFiles(const std::string& prefix, const OdeResult& result, bool printCDAT = true, bool printFunctions = false, bool append = false) const;
