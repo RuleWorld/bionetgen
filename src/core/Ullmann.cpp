@@ -100,13 +100,17 @@ UllmannBase::print_M ( ullmann_M_t & M )
     {
         const node_container_t & possible_matches = M[i];
         
+        std::vector<bool> is_match(pb, false);
+        for (auto match : possible_matches) {
+            is_match[match->get_index()] = true;
+        }
+
         // loop over nodes in Gb
         node_const_iter_t node_iter_b;
         for ( node_iter_b = Gb.begin();  node_iter_b != Gb.end();  ++node_iter_b )
         {
             // see if M_ij=1
-            auto col_iter_m1 = std::find( possible_matches.begin(), possible_matches.end(), *node_iter_b );
-            if ( col_iter_m1 != possible_matches.end() )
+            if ( is_match[(*node_iter_b)->get_index()] )
                 std::cout << "1,";
             else
                 std::cout << "0,";
@@ -173,6 +177,9 @@ UllmannSGIso::next_node ( size_t d, List <Map> & maps )
     
     while (  find_next_match( col_iter, possible_matches.end() )  )
     {           
+        // record the distance before possible_matches is modified
+        size_t col_index = std::distance( possible_matches.begin(), col_iter );
+
         // get match node_b first (before we screw with possible_matches set)
         Node *node_b = *col_iter;
     
@@ -213,7 +220,7 @@ UllmannSGIso::next_node ( size_t d, List <Map> & maps )
         
         // restore col_iter! NOTE that we don't need to restore possible matches since this
         //  happens as a side-effect of copy_M
-        col_iter = std::find( possible_matches.begin(), possible_matches.end(), node_b );
+        col_iter = possible_matches.begin() + col_index;
         ++col_iter;
     }
     
