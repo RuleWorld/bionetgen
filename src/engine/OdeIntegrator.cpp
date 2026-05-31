@@ -525,8 +525,6 @@ void OdeIntegrator::compile() {
             }
         }
 
-        // Also check for user-defined function references OUTSIDE the rateExpr block
-        // This catches cases where rateExpr is nullopt but the rate law string references a function
         if (!crxn.isFunctional) {
             const std::string rawRL = rxn.getRateLaw();
             std::string rlLow = rawRL;
