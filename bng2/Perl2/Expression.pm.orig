@@ -3,8 +3,11 @@
 # updated by msneddon, 2009/11/04
 #   -added if statement as built in function
 #   -added binary logical operators, <,>.<=,>=,==,!=,~=,&&,||
-#    to the basic functional parser, the toString function, and 
+#    to the basic functional parser, the toString function, and
 #    to the evaluate function
+
+#   -todo: add binary operators to method toMathMLString function
+#   -todo: add the unary operator not: '!' (this is implemented, but not tested. --JSH)
 
 package Expression;
 
@@ -27,7 +30,7 @@ use ParamList;
 
 #use POSIX qw/floor ceil/; # safer to use 'floor' and 'ceil' instead of 'int'
 use POSIX qw/floor/; # 'floor' and 'ceil' not supported by muParser. Use 'floor' for 'rint'.
-use Math::Trig qw(tan asin acos atan sinh cosh tanh asinh acosh atanh pi); 
+use Math::Trig qw(tan asin acos atan sinh cosh tanh asinh acosh atanh pi);
 use List::Util qw(min max sum);
 
 struct Expression =>
@@ -48,18 +51,18 @@ struct Expression =>
 # NOTE: it's weird that some built-in functions with names (like exp, cos, etc) are handled
 #  differently than built-ins with operator symbols (like +, -, etc).  We could really simplify this.
 #  --Justin
-# Supported most muParser built-in functions. --LAH 
+# Supported most muParser built-in functions. --LAH
 # See http://muparser.sourceforge.net/mup_features.html#idDef2 for the complete list.
 my %functions =
 (
   "_pi"   => { FPTR => sub { pi },                   NARGS => 0 }, # <pi>
   "_e"    => { FPTR => sub { exp(1) },               NARGS => 0 }, # <exponentiale> (MathML 2.0)
-  "time"  => { FPTR => sub 
-  	{ 
-  		if (defined($BNGModel::GLOBAL_MODEL->time)) 
-  		{$BNGModel::GLOBAL_MODEL->time} 
-  		else {0} 
-  	}, 												 NARGS => 0 }, # ???
+  "time"  => { FPTR => sub
+	{
+		if (defined($BNGModel::GLOBAL_MODEL->time))
+		{$BNGModel::GLOBAL_MODEL->time}
+		else {0}
+	}, 												 NARGS => 0 }, # ???
   "exp"   => { FPTR => sub { exp( $_[0] ) },         NARGS => 1 }, # <exp/> (MathML 2.0)
   "ln"    => { FPTR => sub { log( $_[0] ) },         NARGS => 1 }, # <ln/>
   "log10" => { FPTR => sub { log($_[0])/log(10) },   NARGS => 1 }, # <log/>
@@ -95,9 +98,9 @@ my %functions =
 # AS-2021 TFUN stuff
 sub TFUN
 {
-    # this function is supposed to indicate NFsim that it needs to 
-    # load the file in the second argument. Then use the observable 
-    # given by the first argument to compare to the first column given 
+    # this function is supposed to indicate NFsim that it needs to
+    # load the file in the second argument. Then use the observable
+    # given by the first argument to compare to the first column given
     # in the file and pull values from the second column.
     my $obs = shift @_;
     my $file = shift @_;
@@ -312,12 +315,12 @@ sub Mratio
 	my $a = shift @_;
 	my $b = shift @_;
 	my $z = shift @_;
-	# c This routine calculates the ratio M(a+1,b+1,z)/M(a,b,z) 
-	# c as a continued fraction f in the class of Gauss's continued fraction 
+	# c This routine calculates the ratio M(a+1,b+1,z)/M(a,b,z)
+	# c as a continued fraction f in the class of Gauss's continued fraction
 	# c [Gauss CF (1813)]
 	# c using the modified method of Lentz WJ (1976) [Applied Optics 15:668-671]
 	# c [Thompson IJ, Barnett AR (1986) J Comput Phys 64: 490-509].
-	# c M(a,b,z) = {}_1F_1(a;b;z) is Kummer's (confluent hypergeometric) function 
+	# c M(a,b,z) = {}_1F_1(a;b;z) is Kummer's (confluent hypergeometric) function
 	# c [Kummer EE (1837) Crelle's Journal 17:228-242].
 	# c In general, we take f to have the following form:
 	# c f = q_0 + \frac{p_1}{q_1 +} \frac{p_2}{q_2 +} \frac{p_3}{q_3 +} \cdots
@@ -343,18 +346,18 @@ sub Mratio
 	#       integer odd,oddsave,even,evensave
 	#       double precision f,fsave,C,Csave,D,Dsave,err
 	#       double precision p,q,num,den,Delta
-	# 
+	#
 	# c initialize
-	# c In general, we set f_0 = q_0. 
+	# c In general, we set f_0 = q_0.
 	# c However, if q_0 = 0, we set f_0 = tiny instead.
 	# c We then set C_0 = f_0 and D_0 = 0.
     my $fsave = $tiny;
     my $Csave = $fsave;
     my $Dsave = 0.0;
-      
+
 	# c We set err to a value greater than eps.
     my $err = 1.0 + $eps;
-           
+
     my $odd= 1;
     my $even= 0;
     my $iodd= 0;
@@ -365,7 +368,7 @@ sub Mratio
         $j=$j+1;
         my $p;
 		# c calculate p_j and q_j
-		#         
+		#
 		# c p_1 = 1
 		# c p_j = num_j/den_j for j = 2, 3, ...
 		# c den_j = [b+(j-2)]*[b+(j-1)] for j = 2, 3, ...
@@ -395,13 +398,13 @@ sub Mratio
             print "Error: j=$j\n";
             exit 1;
         }
-        
-		# c q_j = 1 for j = 1, 2, ...  
+
+		# c q_j = 1 for j = 1, 2, ...
         my $q=1.0;
-        
+
 		# c calculate jth terms in recurrence relations
 		# c C_j = q_j + p_j/C_{j-1}
-		# c D_j = 1/(q_j + p_j*D_{j-1}) 
+		# c D_j = 1/(q_j + p_j*D_{j-1})
         my $D=$q+$p*$Dsave;
         if(abs($D) < $tiny){
             $D=$tiny;
@@ -410,13 +413,13 @@ sub Mratio
         if(abs($C) < $tiny){
             $C=$tiny;
         }
-        $D=1.0/$D; 
-        
+        $D=1.0/$D;
+
 		# c current approximation
 		# c f_j = C_j*D_j*f_{j-1}
         my $Delta=$C*$D;
         $f=$Delta*$fsave;
-        
+
 		# c if Delta is sufficiently close to 1, then the current approximation is acceptable.
         $err=abs($Delta-1.0);
 
@@ -456,19 +459,19 @@ my %NARGS = ( '+'  => { 'min'=>2           }, # <plus/>
 
 # muParser operators
 # ------------------
-# +   addition	 
-# -   subtraction	 
-# *   multiplication	 
-# /   division	 
-# ^   raise x to the power of y	 
-# &&  logical and	 
-# ||  logical or	 
-# <   less than	 
-# >   greater than	 
-# <=  less or equal	 
-# >=  greater or equal	 
-# !=  not equal	 
-# ==  equal	 
+# +   addition
+# -   subtraction
+# *   multiplication
+# /   division
+# ^   raise x to the power of y
+# &&  logical and
+# ||  logical or
+# <   less than
+# >   greater than
+# <=  less or equal
+# >=  greater or equal
+# !=  not equal
+# ==  equal
 
 
 # this regex matches param names (letter followed optional by word characters)
@@ -527,7 +530,7 @@ sub newNumOrVar
             return $expr;
         }
     }
-    
+
     die "Expression::newNumOrVar() - Attempted but failed to create number or variable expression";
 }
 
@@ -545,21 +548,21 @@ sub newNumOrVar
 sub operate
 {
     my ($type, $args, $plist) = @_;
-   
+
     # can't do anything without arguments!
     unless (@$args) { return undef; }
-    
+
     # operate is unhappy without a paramlist!
     unless (ref $plist eq 'ParamList') { return undef; }
-    
+
     my $err;
     my $args_copy;
-    
+
     # copy the arguments
     @$args_copy = @$args;
-        
+
     # Check for the right number of arguments..
-   
+
     # is this a function?
     if ( $type eq 'FunctionCall' )
     {
@@ -570,7 +573,7 @@ sub operate
         if ( defined $fcn_name  and  exists $functions{$fcn_name} )
         {   # correct number of arguments?
             return undef  unless ( $functions{$fcn_name}->{NARGS} == (@$args_copy - 1) );
-        }   
+        }
         # or is this custom?
         else
         {
@@ -585,58 +588,58 @@ sub operate
             unless (  @{$fcn_param->Ref->Args} == (@$args_copy - 1)  )
             {   return undef;   }
         }
-        
+
         # clone arguments (not first argument, which is the fcn name)
         foreach my $arg ( @$args_copy[1..$#$args_copy] )
         {
             # clone argument, if it's an expression
-            if ( ref $arg eq 'Expression' ) 
+            if ( ref $arg eq 'Expression' )
             {   ($arg, $err) = $arg->clone($plist);   }
-        
-            # if arg isn't an expression, try to create one  
-            else      
+
+            # if arg isn't an expression, try to create one
+            else
             {   $arg = Expression::newNumOrVar( $arg );   }
-    
+
             # check that are is still defined
             unless (defined $arg) { return undef; }
-        }        
+        }
     }
     # or an operator?
     else
     {
-        # check that the operator exists and has the right number of arguments      
+        # check that the operator exists and has the right number of arguments
         unless ( exists $NARGS{$type} )
         {   return undef;   }
         if (  (exists $NARGS{$type}->{min})  and  (($NARGS{$type}->{min}) > (@$args_copy))  )
-        {   return undef;   } 
+        {   return undef;   }
         if (  (exists $NARGS{$type}->{max})  and  (($NARGS{$type}->{max}) < (@$args_copy))  )
         {   return undef;   }
-        
+
         # clone arguments
         foreach my $arg ( @$args_copy )
         {
             # clone argument, if it's an expression
-            if ( ref $arg eq 'Expression' ) 
+            if ( ref $arg eq 'Expression' )
             {   ($arg, $err) = $arg->clone($plist);   }
-        
-            # if arg isn't an expression, try to create one  
-            else      
+
+            # if arg isn't an expression, try to create one
+            else
             {   $arg = Expression::newNumOrVar($arg,$plist);   }
-    
+
             # check that are is still defined
-            unless (defined $arg) { return undef; }  
-        }             
+            unless (defined $arg) { return undef; }
+        }
     }
-            
+
     # return undefined if there were any errors
     if ($err) { return undef; }
-   
+
     # create the new expression
     my $expr = Expression->new();
     $expr->Type( $type );
     $expr->Arglist( $args_copy );
     $expr->Err( undef );
-    
+
     # return reference to expression!
     return $expr;
 }
@@ -669,7 +672,7 @@ sub operate
         my $plist     = @_ ? shift @_ : undef;
         my $end_chars = @_ ? shift @_ : '';
         my $level     = @_ ? shift @_ : 0;
-        
+
         my $err       = '';
         my $ops_bi    = '\*\*|[+\-*/^]|>=|<=|[<>]|==|!=|~=|&&|\|\|';
         my $ops_un    = '[+\-!~]';
@@ -684,7 +687,7 @@ sub operate
         # my $fstr;
         my $ctrName;
         # Pre-parse expression for TFUNC to remove string argument
-        if ($$sptr =~ /TFUN\(.*\)/) 
+        if ($$sptr =~ /TFUN\(.*\)/)
         {
             # check to see if we have one or two arguments
             if ($$sptr =~ s/TFUN\(\s*([^\)\,]*)\s*,\s*[\'\"]\s*([^\)]*)\s*[\'\"]\s*\)/__TFUN_VAL__/) {
@@ -695,7 +698,7 @@ sub operate
                 # $fstr = $2;
                 $expr->ctrName($ctrName);
                 $$sptr =~ s/__TFUN_VAL__/TFUN\($ctrName\)/;
-            } 
+            }
             # else {
             #     print "I can't parse the arguments given to TFUN function: ".$$sptr."\n";
             #     exit 1
@@ -746,7 +749,7 @@ sub operate
                     $expect_op = 0;
                     next;
                 }
-    
+
                 # Assignment using '='.  Valid syntax is PARAM = EXPRESSION
                 # NOTE: this really stops the current expression (which should be a PARAM) and
                 #  starts parsing a RHS expression which will be assigned to PARAM.
@@ -758,12 +761,12 @@ sub operate
 
                     my $param      = $list[0];
                     my $param_name = $param->Arglist->[0];
-                    
+
 					# Make sure parameter name not the same as built-in functions --Leonard
 					if ( exists $functions{ $param_name } ){
 						return "Cannot use built-in function name '$param_name' as a parameter name.";
 					}
-					
+
                     unless ( $param->Type eq 'VAR' )
                     {   return "Attempted assignment to non-variable type in $string_sav at $$sptr.";   }
 
@@ -791,7 +794,7 @@ sub operate
                     $plist->set( $param_name, $rhs );
                     last;
                 }
-    
+
                 # Look for end characters
                 elsif ( $end_chars  and  ( $$sptr =~ /^\s*[${end_chars}]/ ) )
                 {   # end of expression
@@ -807,10 +810,10 @@ sub operate
                     last;
                 }
             }
-    
+
             # Chop leading whitespace
             $$sptr =~ s/^\s*//;
-    
+
             # look for a NUMBER
             if ( my $num_expr = getNumber($sptr) )
             {
@@ -818,7 +821,7 @@ sub operate
                 $expect_op = 1;
                 next;
             }
-    
+
             # look for a function call
             if ( $$sptr =~ s/^($ops_un)?\s*(\w+)\s*\(// )
             {
@@ -834,8 +837,8 @@ sub operate
                 my $nargs;
                 my ($param, $err);
                 if ($plist)
-                { 
-                    ($param, $err) = $plist->lookup($name); 
+                {
+                    ($param, $err) = $plist->lookup($name);
                 }
                 if ( exists $functions{$name} )
                 {
@@ -866,7 +869,7 @@ sub operate
 	                    }
 					}
                 }
-    
+
                 # Read arguments to function
                 while (1)
                 {
@@ -874,13 +877,13 @@ sub operate
                     $err = $express->readString( $sptr, $plist, ',\)', $level + 1 );
                     if ($err) { return $err; }
                     if ($express->Type) { push @fargs, $express; }
-                    
+
                     if ( $$sptr =~ s/^\)// )
                     {   last;   }
                     elsif ( $$sptr =~ s/^,// )
                     {   next;   }
                 }
-    
+
                 # Check Argument list for consistency with function
                 if ( $type eq "O" )
                 {
@@ -913,14 +916,14 @@ sub operate
                 {
                     push @{$express_u->Arglist}, $express;
                     push @list, $express_u;
-                } 
+                }
                 else
                 {   push @list, $express;   }
 
                 $expect_op = 1;
                 next;
             }
-    
+
             # VARIABLE
             elsif ( $$sptr =~ s/^($ops_un)?\s*(\w+)// )
             {
@@ -958,7 +961,7 @@ sub operate
                 {
                     push @{$express_u->Arglist}, $express;
                     push @list, $express_u;
-                } 
+                }
                 else
                 {   push @list, $express;   }
 
@@ -979,13 +982,13 @@ sub operate
                 if ($err) {  return ($err);  }
                 unless ( $$sptr =~ s/^\s*\)// )
                 {   return "Missing end parentheses in $string_sav at $$sptr";   }
-    
+
                 #printf "express=%s %s\n", $express->toString($plist), $$sptr;
                 if (defined $express_u)
                 {
                     push @{$express_u->Arglist}, $express;
                     push @list, $express_u;
-                } 
+                }
                 else
                 {   push @list, $express;   }
 
@@ -994,7 +997,7 @@ sub operate
             }
             elsif ( $end_chars  and  ($$sptr =~ /^\s*[${end_chars}]/) )
             {   last;   }
-          
+
             # ERROR
             else
             {   return "Expecting operator argument in $string_sav at $$sptr";   }
@@ -1130,10 +1133,10 @@ sub evaluate
         $val = $expr->Arglist->[0];
     }
     elsif ( $expr->Type eq 'VAR' )
-    {        
+    {
         unless (defined $plist)
         {  die "Expression->evaluate: Error! Cannot evaluate VAR type without ParamList.";  }
-    
+
         my $name = $expr->Arglist->[0];
         $val = $plist->evaluate( $name, [], $level+1 );
         unless (defined $val)
@@ -1144,7 +1147,11 @@ sub evaluate
         # first argument is function name
         my $name  = $expr->Arglist->[0];
 
-        if ( exists $functions{$name} )
+        if ( ref $name eq "Function" )
+        {   # anonymous function (TODO: double-check that its ok to be lazy about evaluating the args
+            $val = $name->evaluate( $expr->Arglist, $plist, $level+1);
+        }
+        elsif ( exists $functions{$name} )
         {   # built-in function
             my $f = $functions{$name}->{FPTR};
             # evaluate all the remaining arguments
@@ -1154,34 +1161,16 @@ sub evaluate
             {
                 push @$eval_args, $expr->Arglist->[$ii]->evaluate($plist, $level+1);
                 ++$ii;
-            }             
+            }
             $val = $f->(@$eval_args);
         }
+
         else
-        {
-            # user-defined function (anonymous or named)
-            # eagerly evaluate arguments to prevent dynamic scoping issues
-            my $eval_args = [];
-            push @$eval_args, $name;
-            my $ii = 1;
-            while ( $ii < @{$expr->Arglist} )
-            {
-                my $arg_val = $expr->Arglist->[$ii]->evaluate($plist, $level+1);
-                push @$eval_args, Expression->new( Type=>'NUM', Arglist=>[$arg_val] );
-                ++$ii;
-            }
+        {   # lookup user-defined function in paramlist
+            unless (defined $plist)
+            {  die "Expression->evaluate: Error! Cannot evaluate user Function without ParamList.";  }
 
-            if ( ref $name eq "Function" )
-            {   # anonymous function
-                $val = $name->evaluate( $eval_args, $plist, $level+1);
-            }
-            else
-            {   # lookup user-defined function in paramlist
-                unless (defined $plist)
-                {  die "Expression->evaluate: Error! Cannot evaluate user Function without ParamList.";  }
-
-                $val = $plist->evaluate( $name, $eval_args, $level+1 );
-            }
+            $val = $plist->evaluate( $name, $expr->Arglist, $level+1 );
         }
     }
     else
@@ -1191,7 +1180,7 @@ sub evaluate
         # replace non-perl operators with the perl equivalents
         if    ( $operator eq '~=' ) {  $operator = '!=';  }
         elsif ( $operator eq '^'  ) {  $operator = '**';  }
-        elsif ( $operator eq '~'  ) {  $operator = '!';   } 
+        elsif ( $operator eq '~'  ) {  $operator = '!';   }
 
         if ( @{$expr->Arglist} == 1 )
         {   # handle unary operators
@@ -1276,10 +1265,10 @@ sub evaluate_local
     my $expr  = shift @_;
     my $plist = @_ ? shift @_ : undef;
     my $level = @_ ? shift @_ : 0;
-    
+
     if ( $level > $MAX_LEVEL ) {  return (undef, "Max recursion depth $MAX_LEVEL exceeded.");  }
-    unless (defined $plist)    {  die "Expression->evaluate_local: Error! Function called without required ParamList.";  }    
-    
+    unless (defined $plist)    {  die "Expression->evaluate_local: Error! Function called without required ParamList.";  }
+
     # local variables
     my $local_expr = undef;
     my $err = '';
@@ -1293,8 +1282,8 @@ sub evaluate_local
         # only need to do this for expression arguments
         if ( ref $arg eq 'Expression' )
         {   $arg = $arg->evaluate_local($plist, $level+1);   }
-    } 
-   
+    }
+
     # some additional handling for Function expressions!
     if ( $expr->Type eq 'FunctionCall' )
     {
@@ -1302,7 +1291,7 @@ sub evaluate_local
         #  must go into the function and evaluate the local bits.  Then
         #  we need to create a clone of the function that has the local bits evaluated.
         #  Yuck!
-        
+
         # First argument is the function name
         my $name = $expr->Arglist->[0];
 
@@ -1320,7 +1309,7 @@ sub evaluate_local
                  and not exists $dependencies->{'Function'}   )
             {   # replace this fcn call with the localfcn expression
                 $local_expr = $local_fcn->Expr;
-            }                
+            }
             else
             {   # point this fcn call to the local expr
                 $local_expr->Arglist->[0] = $local_fcn;
@@ -1331,13 +1320,13 @@ sub evaluate_local
             # nothing to do
         }
         else
-        {   # custom, named function 
+        {   # custom, named function
             # lookup function parameter:
             (my $fcn_param) = $plist->lookup( $name );
-            
+
             # Is this a true function or an observable??
             if ( $fcn_param->Type eq 'Function' )
-            {                    
+            {
                 # get locally evaluated function
                 my $local_fcn = $fcn_param->Ref->evaluate_local( $local_expr->Arglist, $plist, $level+1 );
 
@@ -1349,20 +1338,20 @@ sub evaluate_local
                      and not exists $dependencies->{'Function'}   )
                 {   # replace this fcn call with the localfcn expression
                     $local_expr = $local_fcn->Expr;
-                }                
+                }
                 else
                 {   # point this fcn call to the local expr
                     $local_expr->Arglist->[0] = $local_fcn;
                 }
             }
-            # This function is Really an Observable!!    
+            # This function is Really an Observable!!
             elsif ( $fcn_param->Type eq 'Observable' )
-            {         
+            {
                 if ( @{$expr->Arglist} > 1 )
                 {
                     # get locally evaluated function
-                    my $val = $fcn_param->Ref->evaluate( $local_expr->Arglist, $plist, $level+1 );      
-           
+                    my $val = $fcn_param->Ref->evaluate( $local_expr->Arglist, $plist, $level+1 );
+
                     # replace local expression with the evaluation
                     my $args = [ $val ];
                     $local_expr->Type('NUM');
@@ -1372,7 +1361,7 @@ sub evaluate_local
             }
             # The reference type is not known, abort with error!
             else
-            {   $err = "ERROR in Expression->evaluate_local(): expression is a function, but ref type is unknown!";   }   
+            {   $err = "ERROR in Expression->evaluate_local(): expression is a function, but ref type is unknown!";   }
         }
     }
 
@@ -1395,7 +1384,7 @@ sub checkLocalDependency
 
     unless ( defined $plist )
     {   die "Expression->checkLocalDependency: Error! Missing argument ParamList!";   }
-    
+
 
     # check dependence of arguments
     foreach my $arg ( @{$expr->Arglist} )
@@ -1404,15 +1393,15 @@ sub checkLocalDependency
         {
             return 1  if ( $arg->checkLocalDependency( $plist, $level+1 ) );
         }
-    }    
-       
+    }
+
     if ( $expr->Type eq 'FunctionCall' )
-    {    
+    {
         my $name = $expr->Arglist->[0];
 
         if ( ref $name eq "Function" )
         {   # anonymous function..
-            my $fcn = $name;        
+            my $fcn = $name;
             return 1  if ( $fcn->checkLocalDependency( $plist, $level+1 ) );
         }
         elsif ( exists $functions{$name} )
@@ -1423,9 +1412,9 @@ sub checkLocalDependency
         {   # lookup custom function by name
             my ($fcn_param) = $plist->lookup( $expr->Arglist->[0] );
             # is this a true function or an observable?
-            if ( $fcn_param->Type eq 'Function' ) 
-            {   
-                my $fcn = $fcn_param->Ref;            
+            if ( $fcn_param->Type eq 'Function' )
+            {
+                my $fcn = $fcn_param->Ref;
                 return 1  if ( $fcn->checkLocalDependency( $plist, $level+1 ) );
             }
             elsif ( $fcn_param->Type eq 'Observable' )
@@ -1435,7 +1424,7 @@ sub checkLocalDependency
             }
         }
     }
-    
+
     return 0;
 }
 
@@ -1452,20 +1441,20 @@ sub equivalent
     my $expr2 = shift @_;
     my $plist = (@_) ? shift : undef;
     my $level = (@_) ? shift : 0;
-  
+
     # make sure we have defined expressions!
     return 0  unless ( defined $expr1  and  ref $expr1 eq 'Expression' );
     return 0  unless ( defined $expr2  and  ref $expr2 eq 'Expression' );
 
     # shortcut: first check if we're looking at the same object
     return 1  if ( $expr1 == $expr2 );
-    
+
     # check type equivalence
     return 0  unless ( $expr1->Type  eq  $expr2->Type );
-    
+
     # check for equal number of arguments
     return 0  unless ( @{$expr1->Arglist} == @{$expr2->Arglist} );
-    
+
     # now we have to look deeper into the arguments
     if    ( $expr1->Type eq 'NUM' )
     {
@@ -1482,10 +1471,10 @@ sub equivalent
         # compare function names (or refs)
         return 0  unless ( ref $expr1->Arglist->[0] eq ref $expr2->Arglist->[0] );
         return 0  unless ( $expr1->Arglist->[0] eq $expr2->Arglist->[0] );
-    
+
         # check argument equivalence
         for ( my $i = 1;  $i < @{$expr1->Arglist};  ++$i )
-        {   
+        {
             return 0
                 unless ( Expression::equivalent($expr1->Arglist->[$i], $expr2->Arglist->[$i], $plist, $level+1) );
         }
@@ -1494,13 +1483,13 @@ sub equivalent
     {
         # check argument equivalence
         for ( my $i = 0;  $i < @{$expr1->Arglist};  ++$i )
-        {   
+        {
             return 0
                 unless ( Expression::equivalent($expr1->Arglist->[$i], $expr2->Arglist->[$i], $plist, $level+1) );
         }
     }
-    
-    # return true if no differences have been found   
+
+    # return true if no differences have been found
     return 1;
 }
 
@@ -1555,7 +1544,7 @@ sub toString
     # local variables
     my $err;
     my $string;
-    
+
     # different handling depending on the type
     my $type = $expr->Type;
     if ( $type eq 'NUM' )
@@ -1650,7 +1639,7 @@ sub toString
             # enclose in brackets if not at top level
             #    print "level=$level\n";
             if ($level)
-            {   $string = '(' . $string . ')';    }          
+            {   $string = '(' . $string . ')';    }
         }
         else
         {
@@ -1702,7 +1691,7 @@ sub toXML
     # local variables
     my $err;
     my $string;
-    
+
     # different handling depending on the type
     my $type = $expr->Type;
     if ( $type eq 'NUM' )
@@ -1785,7 +1774,7 @@ sub toXML
             # enclose in brackets if not at top level
             #    print "level=$level\n";
             if ($level)
-            {   $string = '(' . $string . ')';    }          
+            {   $string = '(' . $string . ')';    }
         }
         else
         {
@@ -1843,9 +1832,9 @@ sub toCVodeString
 
     my $string;
     my $err;
-    
+
     my $type   = $expr->Type;
-    
+
     if ( $type eq 'NUM' )
     {
         $string = $expr->Arglist->[0];
@@ -1854,7 +1843,7 @@ sub toCVodeString
         $string =~ s/^(\d+)$/$1.0/;
     }
     elsif ( $type eq 'VAR' )
-    {   
+    {
         # lookup corresponding parameter ...
         (my $param, $err) = $plist->lookup( $expr->Arglist->[0] );
         if ($param)
@@ -1870,7 +1859,7 @@ sub toCVodeString
     {
         # the first argument is the function name
         my $fcn_name = $expr->Arglist->[0];
-        
+
         if ( ref $fcn_name eq "Function" )
         {   # anonymous function
             my $fcn = $fcn_name;
@@ -1881,43 +1870,43 @@ sub toCVodeString
         }
         elsif ( isBuiltIn($fcn_name) )
         {
-        		# convert '_pi()' to 'pi'
+			# convert '_pi()' to 'pi'
             if ($fcn_name eq '_pi'){ $string = 'M_PI'; }
-            
-        		# convert '_e()' to 'exp(1)'
+
+			# convert '_e()' to 'exp(1)'
             elsif ( $fcn_name eq '_e' ){ $string = "M_E"; }
-            
-        		# handle the 'if' built-in with 3 arguments
+
+			# handle the 'if' built-in with 3 arguments
             elsif ( $fcn_name eq 'if' )
-            {   
+            {
                 # substitute the "?" operator for the if function
                 my @sarr = ( map {$_->toCVodeString($plist, $level+1)} @{$expr->Arglist}[1..$#{$expr->Arglist}] );
 
                 if ( @sarr == 3 )
                 {   $string = '('. $sarr[0] .' ? '. $sarr[1] .' : '. $sarr[2] .')'; }
                 else
-                {   die "Error in Expression->toCVodeString():  built-in function 'if' must have three arguments!";   }    
+                {   die "Error in Expression->toCVodeString():  built-in function 'if' must have three arguments!";   }
             }
-            
+
             # handle the 'sum' and 'avg' built-ins with >=1 argument
             elsif( $fcn_name eq 'sum' or $fcn_name eq 'avg')
             {
-            		my @sarr = ( map {$_->toCVodeString($plist, $level+1)} @{$expr->Arglist}[1..$#{$expr->Arglist}] );
-            		if ( @sarr ge 1 )
-                {   
-                		$string = '('. $sarr[0];
-                		for(my $i=1; $i < scalar(@sarr); $i++){
-				    		$string .= '+'. $sarr[$i];
+			my @sarr = ( map {$_->toCVodeString($plist, $level+1)} @{$expr->Arglist}[1..$#{$expr->Arglist}] );
+			if ( @sarr ge 1 )
+                {
+				$string = '('. $sarr[0];
+				for(my $i=1; $i < scalar(@sarr); $i++){
+						$string .= '+'. $sarr[$i];
 				    }
-                		$string .= ')';
-                		# if 'avg', divide sum by number of elements
-                		if ( $fcn_name eq 'avg' )
-                		{ $string = '(' . $string . '/' . scalar(@sarr) . ')'; }
+				$string .= ')';
+				# if 'avg', divide sum by number of elements
+				if ( $fcn_name eq 'avg' )
+				{ $string = '(' . $string . '/' . scalar(@sarr) . ')'; }
                 }
                 else
-                {   die "Error in Expression->toCVodeString():  built-in function $fcn_name must have at least 1 argument!";   }  
+                {   die "Error in Expression->toCVodeString():  built-in function $fcn_name must have at least 1 argument!";   }
             }
-            
+
             # all other built-ins
             else
             {
@@ -1934,10 +1923,10 @@ sub toCVodeString
             (my $fcn_param) = $plist->lookup( $fcn_name );
             unless ($fcn_param)
             {   die "Error in Expression->toCVodeString: could not find function parameter!";   }
-            
+
             # Is this a true function or an observable??
             if ( $fcn_param->Type eq 'Function' )
-            {   # Handling a true Function!                            
+            {   # Handling a true Function!
                 # expand argument expressions up until named entities
                 my @sarr = ( map {$_->toCVodeString($plist, $level+1, $expand)} @{$expr->Arglist}[1..$#{$expr->Arglist}] );
                 # pass arguments pointing to the expressions array and observables array
@@ -1954,24 +1943,24 @@ sub toCVodeString
             }
             else
             {   die "Error in Expression->toCVodeString(): don't know how to process function expression of non-function type!";   }
-            
+
         }
-        
+
     }
     elsif ( ($type eq '**') or ($type eq '^') )
-    {  
+    {
         # substitute the "pow" function for the exponentiation operator
         my @sarr = ( map {$_->toCVodeString($plist, $level+1)} @{$expr->Arglist} );
-    
+
         if ( @sarr == 2 )
         {   $string = 'pow(' . $sarr[0] . ',' . $sarr[1] . ')';  }
         else
         {   die "Error in Expression->toCVodeString(): Exponentiation must have exactly two arguments!";   }
     }
     else
-    {   
+    {
         # handling some other operator (+,-,*,/)
-        # enclose in brackets (always. just to be safe)        
+        # enclose in brackets (always. just to be safe)
         my @sarr = ( map {$_->toCVodeString($plist, $level+1, $expand)} @{$expr->Arglist} );
         if ( @sarr > 1 )
         {   # binary or higher order
@@ -2002,31 +1991,31 @@ sub toMatlabString
 
     my $string;
     my $err;
-    
+
     my $type   = $expr->Type;
-    
+
     if ( $type eq 'NUM' )
     {
         $string = $expr->Arglist->[0];
     }
     elsif ( $type eq 'VAR' )
-    {   
+    {
         # lookup corresponding parameter ...
         (my $param, $err) = $plist->lookup( $expr->Arglist->[0] );
         if ($param)
         {   # return matlab ref
-            $string = $param->getMatlabName();   
+            $string = $param->getMatlabName();
         }
         else
         {   # parameter not defined, assume it's a local argument and write its name
             $string = $expr->Arglist->[0];
-        }        
+        }
     }
     elsif ( $type eq 'FunctionCall' )
     {
         # the first argument is the function name
         my $fcn_name = $expr->Arglist->[0];
-        
+
         if ( ref $fcn_name eq "Function" )
         {   # anonymous function!
             my $fcn = $fcn_name;
@@ -2037,27 +2026,27 @@ sub toMatlabString
         }
         elsif ( isBuiltIn($fcn_name) )
         {
-        		# convert '_pi()' to 'pi'
+			# convert '_pi()' to 'pi'
             if ($fcn_name eq '_pi'){ $string = 'pi'; }
-            
-        		# convert '_e()' to 'exp(1)'
+
+			# convert '_e()' to 'exp(1)'
             elsif ( $fcn_name eq '_e' ){ $string = "exp(1)"; }
-            
+
             # handle the 'rint' built-in with 1 argument
             elsif ( $fcn_name eq 'rint' )
             {
-            		my @sarr = ( map {$_->toMatlabString($plist, $level+1)} @{$expr->Arglist}[1..$#{$expr->Arglist}] );
-            		if ( @sarr == 1)
-            		{
-            			$string = sprintf( "floor(%s+0.5)", $sarr[0] );
-            		}
-            		else
-                {   die "Error in Expression->toMatlabString():  built-in function 'rint' must have one argument!";   } 
+			my @sarr = ( map {$_->toMatlabString($plist, $level+1)} @{$expr->Arglist}[1..$#{$expr->Arglist}] );
+			if ( @sarr == 1)
+			{
+				$string = sprintf( "floor(%s+0.5)", $sarr[0] );
+			}
+			else
+                {   die "Error in Expression->toMatlabString():  built-in function 'rint' must have one argument!";   }
             }
-            
-        		# handle the 'if' built-in with 3 arguments
+
+			# handle the 'if' built-in with 3 arguments
             elsif ( $fcn_name eq 'if' )
-            {   
+            {
                 # substitute the "?" operator for the if function
                 my @sarr = ( map {$_->toMatlabString($plist, $level+1)} @{$expr->Arglist}[1..$#{$expr->Arglist}] );
 
@@ -2066,9 +2055,9 @@ sub toMatlabString
                     $string = sprintf( "if__fun( %s, %s, %s)", $sarr[0], $sarr[1], $sarr[2]);
                 }
                 else
-                {   die "Error in Expression->toMatlabString():  built-in function 'if' must have three arguments!";   }    
+                {   die "Error in Expression->toMatlabString():  built-in function 'if' must have three arguments!";   }
             }
-            
+
             # all other built-ins
             else
             {
@@ -2084,10 +2073,10 @@ sub toMatlabString
             (my $fcn_param) = $plist->lookup( $fcn_name );
             unless ($fcn_param)
             {   die "Error in Expression->toMatlabString: could not find function parameter!";   }
-            
+
             # Is this a true function or an observable??
             if ( $fcn_param->Type eq 'Function' )
-            {   # Handling a true Function!                            
+            {   # Handling a true Function!
                 # expand argument expressions up until named entities
                 my @sarr = ( map {$_->toMatlabString($plist, $level+1, $expand)} @{$expr->Arglist}[1..$#{$expr->Arglist}] );
                 # pass arguments pointing to the expressions array and observables array
@@ -2103,14 +2092,14 @@ sub toMatlabString
                 $string = $fcn_param->getMatlabName();
             }
             else
-            {   die "Error in Expression->toMatlabString(): don't know how to process function expression of non-function type!";   }   
+            {   die "Error in Expression->toMatlabString(): don't know how to process function expression of non-function type!";   }
         }
-        
+
     }
     else
-    {   
+    {
         # handling some other operator (+,-,*,/)
-        # enclose in brackets (always. just to be safe)        
+        # enclose in brackets (always. just to be safe)
         my @sarr = ( map {$_->toMatlabString($plist, $level+1, $expand)} @{$expr->Arglist} );
         if ( @sarr > 1 )
         {   # binary or higher order
@@ -2147,40 +2136,37 @@ sub toMatlabString
         '<=' => 'leq',
         '>=' => 'geq',
         '!=' => 'neq',
-        '==' => 'equivalent',
-        '~=' => 'neq',
-        '!'  => 'not',
-        '~'  => 'not'
+        '==' => 'equivalent'
     );
 
 	my %fnhash =
 	(
-	  	'_pi'   => 'pi',
-  		'_e'    => 'exponentiale',
+		'_pi'   => 'pi',
+		'_e'    => 'exponentiale',
 		'exp'   => 'exp',
-  		'ln'    => 'ln',
-  		'log10' => 'log',
+		'ln'    => 'ln',
+		'log10' => 'log',
 #  		'log2'  => Requires special handling (see below)
-  		'abs'   => 'abs',
+		'abs'   => 'abs',
 #  		'rint'  => Requires special handling (see below)
-  		'sqrt'  => 'root',
-  		'cos'   => 'cos',
-  		'sin'   => 'sin',
-  		'tan'   => 'tan',
-  		'asin'  => 'arcsin',
-  		'acos'  => 'arccos',
-  		'atan'  => 'arctan',
-  		'sinh'  => 'sinh',
-  		'cosh'  => 'cosh',
-  		'tanh'  => 'tanh',
-  		'asinh' => 'arcsinh',
-  		'acosh' => 'arccosh',
-  		'atanh' => 'arctanh',
+		'sqrt'  => 'root',
+		'cos'   => 'cos',
+		'sin'   => 'sin',
+		'tan'   => 'tan',
+		'asin'  => 'arcsin',
+		'acos'  => 'arccos',
+		'atan'  => 'arctan',
+		'sinh'  => 'sinh',
+		'cosh'  => 'cosh',
+		'tanh'  => 'tanh',
+		'asinh' => 'arcsinh',
+		'acosh' => 'arccosh',
+		'atanh' => 'arctanh',
 #  		'if'    => Requires special handling (see below)
-  		'min'   => 'min',
-  		'max'   => 'max',
-  		'sum'   => 'sum',
-  		'avg'   => 'mean'		
+		'min'   => 'min',
+		'max'   => 'max',
+		'sum'   => 'sum',
+		'avg'   => 'mean'
 	);
 
     sub toMathMLString
@@ -2213,20 +2199,20 @@ sub toMatlabString
         elsif ( $type eq 'FunctionCall' ) {
 			my @arglist  = @{ $expr->Arglist };
 			my $func_name = shift(@arglist); # Get function name
-			
+
 			# Built-in functions
 			if (isBuiltIn($func_name)){
-				
+
 				# Special handling for log2(x)
 				if ($func_name eq 'log2'){
-					$string .= $indentp . "<apply>\n"; 
+					$string .= $indentp . "<apply>\n";
 					$string .= $indentp . "  <log/><logbase><cn>2</cn></logbase>\n";
 					$string .= $arglist[0]->toMathMLString( $plist, $indentp . "  ", $level + 1 );
 					$string .= $indentp . "</apply>\n";
 				}
 				# Special handling for rint(x)
 				elsif ($func_name eq 'rint'){
-					$string .= $indentp . "<apply>\n"; 
+					$string .= $indentp . "<apply>\n";
 					$string .= $indentp . "  <floor/>\n";
 					$string .= $indentp . "  <apply>\n";
 					$string .= $indentp . "    <plus/>\n";
@@ -2334,7 +2320,7 @@ sub arrayToExpression
 # extract a number expression from a BNG string.
 # NOTE: the method newNumOrVar is appropriate when
 #  the string ONLY contains a number or param name.  This
-#  method, however, is suitable for cases where the string 
+#  method, however, is suitable for cases where the string
 #  contains additional content.
 sub getNumber
 {
@@ -2374,7 +2360,7 @@ sub getNumber
         $$string = $number . $$string;
         return '';
     }
-  
+
     # create number expression and return
     my $express = Expression->new();
     $express->Type('NUM');
@@ -2385,14 +2371,14 @@ sub getNumber
 
 
 # Returns name of VAR if expression is an existing VAR or
-# creates a new VAR with name derived from $basename and 
+# creates a new VAR with name derived from $basename and
 # returns name of new VAR containing expression.
 sub getName
 {
     my $expr      = shift @_;
     my $plist     = shift @_;
     my $basename  = @_ ? shift @_ : "k";
-    my $force_fcn = @_ ? shift @_ : 0; 
+    my $force_fcn = @_ ? shift @_ : 0;
 
     my $name;
     if ( $expr->Type eq 'VAR'  and  !$force_fcn )
@@ -2406,11 +2392,11 @@ sub getName
         $name = $expr->Arglist->[0];
     }
     elsif ( $expr->Type eq "FunctionCall"
-    		and $expr->Arglist->[0] =~ /^$basename/ )
+		and $expr->Arglist->[0] =~ /^$basename/ )
     {   # already a derived function, no need to create a new parameter
-    	$name = $expr->Arglist->[0];
+	$name = $expr->Arglist->[0];
     }
-    else 
+    else
     {
         # Find unused name
         my $index = 1;
@@ -2420,7 +2406,7 @@ sub getName
             last unless $param;
             ++$index;
         }
-        $name = $basename . $index;         
+        $name = $basename . $index;
         # set parameter in list (with type Function, if force)
         $plist->set( $name, $expr, 0, ($force_fcn ? 'Function' : '') );
     }

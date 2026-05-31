@@ -1,0 +1,14 @@
+--- bng2/Perl2/Expression.pm
++++ bng2/Perl2/Expression.pm
+@@ -1124,7 +1124,10 @@
+         '<=' => 'leq',
+         '>=' => 'geq',
+         '!=' => 'neq',
+-        '==' => 'equivalent'
++        '~=' => 'neq',
++        '==' => 'equivalent',
++        '!'  => 'not',
++        '~'  => 'not'
+     );
+
+	my %fnhash =
