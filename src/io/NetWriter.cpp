@@ -793,10 +793,22 @@ std::unordered_map<std::string, DerivedRateInfo> NetWriter::buildDerivedRatePara
                             // Substitute this observable in the function body
                             for (const auto& farg : formalArgs) {
                                 std::string pat = obsName + "(" + farg + ")";
-                                std::string::size_type pos = 0;
-                                while ((pos = funcBody.find(pat, pos)) != std::string::npos) {
-                                    funcBody.replace(pos, pat.length(), countStr);
-                                    pos += countStr.length();
+                                {
+                                    std::string::size_type pos = 0;
+                                    std::string::size_type next_pos = funcBody.find(pat, pos);
+                                    if (next_pos != std::string::npos) {
+                                        std::string result;
+                                        result.reserve(funcBody.length());
+                                        std::string rep = countStr; // evaluate once
+                                        while (next_pos != std::string::npos) {
+                                            result.append(funcBody, pos, next_pos - pos);
+                                            result.append(rep);
+                                            pos = next_pos + pat.length();
+                                            next_pos = funcBody.find(pat, pos);
+                                        }
+                                        result.append(funcBody, pos, funcBody.length() - pos);
+                                        funcBody = std::move(result);
+                                    }
                                 }
                             }
                         }
@@ -821,10 +833,22 @@ std::unordered_map<std::string, DerivedRateInfo> NetWriter::buildDerivedRatePara
                             }
                             for (const auto& farg : formalArgs) {
                                 std::string pat = localObsName + "(" + farg + ")";
-                                std::string::size_type pos = 0;
-                                while ((pos = funcBody.find(pat, pos)) != std::string::npos) {
-                                    funcBody.replace(pos, pat.length(), std::to_string(obsCount));
-                                    pos += std::to_string(obsCount).length();
+                                {
+                                    std::string::size_type pos = 0;
+                                    std::string::size_type next_pos = funcBody.find(pat, pos);
+                                    if (next_pos != std::string::npos) {
+                                        std::string result;
+                                        result.reserve(funcBody.length());
+                                        std::string rep = std::to_string(obsCount); // evaluate once
+                                        while (next_pos != std::string::npos) {
+                                            result.append(funcBody, pos, next_pos - pos);
+                                            result.append(rep);
+                                            pos = next_pos + pat.length();
+                                            next_pos = funcBody.find(pat, pos);
+                                        }
+                                        result.append(funcBody, pos, funcBody.length() - pos);
+                                        funcBody = std::move(result);
+                                    }
                                 }
                             }
                         }
@@ -934,10 +958,22 @@ std::unordered_map<std::string, DerivedRateInfo> NetWriter::buildDerivedRatePara
                                     std::string countStr = token.substr(eqPos + 1);
                                     for (const auto& farg : revFormalArgs) {
                                         std::string pat = obsName + "(" + farg + ")";
-                                        std::string::size_type pos = 0;
-                                        while ((pos = funcBody.find(pat, pos)) != std::string::npos) {
-                                            funcBody.replace(pos, pat.length(), countStr);
-                                            pos += countStr.length();
+                                        {
+                                            std::string::size_type pos = 0;
+                                            std::string::size_type next_pos = funcBody.find(pat, pos);
+                                            if (next_pos != std::string::npos) {
+                                                std::string result;
+                                                result.reserve(funcBody.length());
+                                                std::string rep = countStr; // evaluate once
+                                                while (next_pos != std::string::npos) {
+                                                    result.append(funcBody, pos, next_pos - pos);
+                                                    result.append(rep);
+                                                    pos = next_pos + pat.length();
+                                                    next_pos = funcBody.find(pat, pos);
+                                                }
+                                                result.append(funcBody, pos, funcBody.length() - pos);
+                                                funcBody = std::move(result);
+                                            }
                                         }
                                     }
                                 }
@@ -961,10 +997,22 @@ std::unordered_map<std::string, DerivedRateInfo> NetWriter::buildDerivedRatePara
                                     }
                                     for (const auto& farg : revFormalArgs) {
                                         std::string pat = obsName + "(" + farg + ")";
-                                        std::string::size_type pos = 0;
-                                        while ((pos = funcBody.find(pat, pos)) != std::string::npos) {
-                                            funcBody.replace(pos, pat.length(), std::to_string(obsCount));
-                                            pos += std::to_string(obsCount).length();
+                                        {
+                                            std::string::size_type pos = 0;
+                                            std::string::size_type next_pos = funcBody.find(pat, pos);
+                                            if (next_pos != std::string::npos) {
+                                                std::string result;
+                                                result.reserve(funcBody.length());
+                                                std::string rep = std::to_string(obsCount); // evaluate once
+                                                while (next_pos != std::string::npos) {
+                                                    result.append(funcBody, pos, next_pos - pos);
+                                                    result.append(rep);
+                                                    pos = next_pos + pat.length();
+                                                    next_pos = funcBody.find(pat, pos);
+                                                }
+                                                result.append(funcBody, pos, funcBody.length() - pos);
+                                                funcBody = std::move(result);
+                                            }
                                         }
                                     }
                                 }
@@ -1013,9 +1061,22 @@ std::unordered_map<std::string, DerivedRateInfo> NetWriter::buildDerivedRatePara
                     for (const auto& obs : model.getObservables()) {
                         for (const auto& farg : fArgs) {
                             std::string pat = obs.getName() + "(" + farg + ")";
-                            std::string::size_type pos = 0;
-                            while ((pos = funcBody.find(pat, pos)) != std::string::npos) {
-                                funcBody.replace(pos, pat.length(), "0");
+                            {
+                                std::string::size_type pos = 0;
+                                std::string::size_type next_pos = funcBody.find(pat, pos);
+                                if (next_pos != std::string::npos) {
+                                    std::string result;
+                                    result.reserve(funcBody.length());
+                                    std::string rep = "0"; // evaluate once
+                                    while (next_pos != std::string::npos) {
+                                        result.append(funcBody, pos, next_pos - pos);
+                                        result.append(rep);
+                                        pos = next_pos + pat.length();
+                                        next_pos = funcBody.find(pat, pos);
+                                    }
+                                    result.append(funcBody, pos, funcBody.length() - pos);
+                                    funcBody = std::move(result);
+                                }
                             }
                         }
                     }
