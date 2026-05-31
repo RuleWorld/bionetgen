@@ -558,7 +558,6 @@ ReactionRule::generate_new_reactions ( size_t ir,
 
 
 
-// TODO: create new rule instead
 // Given a complete set of maps to reactants, along with the target graphs, apply the rule
 //  transformations and construct a corresponding Reaction object. Find canonical mechanism and reaction 
 //  labels and add reaction to the list.  Product graphs are loaded into the "graphs" container on return.
