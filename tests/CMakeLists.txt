@@ -199,6 +199,10 @@ target_link_libraries(test_ode_integrator PRIVATE
     antlr4_static
 )
 catch_discover_tests(test_ode_integrator)
+add_executable(test_pattern_graph test_pattern_graph.cpp)
+target_include_directories(test_pattern_graph PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../src ${CMAKE_CURRENT_SOURCE_DIR}/../src/core)
+target_link_libraries(test_pattern_graph PRIVATE Catch2::Catch2WithMain Catch2::Catch2 bng_core)
+catch_discover_tests(test_pattern_graph)
 
 add_executable(test_map test_map.cpp)
 target_include_directories(test_map PRIVATE
