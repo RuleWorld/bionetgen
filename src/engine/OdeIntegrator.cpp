@@ -485,7 +485,6 @@ void OdeIntegrator::compile() {
                 }
             }
 
-            // Check for user-defined function references
             std::string matchedFuncName;
             if (!isFunctional) {
                 const std::string rawRL = rxn.getRateLaw();
