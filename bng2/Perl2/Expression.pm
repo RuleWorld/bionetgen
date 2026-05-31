@@ -1147,11 +1147,7 @@ sub evaluate
         # first argument is function name
         my $name  = $expr->Arglist->[0];
 
-        if ( ref $name eq "Function" )
-        {   # anonymous function (TODO: double-check that its ok to be lazy about evaluating the args
-            $val = $name->evaluate( $expr->Arglist, $plist, $level+1);
-        }
-        elsif ( exists $functions{$name} )
+        if ( exists $functions{$name} )
         {   # built-in function
             my $f = $functions{$name}->{FPTR};
             # evaluate all the remaining arguments
@@ -1164,13 +1160,31 @@ sub evaluate
             }             
             $val = $f->(@$eval_args);
         }
-        
         else
-        {   # lookup user-defined function in paramlist
-            unless (defined $plist)
-            {  die "Expression->evaluate: Error! Cannot evaluate user Function without ParamList.";  }
-        
-            $val = $plist->evaluate( $name, $expr->Arglist, $level+1 );
+        {
+            # user-defined function (anonymous or named)
+            # eagerly evaluate arguments to prevent dynamic scoping issues
+            my $eval_args = [];
+            push @$eval_args, $name;
+            my $ii = 1;
+            while ( $ii < @{$expr->Arglist} )
+            {
+                my $arg_val = $expr->Arglist->[$ii]->evaluate($plist, $level+1);
+                push @$eval_args, Expression->new( Type=>'NUM', Arglist=>[$arg_val] );
+                ++$ii;
+            }
+
+            if ( ref $name eq "Function" )
+            {   # anonymous function
+                $val = $name->evaluate( $eval_args, $plist, $level+1);
+            }
+            else
+            {   # lookup user-defined function in paramlist
+                unless (defined $plist)
+                {  die "Expression->evaluate: Error! Cannot evaluate user Function without ParamList.";  }
+
+                $val = $plist->evaluate( $name, $eval_args, $level+1 );
+            }
         }
     }
     else
