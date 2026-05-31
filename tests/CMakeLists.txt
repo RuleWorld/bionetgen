@@ -145,6 +145,13 @@ target_include_directories(test_GraphTypeRegistry PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/core
 )
 target_link_libraries(test_GraphTypeRegistry PRIVATE Catch2::Catch2WithMain Catch2::Catch2 bng_ast bng_core)
+add_executable(test_Species ast/test_Species.cpp)
+target_include_directories(test_Species PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src
+)
+target_link_libraries(test_Species PRIVATE Catch2::Catch2WithMain Catch2::Catch2 bng_ast bng_core)
+catch_discover_tests(test_Species)
+
 catch_discover_tests(test_GraphTypeRegistry)
 
 add_executable(test_ode_integrator test_ode_integrator.cpp)
