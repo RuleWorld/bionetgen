@@ -1,1 +1,0 @@
-sed -i 's/auto pattern = parseObservablePattern(patternText, const_cast<ast::Model&>(model));/auto pattern = parseObservablePattern(patternText, const_cast<ast::Model\&>(model));/g' src/io/NetWriter.cpp
