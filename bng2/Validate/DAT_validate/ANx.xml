@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Created by BioNetGen 2.7.0  -->
+<!-- Created by BioNetGen 2.9.3  -->
 <sbml xmlns="http://www.sbml.org/sbml/level3" level="3" version="1">
   <model id="ANx">
     <ListOfParameters>
@@ -1378,7 +1378,7 @@
     <ListOfObservables>
       <Observable id="O1" name="R0" type="Molecules" output="1">
         <ListOfPatterns>
-          <Pattern id="O1_P1">
+          <Pattern id="O1_P1" automorphisms="1">
             <ListOfMolecules>
               <Molecule id="O1_P1_M1" name="RD">
                 <ListOfComponents>
@@ -1391,7 +1391,7 @@
       </Observable>
       <Observable id="O2" name="R1" type="Molecules" output="1">
         <ListOfPatterns>
-          <Pattern id="O2_P1">
+          <Pattern id="O2_P1" automorphisms="1">
             <ListOfMolecules>
               <Molecule id="O2_P1_M1" name="RD">
                 <ListOfComponents>
@@ -1404,7 +1404,7 @@
       </Observable>
       <Observable id="O3" name="R2" type="Molecules" output="1">
         <ListOfPatterns>
-          <Pattern id="O3_P1">
+          <Pattern id="O3_P1" automorphisms="1">
             <ListOfMolecules>
               <Molecule id="O3_P1_M1" name="RD">
                 <ListOfComponents>
@@ -1417,7 +1417,7 @@
       </Observable>
       <Observable id="O4" name="R3" type="Molecules" output="1">
         <ListOfPatterns>
-          <Pattern id="O4_P1">
+          <Pattern id="O4_P1" automorphisms="1">
             <ListOfMolecules>
               <Molecule id="O4_P1_M1" name="RD">
                 <ListOfComponents>
@@ -1430,7 +1430,7 @@
       </Observable>
       <Observable id="O5" name="R4" type="Molecules" output="1">
         <ListOfPatterns>
-          <Pattern id="O5_P1">
+          <Pattern id="O5_P1" automorphisms="1">
             <ListOfMolecules>
               <Molecule id="O5_P1_M1" name="RD">
                 <ListOfComponents>
@@ -1443,7 +1443,7 @@
       </Observable>
       <Observable id="O6" name="R5" type="Molecules" output="1">
         <ListOfPatterns>
-          <Pattern id="O6_P1">
+          <Pattern id="O6_P1" automorphisms="1">
             <ListOfMolecules>
               <Molecule id="O6_P1_M1" name="RD">
                 <ListOfComponents>
@@ -1456,7 +1456,7 @@
       </Observable>
       <Observable id="O7" name="R6" type="Molecules" output="1">
         <ListOfPatterns>
-          <Pattern id="O7_P1">
+          <Pattern id="O7_P1" automorphisms="1">
             <ListOfMolecules>
               <Molecule id="O7_P1_M1" name="RD">
                 <ListOfComponents>
@@ -1469,7 +1469,7 @@
       </Observable>
       <Observable id="O8" name="R7" type="Molecules" output="1">
         <ListOfPatterns>
-          <Pattern id="O8_P1">
+          <Pattern id="O8_P1" automorphisms="1">
             <ListOfMolecules>
               <Molecule id="O8_P1_M1" name="RD">
                 <ListOfComponents>
@@ -1482,7 +1482,7 @@
       </Observable>
       <Observable id="O9" name="R8" type="Molecules" output="1">
         <ListOfPatterns>
-          <Pattern id="O9_P1">
+          <Pattern id="O9_P1" automorphisms="1">
             <ListOfMolecules>
               <Molecule id="O9_P1_M1" name="RD">
                 <ListOfComponents>
@@ -1495,7 +1495,7 @@
       </Observable>
       <Observable id="O10" name="RDtot" type="Molecules" output="1">
         <ListOfPatterns>
-          <Pattern id="O10_P1">
+          <Pattern id="O10_P1" automorphisms="1">
             <ListOfMolecules>
               <Molecule id="O10_P1_M1" name="RD"/>
             </ListOfMolecules>
@@ -1504,7 +1504,7 @@
       </Observable>
       <Observable id="O11" name="RD_R" type="Molecules" output="1">
         <ListOfPatterns>
-          <Pattern id="O11_P1">
+          <Pattern id="O11_P1" automorphisms="1">
             <ListOfMolecules>
               <Molecule id="O11_P1_M1" name="RD">
                 <ListOfComponents>
@@ -1525,7 +1525,7 @@
       </Observable>
       <Observable id="O12" name="RD_B" type="Molecules" output="1">
         <ListOfPatterns>
-          <Pattern id="O12_P1">
+          <Pattern id="O12_P1" automorphisms="1">
             <ListOfMolecules>
               <Molecule id="O12_P1_M1" name="RD">
                 <ListOfComponents>

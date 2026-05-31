@@ -2084,11 +2084,11 @@ sub toXML
 	}
 
 
-	# add support for Automorphism count (TODO: disabled for now)
-	#if ( defined $sg->Automorphisms )
-    #{
-	#	$string .= " automorphisms=\"" . $sg->Automorphisms . "\"";
-	#}
+	# add support for Automorphism count
+	if ( defined $sg->Automorphisms )
+    {
+		$string .= " automorphisms=\"" . $sg->Automorphisms . "\"";
+	}
 
 	# add quantifiers
 	if ( $sg->Quantifier )
