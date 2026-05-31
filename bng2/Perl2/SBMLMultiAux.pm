@@ -401,8 +401,6 @@ sub writeSBMLReactions
                                 
                                 my $reactantName = @{$reactant->Molecules}[$smolecule]->Name;
 
-                                # fixme: this shouldnt be zero, we should actually index the component we want, important if there are labels that change mapping order
-                                # that said, the index here is a $local$ index within the repeated elements of the same molecule type in a species
                                 #get the sbml multi id associated with this graph pattern's component id in the species type
 
                                 my $rlocal_idx = 0;
@@ -414,8 +412,6 @@ sub writeSBMLReactions
 
                                 $rreverseReference = "cmp_" . $reactantHash->{$rspeciesType}{'moleculeReverseReferences'}{$reactantName}[$rlocal_idx];
                                 
-                                #fixme: once again it is not necessarely the first one that we are removing
-                                #we used this component so remove it from the available components pool
                             }
                             else{
                                 $rreverseReference =  $speciesIdHash_ref->{'Molecules'}->{@{$reactant->Molecules}[0]->Name};
