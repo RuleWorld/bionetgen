@@ -412,7 +412,6 @@ sub readString
 
 
 # check if a speciesGraph represents a fully-specified species.
-# TODO: need to check that compartments are specified, if we're using compartments!
 sub checkSpecies
 {
     my $sg    = shift @_;
@@ -428,11 +427,14 @@ sub checkSpecies
 	return 0 if ($err);
 
     # check that compartments are specified, if we're using compartments
-    if (defined $model->CompartmentList && @{$model->CompartmentList->Array}) {
+    if (defined $model->CompartmentList && $model->CompartmentList->Used) {
         foreach my $mol (@{$sg->Molecules}) {
-            if (!defined $mol->Compartment && !defined $sg->Compartment) {
-                # Could log an error here, but following the surrounding logic, we just return 0 to indicate not a fully-specified species
-                return 0;
+            my $mol_comp = defined $mol->Compartment ? $mol->Compartment : $sg->Compartment;
+            return 0 if !defined $mol_comp;
+
+            foreach my $component (@{$mol->Components}) {
+                my $ccomp = defined $component->Compartment ? $component->Compartment : $mol_comp;
+                return 0 if !defined $ccomp;
             }
         }
     }
