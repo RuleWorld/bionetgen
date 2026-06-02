@@ -2000,6 +2000,7 @@ Rxn_array* read_Rxn_array(FILE* datfile, int* line_number, int* n_read, Elt_arra
 	int* rateLaw_indices = NULL;
 	double stat_factor;
 	int perr;
+		int rperr;
 	int n_tok, i;
 	char buf[1000];
 	enum { FMT_NONE, FMT_DFLT };
@@ -2118,26 +2119,38 @@ Rxn_array* read_Rxn_array(FILE* datfile, int* line_number, int* n_read, Elt_arra
 			rateLaw_indices = (int *) malloc(n_rateLaw_tokens * sizeof(int));
 
 			// Check that number of rate constants is correct for rateLaw type
-			// TODO: Check that number of reactants and products is also correct
+			// Check that number of reactants and products is also correct
 			perr = 0;
+			rperr = 0;
 			switch (rateLaw_type) {
 			case ELEMENTARY:
 				perr = (n_rateLaw_tokens != 1);
 				break;
 			case SATURATION:
-				perr = (n_rateLaw_tokens == 0) || (n_rateLaw_tokens > (n_reactants + 1));
+				rperr = (n_rateLaw_tokens > 1 && n_reactants < 1);
+				perr = (n_rateLaw_tokens == 0) || ((n_rateLaw_tokens > (n_reactants + 1)) && !rperr);
 				break;
 			case HILL:
 				perr = (n_rateLaw_tokens == 0) || (n_rateLaw_tokens != 3);
+				rperr = (n_reactants != 2) || (n_products != 2);
 				break;
 			case MICHAELIS_MENTEN:
 				perr = (n_rateLaw_tokens != 2);
+				rperr = (n_reactants != 2) || (n_products != 2);
 				break;
 			}
 			if (perr) {
 				fprintf(
 						stderr,
 						"Incorrect number of rate constants for reaction type at line %d.\n",
+						*line_number);
+				++error;
+				goto cleanup;
+			}
+			if (rperr) {
+				fprintf(
+						stderr,
+						"Incorrect number of reactants or products for reaction type at line %d.\n",
 						*line_number);
 				++error;
 				goto cleanup;
