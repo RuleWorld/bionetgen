@@ -402,7 +402,18 @@ sub readSBML
     
     # Run the translator
     printf "SBML translation: %s\n", join(" ", @cmd);
-    system(@cmd);
+    system { $cmd[0] } @cmd;
+
+    if ($? == -1) {
+        return 1, "failed to execute sbmlTranslator: $!";
+    }
+    elsif ($? & 127) {
+        return 1, sprintf("sbmlTranslator died with signal %d, %s coredump",
+                          ($? & 127),  ($? & 128) ? 'with' : 'without');
+    }
+    elsif ($? >> 8) {
+        return 1, sprintf("sbmlTranslator exited with value %d", $? >> 8);
+    }
     
     # Return full path to generated BNGL file
     return 0, $outfile
@@ -966,8 +977,6 @@ sub readSBML
                                 # get group weights
                                 my @group_weights = split (/,/, $tokens[0]);
     
-                                # Zero the weights (TODO..)
-                                @{$obs->Weights} = (0) x scalar @{$obs->Weights};
                                 my ($weight, $species_idx);
                                 foreach my $component (@group_weights)
                                 {
@@ -1032,8 +1041,6 @@ sub readSBML
                                 # get group weights
                                 my @group_weights = ($tokens[0]) ? split( /,/ , $tokens[0] ) : ();
                                 
-                                # Zero the weights
-                                @{$obs->Weights} = (0) x ($n_species+1);
                                 my ($weight, $species_idx);
                                 foreach my $component (@group_weights)
                                 {
@@ -1307,18 +1314,9 @@ sub readSBML
 
             }
                 else
-                {   # Try to execute general PERL code (Dangerous!!)
-                    if ( $model->Params->{allow_perl} )
-                    {
-                        # General Perl code
-                        eval $string;
-                        if ($@) { $err = errgen($@);  goto EXIT; }
-                    }
-                    else
-                    {
-                        send_warning( errgen("Unidentified input! Will not attempt to execute as Perl.") );
-                        next;
-                    }
+                {
+                    send_warning( errgen("Unidentified input! Arbitrary Perl execution is disabled for security reasons.") );
+                    next;
                 }
             }
             } # end read BNGL or NET
@@ -1566,7 +1564,7 @@ sub writeNET
 #
 # OPTIONS:
 #   evaluate_expressions => 0,1 : evaluate math expressions output as numbers (default=0).
-#   format => "FORMAT"          : select output format, where FORMAT=bngl,net,xml,sbml,ssc (default=net).
+#   format => "FORMAT"          : select output format, where FORMAT=bngl,net,xml,sbml,ssc,mfile,mexfile,mdl (default=net).
 #   include_model => 0,1        : include model blocks in output file (default=1).
 #   include_network => 0,1      : include network blocks in output file (default=1).
 #   overwrite => 0,1            : allow writeFile to overwrite exisiting files (default=0).
@@ -1575,8 +1573,6 @@ sub writeNET
 #   suffix => "string"          : set suffix of output file name (default=NONE).
 #   TextReaction => 0,1         : write reactions as BNGL strings (default=0).
 #   TextSpecies => 0,1          : write species as BNGL string (default=1).
-#
-# TODO: set up additional formats: SBML, SSC, etc.
 sub writeFile
 {
     use strict;
@@ -1599,7 +1595,7 @@ sub writeFile
     );
 
     # change this to a constant?
-    my %allowed_formats = ( 'net'=>1, 'bngl'=>1, 'sbml'=>1, 'xml'=>1, 'ssc'=>1 );
+    my %allowed_formats = ( 'net'=>1, 'bngl'=>1, 'sbml'=>1, 'xml'=>1, 'ssc'=>1, 'mfile'=>1, 'mexfile'=>1, 'mdl'=>1 );
 
     # copy user_params into params and pass_params structures
     foreach my $key ( keys %$user_params )
@@ -1637,7 +1633,7 @@ sub writeFile
     return undef if $NO_EXEC;
 
     ## Execute the Action ##
-    my %extensions = ( 'net'=>'net', 'bngl'=>'bngl', 'sbml'=>'xml', 'xml'=>'xml', 'ssc'=>'rxn' );
+    my %extensions = ( 'net'=>'net', 'bngl'=>'bngl', 'sbml'=>'xml', 'xml'=>'xml', 'ssc'=>'rxn', 'mfile'=>'m', 'mexfile'=>'c', 'mdl'=>'mdl' );
     my $ext = $extensions{$params{'format'}} || $params{'format'};
 
     # first, build output filename
@@ -1687,6 +1683,18 @@ sub writeFile
     elsif ( $params{'format'} eq 'ssc' )
     {
         return $model->writeSSC( \%params );
+    }
+    elsif ( $params{'format'} eq 'mfile' )
+    {
+        return $model->writeMfile( \%params );
+    }
+    elsif ( $params{'format'} eq 'mexfile' )
+    {
+        return $model->writeMexfile( \%params );
+    }
+    elsif ( $params{'format'} eq 'mdl' )
+    {
+        return $model->writeMDL( \%params );
     }
 
     if ( defined $file_string )

@@ -209,15 +209,11 @@ UllmannSGIso::next_node ( size_t d, row_iter_t & row_iter, List <Map> & maps )
     //std::cout << "next_node, level: " << d << std::endl;
  
     // put a pristine copy of M at M_vec[d];
-    //push_M();
     copy_M( M, M_vec[d] );
     
     // look for next way to map node Ga_d into graph Gb
     node_container_t  *possible_matches = row_iter->second;
     col_iter_t  col_iter = possible_matches->begin();
-    
-    // debug
-    //if ( d == 4 ) print_M();
     
     while (  find_next_match( col_iter, possible_matches->end() )  )
     {
@@ -231,7 +227,6 @@ UllmannSGIso::next_node ( size_t d, row_iter_t & row_iter, List <Map> & maps )
         // delete possible matches, except for col_node
         //  NOTE: this will be restored later when we call copy_M
         possible_matches->clear();
-        //possible_matches->insert( node_b );
         possible_matches->push_back( node_b );
 
         // refine M and continue, if possible

@@ -611,11 +611,36 @@ sub compare_local
     }
 
     # Number of edges
-    if ( $cmp = (@{$a->Edges} <=> @{$b->Edges}) )
-    {   return $cmp;   }
+    my $a_exp = 0;
+    my $a_plus = 0;
+    my $a_ques = 0;
+    my $a_star = 0;
+    for my $e (@{$a->Edges}) {
+        if ($e eq '+') { $a_plus++; }
+        elsif ($e eq '?') { $a_ques++; }
+        elsif ($e eq '*') { $a_star++; }
+        else { $a_exp++; }
+    }
+
+    my $b_exp = 0;
+    my $b_plus = 0;
+    my $b_ques = 0;
+    my $b_star = 0;
+    for my $e (@{$b->Edges}) {
+        if ($e eq '+') { $b_plus++; }
+        elsif ($e eq '?') { $b_ques++; }
+        elsif ($e eq '*') { $b_star++; }
+        else { $b_exp++; }
+    }
+
+    if ( $cmp = ($a_exp <=> $b_exp) ) { return $cmp; }
+    if ( $cmp = ($a_plus <=> $b_plus) ) { return $cmp; }
+    if ( $cmp = ($a_ques <=> $b_ques) ) { return $cmp; }
+    if ( $cmp = ($a_star <=> $b_star) ) { return $cmp; }
 
     return 0;
 }
+
 
 
 

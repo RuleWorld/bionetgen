@@ -1,7 +1,6 @@
 from readBNGXML import parseXML
 import networkx as nx
 
-
 def extractMolecules(action,site1,site2,chemicalArray):
     '''
     this method goes through the chemicals in a given array 'chemicalArray'
@@ -23,10 +22,8 @@ def extractMolecules(action,site1,site2,chemicalArray):
         #for element in ta:
         #    atomicPatterns.add(element)
         atomicPatterns.update(ta)
-        for element in tr:
-            reactionCenter.add(element)
-        for element in tc:
-            context.add(element)
+        reactionCenter.update(tr)
+        context.update(tc)
         
     
     return atomicPatterns,reactionCenter,context
@@ -34,8 +31,11 @@ def extractMolecules(action,site1,site2,chemicalArray):
 def getMapping(mapp,site):
     for mapping in mapp:
         if site in mapping:
-            # ⚡ Bolt: Use next() with generator instead of list comprehension + [0] for O(1) best-case early exit
-            return next((x for x in mapping if x != site), None)
+            # ⚡ Bolt: Use simple for loop instead of generator expression to avoid generator initialization overhead, providing a much faster O(1) early exit
+            for x in mapping:
+                if x != site:
+                    return x
+            return None
 
 
 def solveWildcards(atomicArray):
@@ -45,13 +45,19 @@ def solveWildcards(atomicArray):
     can potentially resolve to
     '''
     standinArray = {}
-    for wildcard in [x for x in atomicArray if '+' in x]:
-        for atomic in [x for x in atomicArray if '+' not in x and len(atomicArray[x].molecules) > 1]:
-            atomic_molecule_names = set(x.name for x in atomicArray[atomic].molecules)
-            if atomicArray[wildcard].molecules[0].name in atomic_molecule_names:
-                if wildcard not in standinArray:
-                    standinArray[wildcard] = []
-                standinArray[wildcard].append(atomicArray[atomic])
+    molecule_to_atomics = {}
+    for atomic_key, atomic_val in atomicArray.items():
+        if '+' not in atomic_key and len(atomic_val.molecules) > 1:
+            names = {m.name for m in atomic_val.molecules}
+            for name in names:
+                molecule_to_atomics.setdefault(name, []).append(atomic_val)
+
+    for wildcard_key, wildcard_val in atomicArray.items():
+        if '+' in wildcard_key:
+            wildcard_molecule_name = wildcard_val.molecules[0].name
+            if wildcard_molecule_name in molecule_to_atomics:
+                standinArray[wildcard_key] = list(molecule_to_atomics[wildcard_molecule_name])
+
     atomicArray.update(standinArray)
 
 
@@ -130,7 +136,7 @@ def createCollapsedContact(rules,species,transformations,fileName):
                 nonatomicset = True
             elif rule.actions[idx].action in ['AddBond']:
 
-                bondpartners = [x.split('(')[0] for x in transformationCenter[idx]]
+                bondpartners = [x.split('(', 1)[0] for x in transformationCenter[idx]]
                 if len(bondpartners) == 2:
                     graph.add_edge(bondpartners[0],bondpartners[1],graphics={'fill':"#000000"})
                 else:
@@ -141,8 +147,12 @@ def createCollapsedContact(rules,species,transformations,fileName):
                     if x in activeProducts:
                         activeProducts.remove(x)
             elif rule.actions[idx].action in ['StateChange']:
-                molecule = [x.split('(')[0] for x in transformationCenter[idx]]
-                state = [x.split('(')[1].split('~')[0] for x in transformationCenter[idx]]
+                molecule = []
+                state = []
+                for x in transformationCenter[idx]:
+                    mol, rest = x.split('(', 1)
+                    molecule.append(mol)
+                    state.append(rest.split('~', 1)[0])
                 graph.add_node(molecule[0] +'_'+state[0],graphics={'type': "circle",'fill':"#CCFFCC"})
                 processNodes.append(state[0])
                 graph.add_edge(molecule[0]+'_'+state[0],molecule[0],graphics={'fill':"#000000"})
@@ -165,7 +175,8 @@ def createCollapsedContact(rules,species,transformations,fileName):
     #graph = pgv.AGraph('%s.dot' % fileName)
     #graph.layout(prog='fdp')
     #graph.draw('%s.png' % fileName)
-    #subprocess.call(['dot', '-Tsvg', '{0}.dot'.format(fileName),'-o{0}.svg'.format(fileName)])
+    #dot_path = shutil.which('dot') or 'dot'
+    #subprocess.call([dot_path, '-Tsvg', './{0}.dot'.format(fileName), '-o', './{0}.svg'.format(fileName)], shell=False)
 
 
 def main(fileName,outputfilename):

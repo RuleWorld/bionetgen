@@ -23,7 +23,6 @@ double Util::convertToDouble(const std::string& s)
 		cout << "Error in Util::convertToDouble(): Cannot convert string to double value. Exiting." << endl;
 		exit(1);
 	}
-//		throw MoMMA::HiveException("Cannot convert string to double value.","Util::convertToDouble(\"" + s + "\")");
 	return x;
 }
 
@@ -38,7 +37,6 @@ int Util::convertToInt(const std::string& s)
 		cout << "Error in Util::convertToInt(): Cannot convert string to int value. Exiting." << endl;
 		exit(1);
 	}
-//		throw MoMMA::HiveException("Cannot convert string to int value.","Util::convertToInt(\"" + s + "\")");
 	return x;
 }
 
@@ -50,7 +48,6 @@ string Util::toString(double x)
 		cout << "Error in Util::toString(): Cannot convert double to string value. Exiting." << endl;
 		exit(1);
 	}
-//		throw MoMMA::HiveException("Cannot convert double to string value.","Util::toString(double x)");
 	return o.str();
 }
 
@@ -62,6 +59,5 @@ string Util::toString(int x)
 		cout << "Error in Util::toString(): Cannot convert int to string value. Exiting." << endl;
 		exit(1);
 	}
-//		throw MoMMA::HiveException("Cannot convert int to string value.","Util::toString(int x)");
 	return o.str();
 }

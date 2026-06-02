@@ -67,13 +67,12 @@ sub toString
 
     # Write the Ratelaw...
     if (defined $rxn->RateLaw)
-    {   $string .= $rxn->RateLaw->toString($rxn->StatFactor, 1, $plist, $conv_expr);   }   
+    {   my $sf = ($rxn->RxnRule && $rxn->RxnRule->TotalRate) ? 1 : $rxn->StatFactor; $string .= $rxn->RateLaw->toString($sf, 1, $plist, $conv_expr);   }
 
     # append comments
     $string .= " #";
 
     # write source RxnRule
-#    if (defined $rxn->RxnRule) {  $string .= $rxn->RxnRule->Name;  }
 	if (defined $rxn->RxnRule)
 	{
 		my $i = 0;
@@ -275,7 +274,8 @@ sub getCVodeRate
     if ( $rxn->RxnRule )
     {   $rrefs = $rxn->RxnRule->RRefs;   }
     # get ratelaw string   
-    return $rxn->RateLaw->toCVodeString( $rxn->StatFactor, $rxn->Reactants, $rrefs, $plist, $conv_expr );
+    my $sf = ($rxn->RxnRule && $rxn->RxnRule->TotalRate) ? 1 : $rxn->StatFactor;
+    return $rxn->RateLaw->toCVodeString( $sf, $rxn->Reactants, $rrefs, $plist, $conv_expr );
 }
 
 
@@ -301,7 +301,8 @@ sub getMatlabRate
     if ( $rxn->RxnRule )
     {   $rrefs = $rxn->RxnRule->RRefs;   }
     # get ratelaw string  
-    return $rxn->RateLaw->toMatlabString( $rxn->StatFactor, $rxn->Reactants, $rrefs, $plist, $conv_expr );
+    my $sf = ($rxn->RxnRule && $rxn->RxnRule->TotalRate) ? 1 : $rxn->StatFactor;
+    return $rxn->RateLaw->toMatlabString( $sf, $rxn->Reactants, $rrefs, $plist, $conv_expr );
 }
 
 
@@ -375,21 +376,11 @@ sub getMDLrxn
     #   First prcoess reaction multipliers (statistical factor, compartment volumes, etc)
     my $err = undef;
     
-    #my $rxn_mult_temp=""; 
-    #if (scalar @{$rxn->Reactants} >1){
-       #my $i = 0; 
-       #foreach (@{$rxn->Reactants}){
-             #$i = 1 if ($_->SpeciesGraph->Compartment->SpatialDimensions == 3); 
-	     #}
-      #$rxn_mult_temp = ($i == 1) ? "*Nav" : "/rxn_layer_t";      
-      #}
-      
-   
     my $rxn_mult = undef; 
 
     # get ratelaw string
-    #$string .= sprintf("   [%s$rxn_mult_temp]",$rxn->RateLaw->toString( $rxn_mult, 1, $plist ));
-    my $rate_expr = sprintf("%s",$rxn->RateLaw->toString($rxn->StatFactor, 1, $plist)); 
+    my $sf = ($rxn->RxnRule && $rxn->RxnRule->TotalRate) ? 1 : $rxn->StatFactor;
+    my $rate_expr = sprintf("%s",$rxn->RateLaw->toString($sf, 1, $plist));
     $string .= "    [".$rate_expr."]"; 
     $py_string .= "\"fwd_rate\":\"".$rate_expr."\"}"; 
     push (@{$py_reactions}, $py_string); 

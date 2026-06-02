@@ -317,11 +317,13 @@ READ:
 	    send_warning($err);
 	    $err="";
 	  }
-	} elsif (/^([A-Za-z][^(]*)/){
-          push(@gene1rate,$_);
+	} elsif (/^\s*([A-Za-z][^(]*)/){
+          my $line = $_;
+          $line =~ s/^\s+//;
+          push(@gene1rate,$line);
 	} else {
-	  eval $_;
-	  if ($@){ $err=errgen($@); last READ;};
+	  $err=errgen("Unrecognized input outside block: $_");
+	  last READ;
 	}
       } ##while bngl
     &pre_species1(\%nm_site,\%nm2_site);

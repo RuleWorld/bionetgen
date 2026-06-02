@@ -78,12 +78,9 @@ class Rule:
         self.actions.extend(actionList)
         
     def __str__(self):
-        finalStr = ''
-        if self.label != '':
-            finalStr += '{0}: '.format(self.label)
+        label = f"{self.label}: " if self.label != '' else ""
         arrow = ' <-> ' if self.bidirectional else ' -> '
-        finalStr += ' + '.join([str(x) for x in self.reactants]) + arrow + ' + '.join([str(x) for x in self.products]) + ' ' + ','.join(self.rates)
-        return finalStr
+        return f"{label}{' + '.join(str(x) for x in self.reactants)}{arrow}{' + '.join(str(x) for x in self.products)} {','.join(self.rates)}"
 class Species:
     def __init__(self):
         self.molecules = []
@@ -221,7 +218,7 @@ class Species:
             for element in species.molecules:
                 mol_list = mol_dict.get(element.name)
                 if not mol_list:
-                    new_mol = deepcopy(element)
+                    new_mol = element.copy()
                     self.addMolecule(new_mol, update)
                     mol_dict[new_mol.name] = [new_mol]
                 else:
@@ -235,7 +232,7 @@ class Species:
                         for component in element.components:
                             comp_list = comp_dict.get(component.name)
                             if not comp_list:
-                                new_comp = deepcopy(component)
+                                new_comp = component.copy()
                                 mol.addComponent(new_comp, update)
                                 comp_dict[new_comp.name] = [new_comp]
                             else:
@@ -273,7 +270,7 @@ class Species:
         
     def __str__(self):
         self.molecules.sort(key= lambda molecule: molecule.name)
-        name= '.'.join([x.toString() for x in self.molecules])
+        name= '.'.join(x.toString() for x in self.molecules)
         '''
         name = name.replace('~','')
         
@@ -288,7 +285,7 @@ class Species:
         return name
         
     def str2(self):
-        return '.'.join([x.str2() for x in self.molecules])
+        return '.'.join(x.str2() for x in self.molecules)
         
     def reset(self):
         for element in self.molecules:
@@ -439,10 +436,12 @@ class Molecule:
         if not overlap:
             self.components.append(component)
         else:
-            if not component.name in [x.name for x in self.components]:
+            # ⚡ Bolt: Use getComponent directly to combine existence check and retrieval,
+            # avoiding an O(N) list comprehension.
+            compo = self.getComponent(component.name)
+            if compo is None:
                 self.components.append(component)
             else:
-                compo = self.getComponent(component.name)
                 for state in component.states:
                     compo.addState(state)
     
@@ -459,7 +458,8 @@ class Molecule:
         
     def getComponent(self,componentName):
         for component in self.components:
-            if componentName == component.getName():
+            # ⚡ Bolt: Direct attribute access is faster than method call overhead
+            if componentName == component.name:
                 return component
                 
     def removeComponent(self,componentName):
@@ -488,19 +488,17 @@ class Molecule:
         
     def __str__(self):
         self.components = sorted(self.components,key = lambda st:st.name)
-        finalStr =  self.name
-        if len(self.components) > 0:
-            finalStr += '(' + ','.join([str(x) for x in self.components]) + ')' 
-        if self.compartment != '':
-            finalStr += '@' + self.compartment
-        return finalStr
+        components_str = '(' + ','.join(str(x) for x in self.components) + ')' if self.components else ''
+        compartment_str = '@' + self.compartment if self.compartment else ''
+        # ⚡ Bolt: Use single f-string to prevent intermediate string allocations
+        return f"{self.name}{components_str}{compartment_str}"
         
     def toString(self):
         return self.__str__()
         
     def str2(self):
         self.components.sort()
-        return self.name + '(' + ','.join([x.str2() for x in self.components]) + ')'
+        return self.name + '(' + ','.join(x.str2() for x in self.components) + ')'
         
     def str3(self):
         return self.name + '(' + self.components[0].name + ')'
@@ -515,7 +513,7 @@ class Molecule:
         for element in molecule.components:
             comp_list = comp_dict.get(element.name)
             if not comp_list:
-                new_comp = deepcopy(element)
+                new_comp = element.copy()
                 self.components.append(new_comp)
                 comp_dict[new_comp.name] = [new_comp]
             else:
@@ -530,10 +528,10 @@ class Molecule:
             element.reset()
             
     def update(self,molecule):
-        self_component_names = set(x.name for x in self.components)
+        self_component_names = {x.name for x in self.components}
         for comp in molecule.components:
             if comp.name not in self_component_names:
-                self.components.append(deepcopy(comp))
+                self.components.append(comp.copy())
                 self_component_names.add(comp.name)
                 
     def graphVizGraph(self,graph,identifier,components=None,flag=False,options={}):
@@ -638,12 +636,10 @@ class Component:
         return True
         
     def getRuleStr(self):
-        tmp = self.name
-        if len(self.bonds) > 0:
-            tmp += '!' + '!'.join([str(x) for x in self.bonds])
-        if self.activeState != '':
-            tmp += '~' + self.activeState
-        return tmp
+        bonds_str = '!' + '!'.join(str(x) for x in self.bonds) if self.bonds else ''
+        state_str = '~' + self.activeState if self.activeState else ''
+        # ⚡ Bolt: Use single f-string to prevent intermediate string allocations
+        return f"{self.name}{bonds_str}{state_str}"
         
     def getTotalStr(self):
         return self.name + '~'.join(self.states)
@@ -655,12 +651,10 @@ class Component:
         return self.getRuleStr()
         
     def str2(self):
-        tmp = self.name
-        if len(self.bonds) > 0:
-            tmp += '!' + '!'.join([str(x) for x in self.bonds])
-        if len(self.states) > 0:
-            tmp += '~' + '~'.join([str(x) for x in self.states])
-        return tmp        
+        bonds_str = '!' + '!'.join(str(x) for x in self.bonds) if self.bonds else ''
+        states_str = '~' + '~'.join(str(x) for x in self.states) if self.states else ''
+        # ⚡ Bolt: Use single f-string to prevent intermediate string allocations
+        return f"{self.name}{bonds_str}{states_str}"
         
     def __hash__(self):
         return self.name

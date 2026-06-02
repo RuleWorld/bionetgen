@@ -1436,10 +1436,17 @@ void ActionDispatch::execute(ast::Model& model, const std::filesystem::path& sou
                 ast::Action simAction;
                 simAction.name = "simulate";
                 simAction.arguments["method"] = "ode";
-                simAction.arguments["t_end"] = std::to_string(tEnd);
+
+                auto d2s = [](double val) {
+                    std::ostringstream oss;
+                    oss << std::scientific << std::setprecision(8) << val;
+                    return oss.str();
+                };
+
+                simAction.arguments["t_end"] = d2s(tEnd);
                 simAction.arguments["n_steps"] = std::to_string(nSteps);
-                simAction.arguments["atol"] = std::to_string(atol);
-                simAction.arguments["rtol"] = std::to_string(rtol);
+                simAction.arguments["atol"] = d2s(atol);
+                simAction.arguments["rtol"] = d2s(rtol);
                 simAction.arguments["prefix"] = simPrefix;
                 if (steadyState) {
                     simAction.arguments["steady_state"] = "1";
@@ -1499,6 +1506,89 @@ void ActionDispatch::execute(ast::Model& model, const std::filesystem::path& sou
                 if (verbose) {
                     std::cerr << "[bng_cpp] LinearParameterSensitivity: completed bump for '" << paramName
                               << "' (" << paramValue << " -> " << newValue << ")\n";
+                }
+
+                double dp = newValue - paramValue;
+                std::string basePrefix = prefix + "_basecase_" + suffix;
+
+                for (const auto& ext : {"cdat", "gdat"}) {
+                    std::string baseFile = (outputDir / (basePrefix + "." + ext)).string();
+                    std::string bumpFile = (outputDir / (bumpPrefix + "." + ext)).string();
+                    std::string scExt = (std::string(ext) == "cdat") ? "csc" : "gsc";
+                    std::string outFile = (outputDir / (bumpPrefix + "." + scExt)).string();
+
+                    std::ifstream bfs(baseFile);
+                    std::ifstream pfs(bumpFile);
+                    if (bfs.is_open() && pfs.is_open()) {
+                        std::ofstream ofs(outFile);
+                        if (ofs.is_open()) {
+                            std::string bHead, pHead;
+                            std::getline(bfs, bHead);
+                            std::getline(pfs, pHead);
+
+                            std::vector<std::string> cols;
+                            std::vector<double> times;
+                            std::vector<std::vector<double>> baseData;
+                            std::vector<std::vector<double>> bumpData;
+
+                            bool hasHeader = (!bHead.empty() && bHead[0] == '#');
+                            if (hasHeader) {
+                                std::istringstream hss(bHead);
+                                std::string col;
+                                while (hss >> col) {
+                                    if (col == "#") continue;
+                                    cols.push_back(col);
+                                }
+                            } else {
+                                std::istringstream bss(bHead), pss(pHead);
+                                std::vector<double> bVals, pVals;
+                                double val;
+                                while (bss >> val) bVals.push_back(val);
+                                while (pss >> val) pVals.push_back(val);
+
+                                cols.push_back("time");
+                                for (size_t i = 1; i < bVals.size(); ++i) {
+                                    cols.push_back(std::to_string(i));
+                                }
+                                if (!bVals.empty() && !pVals.empty()) {
+                                    times.push_back(bVals[0]);
+                                    baseData.push_back(bVals);
+                                    bumpData.push_back(pVals);
+                                }
+                            }
+
+                            std::string bLine, pLine;
+                            while (std::getline(bfs, bLine) && std::getline(pfs, pLine)) {
+                                std::istringstream bss(bLine), pss(pLine);
+                                std::vector<double> bVals, pVals;
+                                double val;
+                                while (bss >> val) bVals.push_back(val);
+                                while (pss >> val) pVals.push_back(val);
+
+                                if (!bVals.empty() && !pVals.empty()) {
+                                    times.push_back(bVals[0]);
+                                    baseData.push_back(bVals);
+                                    bumpData.push_back(pVals);
+                                }
+                            }
+
+                            ofs << std::setw(16) << "# time";
+                            for (double t : times) {
+                                ofs << " " << std::setw(16) << std::scientific << std::setprecision(8) << t;
+                            }
+                            ofs << "\n";
+
+                            for (size_t c = 1; c < cols.size(); ++c) {
+                                ofs << std::setw(16) << cols[c];
+                                for (size_t r = 0; r < times.size(); ++r) {
+                                    double diff = bumpData[r][c] - baseData[r][c];
+                                    double sens = (dp != 0.0) ? (diff / dp) : 0.0;
+                                    ofs << " " << std::setw(16) << std::scientific << std::setprecision(8) << sens;
+                                }
+                                ofs << "\n";
+                            }
+                        }
+                    }
                 }
 
                 // Restore the parameter

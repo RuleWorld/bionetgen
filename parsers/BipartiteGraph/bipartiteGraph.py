@@ -33,18 +33,19 @@ def extractMolecules(action,site1,site2,chemicalArray):
         #for element in ta:
         #    atomicPatterns.add(element)
         atomicPatterns.update(ta)
-        for element in tr:
-            reactionCenter.add(element)
-        for element in tc:
-            context.add(element)   	
+        reactionCenter.update(tr)
+        context.update(tc)
     return atomicPatterns,reactionCenter,context
 
  
 def getMapping(mapp,site):
     for mapping in mapp:
         if site in mapping:
-            # ⚡ Bolt: Use next() with generator instead of list comprehension + [0] for O(1) best-case early exit
-            return next((x for x in mapping if x != site), None)
+            # ⚡ Bolt: Use simple for loop instead of generator expression to avoid generator initialization overhead, providing a much faster O(1) early exit
+            for x in mapping:
+                if x != site:
+                    return x
+            return None
 
          
 def extractTransformations(rules):
@@ -126,9 +127,13 @@ def extractTransformations(rules):
     # resolving bond wildcards
     wildcards = [x for x in atomicArray if '!+' in x]
     bondedpatterns = [x for x in atomicArray if '!' in x and x not in wildcards]
+    prefix_cache = {}
     for item in wildcards:
-    	loc = string.find(item,'+')
-    	selected_bondedpatterns = [x for x in bondedpatterns if item[0:loc] in x]
+	loc = item.find('+')
+	prefix = item[:loc]
+	if prefix not in prefix_cache:
+		prefix_cache[prefix] = [x for x in bondedpatterns if prefix in x]
+	selected_bondedpatterns = prefix_cache[prefix]
 
     	for idx,set1 in enumerate(transformationContext):
     		if item in set1:
@@ -194,9 +199,18 @@ def createTransformationPairs(t2pReactant,t2pProduct,t2pContext):
 	tr_id_list.update([x for x,y in t2pProduct])
 	reactDict = dict()
 	prodDict = dict()
+
+	# Pre-group elements to avoid O(N^2) lists comprehensions inside the loop
+	reactant_grouped = {}
+	for x, y in t2pReactant:
+		reactant_grouped.setdefault(x, []).append(y)
+	product_grouped = {}
+	for x, y in t2pProduct:
+		product_grouped.setdefault(x, []).append(y)
+
 	for tr in tr_id_list:
-		r = [y for x,y in t2pReactant if x==tr]
-		p = [y for x,y in t2pProduct if x==tr]
+		r = reactant_grouped.get(tr, [])
+		p = product_grouped.get(tr, [])
 		#print r,p
 		
 		reactDict[tr] = r
@@ -222,7 +236,7 @@ def createTransformationPairs(t2pReactant,t2pProduct,t2pContext):
 def sortTransformationPairs(trPairs,transformationDict):
 
 	trPairs2 = []
-	tDict = dict([[v,k] for k,v in transformationDict.items()])
+	tDict = {v: k for k, v in transformationDict.items()}
 	for tr1,tr2 in trPairs:
 		lhs = tDict[tr1][0]
 		rhs = tDict[tr1][1]
@@ -239,11 +253,20 @@ def remapToTransformationPairs(trPairs,t2pReactant,t2pProduct,t2pContext):
 	rc = []
 	fi = []
 	ri = []
+
+	# Pre-group context and reactants to avoid O(N^2) list comprehensions
+	reactant_grouped = {}
+	for x, y in t2pReactant:
+		reactant_grouped.setdefault(x, []).append(y)
+	context_grouped = {}
+	for x, y in t2pContext:
+		context_grouped.setdefault(x, []).append(y)
+
 	for trPair in trPairs:
-		fc_items = [y for x,y in t2pReactant if x==trPair[0]]
-		rc_items = [y for x,y in t2pReactant if x==trPair[1]]
-		fi_items = [y for x,y in t2pContext if x==trPair[0]]
-		ri_items = [y for x,y in t2pContext if x==trPair[1]]	
+		fc_items = reactant_grouped.get(trPair[0], [])
+		rc_items = reactant_grouped.get(trPair[1], [])
+		fi_items = context_grouped.get(trPair[0], [])
+		ri_items = context_grouped.get(trPair[1], [])
 		for item in fc_items:
 			fc.append([tuple(trPair),item])
 		for item in rc_items:
@@ -280,11 +303,17 @@ def summarizeModel(patternDict,transformationDict,atomicPatternAnnotations,trans
 		f.write('\n\n')
 			
 		# Summarizing Context Annotations	
-		invPatternDict = dict((v,k) for k,v in patternDict.items())
+		invPatternDict = {v: k for k, v in patternDict.items()}
 		f.write('Model interactions:\n')
+
+		# Pre-group context items by transformation ID to convert O(N*M) list comprehensions into O(1) lookups
+		t2pContext_grouped = {}
+		for item in t2pContext:
+			t2pContext_grouped.setdefault(item[0], []).append(item[1])
+
 		for tr,tr_id in transformationDict.items():
 			f.write("Process: "+transformationAnnotations[tr]+"(" + str(tr_id) + ")\n")
-			annot_list = [(str(atomicPatternAnnotations[invPatternDict[item[1]]])+ "(" + str(item[1]) + ")" ) for item in t2pContext if item[0]==tr_id]
+			annot_list = [(str(atomicPatternAnnotations[invPatternDict[p_id]])+ "(" + str(p_id) + ")" ) for p_id in t2pContext_grouped.get(tr_id, [])]
 			f.write("Kinetic Modifiers: " + ', '.join(annot_list)+"\n\n")
 		
 def writeAnnotationFiles(atomicPatternAnnotations,transformationAnnotations,patternDict,transformationDict):
@@ -613,16 +642,17 @@ if __name__ == "__main__":
 					print lev
 						
 			
-			options_string = ''
+			options_list = []
 			if args.use_annot:
-				options_string = options_string + 'a'	
+				options_list.append('a')
 
 			if not args.no_r:
-				options_string = options_string + 'r'
+				options_list.append('r')
 			if not args.no_c:
-				options_string = options_string + 'c'
+				options_list.append('c')
 			if not args.no_p:
-				options_string = options_string + 'p'
+				options_list.append('p')
+			options_string = ''.join(options_list)
 			print "Generating dot file."
 			writeDot(patternDict,transformationDict,atomicPatternAnnotations,transformationAnnotations,t2pReactant, t2pProduct, t2pContext,options_string)
 			

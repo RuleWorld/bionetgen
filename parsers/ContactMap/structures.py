@@ -192,7 +192,7 @@ class Species:
     def extend(self,species,update=True):
         if(len(self.molecules) == len(species.molecules)):
             for (selement,oelement) in zip(self.molecules,species.molecules):
-                selement_component_names = set(x.name for x in selement.components)
+                selement_component_names = {x.name for x in selement.components}
                 for component in oelement.components:
                     if component.name not in selement_component_names:
                         selement.components.append(component)
@@ -204,18 +204,18 @@ class Species:
                                 break
                                 
         else:
-            self_molecule_names = set(x.name for x in self.molecules)
+            self_molecule_names = {x.name for x in self.molecules}
             for element in species.molecules:
                 if element.name not in self_molecule_names:
-                    self.addMolecule(deepcopy(element),update)
+                    self.addMolecule(element.copy(),update)
                     self_molecule_names.add(element.name)
                 else:
                     for molecule in self.molecules:
                         if molecule.name == element.name:
-                            molecule_component_names = set(x.name for x in molecule.components)
+                            molecule_component_names = {x.name for x in molecule.components}
                             for component in element.components:
                                 if component.name not in molecule_component_names:
-                                    molecule.addComponent(deepcopy(component),update)
+                                    molecule.addComponent(component.copy(),update)
                                     molecule_component_names.add(component.name)
                                 else:
                                     comp = molecule.getComponent(component.name)
@@ -419,10 +419,12 @@ class Molecule:
         if not overlap:
             self.components.append(component)
         else:
-            if not component.name in set(x.name for x in self.components):
+            # ⚡ Bolt: Use getComponent directly to combine existence check and retrieval,
+            # avoiding an O(N) generator expression traversal.
+            compo = self.getComponent(component.name)
+            if compo is None:
                 self.components.append(component)
             else:
-                compo = self.getComponent(component.name)
                 for state in component.states:
                     compo.addState(state)
     
@@ -439,7 +441,8 @@ class Molecule:
         
     def getComponent(self,componentName):
         for component in self.components:
-            if componentName == component.getName():
+            # ⚡ Bolt: Direct attribute access is faster than method call overhead
+            if componentName == component.name:
                 return component
                 
     def removeComponent(self,componentName):
@@ -472,12 +475,10 @@ class Molecule:
         
     def __str__(self):
         self.components = sorted(self.components,key = lambda st:st.name)
-        finalStr =  self.name
-        if len(self.components) > 0:
-            finalStr += '(' + ','.join([str(x) for x in self.components]) + ')' 
-        if self.compartment != '':
-            finalStr += '@' + self.compartment
-        return finalStr
+        components_str = '(' + ','.join([str(x) for x in self.components]) + ')' if self.components else ''
+        compartment_str = '@' + self.compartment if self.compartment else ''
+        # ⚡ Bolt: Use single f-string to prevent intermediate string allocations
+        return f"{self.name}{components_str}{compartment_str}"
         
     def toString(self):
         return self.__str__()
@@ -498,7 +499,7 @@ class Molecule:
 
         for element in molecule.components:
             if element.name not in comp_dict:
-                new_comp = deepcopy(element)
+                new_comp = element.copy()
                 self.components.append(new_comp)
                 comp_dict[element.name] = new_comp
             else:
@@ -513,10 +514,10 @@ class Molecule:
             element.reset()
             
     def update(self,molecule):
-        self_component_names = set(x.name for x in self.components)
+        self_component_names = {x.name for x in self.components}
         for comp in molecule.components:
             if comp.name not in self_component_names:
-                self.components.append(deepcopy(comp))
+                self.components.append(comp.copy())
                 self_component_names.add(comp.name)
                 
     def graphVizGraph(self,graph,identifier,components=None,flag=False):
@@ -622,12 +623,10 @@ class Component:
         return True
         
     def getRuleStr(self):
-        tmp = self.name
-        if len(self.bonds) > 0:
-            tmp += '!' + '!'.join([str(x) for x in self.bonds])
-        if self.activeState != '':
-            tmp += '~' + self.activeState
-        return tmp
+        bonds_str = '!' + '!'.join([str(x) for x in self.bonds]) if self.bonds else ''
+        state_str = '~' + self.activeState if self.activeState else ''
+        # ⚡ Bolt: Use single f-string to prevent intermediate string allocations
+        return f"{self.name}{bonds_str}{state_str}"
         
     def getTotalStr(self):
         return self.name + '~'.join(self.states)
@@ -639,12 +638,10 @@ class Component:
         return self.getRuleStr()
         
     def str2(self):
-        tmp = self.name
-        if len(self.bonds) > 0:
-            tmp += '!' + '!'.join([str(x) for x in self.bonds])
-        if len(self.states) > 0:
-            tmp += '~' + '~'.join([str(x) for x in self.states])
-        return tmp        
+        bonds_str = '!' + '!'.join([str(x) for x in self.bonds]) if self.bonds else ''
+        states_str = '~' + '~'.join([str(x) for x in self.states]) if self.states else ''
+        # ⚡ Bolt: Use single f-string to prevent intermediate string allocations
+        return f"{self.name}{bonds_str}{states_str}"
         
     def __hash__(self):
         return self.name

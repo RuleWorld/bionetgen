@@ -1,0 +1,17 @@
+begin model
+begin parameters
+  k1 1.0
+  k2 1.0
+  k3 1.0
+end parameters
+
+begin species
+  A() 100
+  B() 100
+end species
+
+begin reactions
+  A() -> B() Hill(k1,k2,k3)
+end reactions
+end model
+generate_network({overwrite=>1})

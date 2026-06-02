@@ -1093,9 +1093,10 @@ Elt_array* read_Elt_array(FILE* datfile, int* line_number, char* name, int* n_re
 				char buf[1000], c;
 
 				// Look for prefactor
-				if (sscanf(tokens[n_tok], "%lf*%s", &factor, buf) != 2) {
+				if (sscanf(tokens[n_tok], "%lf*%999s", &factor, buf) != 2) {
 					factor = 1;
-					strcpy(buf, tokens[n_tok]);
+					strncpy(buf, tokens[n_tok], 999);
+					buf[999] = '\0';
 				}
 
 				// Try to obtain numerical value for elt, or lookup parameter
@@ -1331,14 +1332,15 @@ Group* read_Groups(Group* glist, FILE* datfile, Elt_array* earray, int* line_num
 				double factor;
 				char buf[1000];
 
-				if (sscanf(tokens[n_tok], "%lf*%s", &factor, buf) == 2) {
+				if (sscanf(tokens[n_tok], "%lf*%999s", &factor, buf) == 2) {
 					if (!elt_factor) {
 						elt_factor = ALLOC_VECTOR(n_elt);
 						INIT_VECTOR(elt_factor, 1.0, n_elt);
 					}
 					elt_factor[i] = factor;
 				} else {
-					strcpy(buf, tokens[n_tok]);
+					strncpy(buf, tokens[n_tok], 999);
+					buf[999] = '\0';
 				}
 
 				if (sscanf(buf, "%d", elt_index + i) != 1) {
@@ -1998,6 +2000,7 @@ Rxn_array* read_Rxn_array(FILE* datfile, int* line_number, int* n_read, Elt_arra
 	int* rateLaw_indices = NULL;
 	double stat_factor;
 	int perr;
+		int rperr;
 	int n_tok, i;
 	char buf[1000];
 	enum { FMT_NONE, FMT_DFLT };
@@ -2070,8 +2073,9 @@ Rxn_array* read_Rxn_array(FILE* datfile, int* line_number, int* n_read, Elt_arra
 			}
 			++n_tok;
 			// Find optional statistical factor for reaction
-			if (sscanf(tokens[n_tok], "%lf*%s", &stat_factor, buf) == 2) {
-				strcpy(tokens[n_tok], buf);
+			if (sscanf(tokens[n_tok], "%lf*%999s", &stat_factor, buf) == 2) {
+				strncpy(tokens[n_tok], buf, strlen(tokens[n_tok]));
+				tokens[n_tok][strlen(tokens[n_tok])] = '\0';
 			}
 			else {
 				stat_factor = 1.0;
@@ -2115,26 +2119,38 @@ Rxn_array* read_Rxn_array(FILE* datfile, int* line_number, int* n_read, Elt_arra
 			rateLaw_indices = (int *) malloc(n_rateLaw_tokens * sizeof(int));
 
 			// Check that number of rate constants is correct for rateLaw type
-			// TODO: Check that number of reactants and products is also correct
+			// Check that number of reactants and products is also correct
 			perr = 0;
+			rperr = 0;
 			switch (rateLaw_type) {
 			case ELEMENTARY:
 				perr = (n_rateLaw_tokens != 1);
 				break;
 			case SATURATION:
-				perr = (n_rateLaw_tokens == 0) || (n_rateLaw_tokens > (n_reactants + 1));
+				rperr = (n_rateLaw_tokens > 1 && n_reactants < 1);
+				perr = (n_rateLaw_tokens == 0) || ((n_rateLaw_tokens > (n_reactants + 1)) && !rperr);
 				break;
 			case HILL:
 				perr = (n_rateLaw_tokens == 0) || (n_rateLaw_tokens != 3);
+				rperr = (n_reactants != 2) || (n_products != 2);
 				break;
 			case MICHAELIS_MENTEN:
 				perr = (n_rateLaw_tokens != 2);
+				rperr = (n_reactants != 2) || (n_products != 2);
 				break;
 			}
 			if (perr) {
 				fprintf(
 						stderr,
 						"Incorrect number of rate constants for reaction type at line %d.\n",
+						*line_number);
+				++error;
+				goto cleanup;
+			}
+			if (rperr) {
+				fprintf(
+						stderr,
+						"Incorrect number of reactants or products for reaction type at line %d.\n",
 						*line_number);
 				++error;
 				goto cleanup;
@@ -3293,14 +3309,11 @@ void derivs_network(double t, double* conc, double* derivs) {
 }
 
 int print_derivs_network(FILE* out) {
-	int i/*,j*/;
+	int i;
 	int error = 0, n_species;
-//	double *X = NULL, *dX = NULL;
 
 	n_species = n_species_network();
-//	X = ALLOC_VECTOR(n_species);
 	double X[n_species];
-//	dX = ALLOC_VECTOR(n_species);
 	double dX[n_species];
 
 	// Compute time derivs of species concentration by reaction
@@ -3319,14 +3332,11 @@ int print_derivs_network(FILE* out) {
 	}
 	fprintf(out, "end derivs\n");
 
-//	exit:
-//	if (X) FREE_VECTOR(X);
-//	if (dX) FREE_VECTOR(dX);
 	return (error);
 }
 
 int print_derivs_species_network(FILE* out) {
-	int i/*,j*/;
+	int i;
 	int error = 0, n_species;
 	double *X = NULL, *dX = NULL;
 
@@ -3347,7 +3357,6 @@ int print_derivs_species_network(FILE* out) {
 	}
 	fprintf(out, "end derivs_species\n");
 
-//	exit:
 	if (X) FREE_VECTOR(X);
 	if (dX) FREE_VECTOR(dX);
 	return (error);
@@ -3356,7 +3365,7 @@ int print_derivs_species_network(FILE* out) {
 int print_rates_network(FILE* out, int discrete) {
 
 	int i;
-	int error = 0, /*n_species,*/n_reactions;
+	int error = 0, n_reactions;
 	double* rates_rxn = NULL;
 	Rxn** rxns;
 	n_reactions = n_rxns_network();
@@ -3375,7 +3384,6 @@ int print_rates_network(FILE* out, int discrete) {
 		}
 	}
 	fprintf(out, "end reaction_rates\n");
-//	exit:
 	if (rates_rxn) FREE_VECTOR(rates_rxn);
 	return (error);
 }

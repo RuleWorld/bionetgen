@@ -43,6 +43,7 @@ struct OdeResult {
 class OdeIntegrator {
 public:
     OdeIntegrator(const ast::Model& model, const GeneratedNetwork& network);
+    ~OdeIntegrator();
 
     OdeResult integrate(const OdeOptions& options);
     void writeOutputFiles(const std::string& prefix, const OdeResult& result, bool printCDAT = true, bool printFunctions = false, bool append = false) const;
@@ -79,6 +80,8 @@ private:
     std::unordered_map<std::string, std::size_t> observableIndex_; // O(1) observable lookup
     std::vector<std::size_t> constantRxnIndices_;              // Indices of constant-rate reactions
     std::vector<std::size_t> functionalRxnIndices_;            // Indices of functional-rate reactions
+    std::unordered_map<std::string, const ast::Expression*> functionMap_; // O(1) function lookup
+    std::vector<std::vector<std::size_t>> ssaRxnUpdateRxn_;    // Reaction dependency graph for SSA
 
     void compile();
     void compileGroups();

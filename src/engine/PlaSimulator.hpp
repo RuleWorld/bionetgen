@@ -61,6 +61,7 @@ enum class RxnClass {
  * Reference: bng2/Network3/src/pla/PLA.hh, PLA.cpp
  */
 class PlaSimulator {
+    friend class PlaSimulatorTestProxy;
 public:
     PlaSimulator(const ast::Model& model, const GeneratedNetwork& network);
 

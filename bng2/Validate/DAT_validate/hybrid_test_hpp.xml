@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Created by BioNetGen 2.8.0  -->
+<!-- Created by BioNetGen 2.9.3  -->
 <sbml xmlns="http://www.sbml.org/sbml/level3" level="3" version="1">
   <model id="hybrid_test_hpp">
     <ListOfParameters>
@@ -215,7 +215,7 @@
             <ListOfMolecules>
               <Molecule id="RR4_RP1_M1" name="L">
                 <ListOfComponents>
-                  <Component id="RR4_RP1_M1_C1" name="r" numberOfBonds="+"/>
+                  <Component id="RR4_RP1_M1_C1" name="r" label="T1" numberOfBonds="+"/>
                   <Component id="RR4_RP1_M1_C2" name="r" numberOfBonds="0"/>
                   <Component id="RR4_RP1_M1_C3" name="r" numberOfBonds="0"/>
                 </ListOfComponents>
@@ -237,8 +237,8 @@
             <ListOfMolecules>
               <Molecule id="RR4_PP1_M1" name="L">
                 <ListOfComponents>
-                  <Component id="RR4_PP1_M1_C1" name="r" numberOfBonds="+"/>
-                  <Component id="RR4_PP1_M1_C2" name="r" numberOfBonds="1"/>
+                  <Component id="RR4_PP1_M1_C1" name="r" numberOfBonds="1"/>
+                  <Component id="RR4_PP1_M1_C2" name="r" label="T1" numberOfBonds="+"/>
                   <Component id="RR4_PP1_M1_C3" name="r" numberOfBonds="0"/>
                 </ListOfComponents>
               </Molecule>
@@ -249,7 +249,7 @@
               </Molecule>
             </ListOfMolecules>
             <ListOfBonds>
-              <Bond id="RR4_PP1_B1" site1="RR4_PP1_M1_C2" site2="RR4_PP1_M2_C1"/>
+              <Bond id="RR4_PP1_B1" site1="RR4_PP1_M1_C1" site2="RR4_PP1_M2_C1"/>
             </ListOfBonds>
           </ProductPattern>
         </ListOfProductPatterns>
@@ -260,8 +260,8 @@
         </RateLaw>
         <Map>
           <MapItem sourceID="RR4_RP1_M1" targetID="RR4_PP1_M1"/>
-          <MapItem sourceID="RR4_RP1_M1_C1" targetID="RR4_PP1_M1_C1"/>
-          <MapItem sourceID="RR4_RP1_M1_C2" targetID="RR4_PP1_M1_C2"/>
+          <MapItem sourceID="RR4_RP1_M1_C1" targetID="RR4_PP1_M1_C2"/>
+          <MapItem sourceID="RR4_RP1_M1_C2" targetID="RR4_PP1_M1_C1"/>
           <MapItem sourceID="RR4_RP1_M1_C3" targetID="RR4_PP1_M1_C3"/>
           <MapItem sourceID="RR4_RP2_M1" targetID="RR4_PP1_M2"/>
           <MapItem sourceID="RR4_RP2_M1_C1" targetID="RR4_PP1_M2_C1"/>
@@ -276,7 +276,7 @@
             <ListOfMolecules>
               <Molecule id="RR5_RP1_M1" name="L">
                 <ListOfComponents>
-                  <Component id="RR5_RP1_M1_C1" name="r" numberOfBonds="+"/>
+                  <Component id="RR5_RP1_M1_C1" name="r" label="T1" numberOfBonds="+"/>
                   <Component id="RR5_RP1_M1_C2" name="r" numberOfBonds="0"/>
                   <Component id="RR5_RP1_M1_C3" name="r" numberOfBonds="0"/>
                 </ListOfComponents>
@@ -294,8 +294,8 @@
             <ListOfMolecules>
               <Molecule id="RR5_PP1_M1" name="L">
                 <ListOfComponents>
-                  <Component id="RR5_PP1_M1_C1" name="r" numberOfBonds="+"/>
-                  <Component id="RR5_PP1_M1_C2" name="r" numberOfBonds="1"/>
+                  <Component id="RR5_PP1_M1_C1" name="r" numberOfBonds="1"/>
+                  <Component id="RR5_PP1_M1_C2" name="r" label="T1" numberOfBonds="+"/>
                   <Component id="RR5_PP1_M1_C3" name="r" numberOfBonds="0"/>
                 </ListOfComponents>
               </Molecule>
@@ -307,7 +307,7 @@
               </Molecule>
             </ListOfMolecules>
             <ListOfBonds>
-              <Bond id="RR5_PP1_B1" site1="RR5_PP1_M1_C2" site2="RR5_PP1_M2_C1"/>
+              <Bond id="RR5_PP1_B1" site1="RR5_PP1_M1_C1" site2="RR5_PP1_M2_C1"/>
             </ListOfBonds>
           </ProductPattern>
         </ListOfProductPatterns>
@@ -318,8 +318,8 @@
         </RateLaw>
         <Map>
           <MapItem sourceID="RR5_RP1_M1" targetID="RR5_PP1_M1"/>
-          <MapItem sourceID="RR5_RP1_M1_C1" targetID="RR5_PP1_M1_C1"/>
-          <MapItem sourceID="RR5_RP1_M1_C2" targetID="RR5_PP1_M1_C2"/>
+          <MapItem sourceID="RR5_RP1_M1_C1" targetID="RR5_PP1_M1_C2"/>
+          <MapItem sourceID="RR5_RP1_M1_C2" targetID="RR5_PP1_M1_C1"/>
           <MapItem sourceID="RR5_RP1_M1_C3" targetID="RR5_PP1_M1_C3"/>
           <MapItem sourceID="RR5_RP2_M1"/>
         </Map>
@@ -335,8 +335,8 @@
             <ListOfMolecules>
               <Molecule id="RR6_RP1_M1" name="L">
                 <ListOfComponents>
-                  <Component id="RR6_RP1_M1_C1" name="r" numberOfBonds="+"/>
-                  <Component id="RR6_RP1_M1_C2" name="r" numberOfBonds="+"/>
+                  <Component id="RR6_RP1_M1_C1" name="r" label="T1" numberOfBonds="+"/>
+                  <Component id="RR6_RP1_M1_C2" name="r" label="T2" numberOfBonds="+"/>
                   <Component id="RR6_RP1_M1_C3" name="r" numberOfBonds="0"/>
                 </ListOfComponents>
               </Molecule>
@@ -357,9 +357,9 @@
             <ListOfMolecules>
               <Molecule id="RR6_PP1_M1" name="L">
                 <ListOfComponents>
-                  <Component id="RR6_PP1_M1_C1" name="r" numberOfBonds="+"/>
-                  <Component id="RR6_PP1_M1_C2" name="r" numberOfBonds="+"/>
-                  <Component id="RR6_PP1_M1_C3" name="r" numberOfBonds="1"/>
+                  <Component id="RR6_PP1_M1_C1" name="r" numberOfBonds="1"/>
+                  <Component id="RR6_PP1_M1_C2" name="r" label="T1" numberOfBonds="+"/>
+                  <Component id="RR6_PP1_M1_C3" name="r" label="T2" numberOfBonds="+"/>
                 </ListOfComponents>
               </Molecule>
               <Molecule id="RR6_PP1_M2" name="R">
@@ -369,7 +369,7 @@
               </Molecule>
             </ListOfMolecules>
             <ListOfBonds>
-              <Bond id="RR6_PP1_B1" site1="RR6_PP1_M1_C3" site2="RR6_PP1_M2_C1"/>
+              <Bond id="RR6_PP1_B1" site1="RR6_PP1_M1_C1" site2="RR6_PP1_M2_C1"/>
             </ListOfBonds>
           </ProductPattern>
         </ListOfProductPatterns>
@@ -380,9 +380,9 @@
         </RateLaw>
         <Map>
           <MapItem sourceID="RR6_RP1_M1" targetID="RR6_PP1_M1"/>
-          <MapItem sourceID="RR6_RP1_M1_C1" targetID="RR6_PP1_M1_C1"/>
-          <MapItem sourceID="RR6_RP1_M1_C2" targetID="RR6_PP1_M1_C2"/>
-          <MapItem sourceID="RR6_RP1_M1_C3" targetID="RR6_PP1_M1_C3"/>
+          <MapItem sourceID="RR6_RP1_M1_C1" targetID="RR6_PP1_M1_C2"/>
+          <MapItem sourceID="RR6_RP1_M1_C2" targetID="RR6_PP1_M1_C3"/>
+          <MapItem sourceID="RR6_RP1_M1_C3" targetID="RR6_PP1_M1_C1"/>
           <MapItem sourceID="RR6_RP2_M1" targetID="RR6_PP1_M2"/>
           <MapItem sourceID="RR6_RP2_M1_C1" targetID="RR6_PP1_M2_C1"/>
         </Map>
@@ -396,8 +396,8 @@
             <ListOfMolecules>
               <Molecule id="RR7_RP1_M1" name="L">
                 <ListOfComponents>
-                  <Component id="RR7_RP1_M1_C1" name="r" numberOfBonds="+"/>
-                  <Component id="RR7_RP1_M1_C2" name="r" numberOfBonds="+"/>
+                  <Component id="RR7_RP1_M1_C1" name="r" label="T1" numberOfBonds="+"/>
+                  <Component id="RR7_RP1_M1_C2" name="r" label="T2" numberOfBonds="+"/>
                   <Component id="RR7_RP1_M1_C3" name="r" numberOfBonds="0"/>
                 </ListOfComponents>
               </Molecule>
@@ -414,9 +414,9 @@
             <ListOfMolecules>
               <Molecule id="RR7_PP1_M1" name="L">
                 <ListOfComponents>
-                  <Component id="RR7_PP1_M1_C1" name="r" numberOfBonds="+"/>
-                  <Component id="RR7_PP1_M1_C2" name="r" numberOfBonds="+"/>
-                  <Component id="RR7_PP1_M1_C3" name="r" numberOfBonds="1"/>
+                  <Component id="RR7_PP1_M1_C1" name="r" numberOfBonds="1"/>
+                  <Component id="RR7_PP1_M1_C2" name="r" label="T1" numberOfBonds="+"/>
+                  <Component id="RR7_PP1_M1_C3" name="r" label="T2" numberOfBonds="+"/>
                 </ListOfComponents>
               </Molecule>
               <Molecule id="RR7_PP1_M2" name="R">
@@ -427,7 +427,7 @@
               </Molecule>
             </ListOfMolecules>
             <ListOfBonds>
-              <Bond id="RR7_PP1_B1" site1="RR7_PP1_M1_C3" site2="RR7_PP1_M2_C1"/>
+              <Bond id="RR7_PP1_B1" site1="RR7_PP1_M1_C1" site2="RR7_PP1_M2_C1"/>
             </ListOfBonds>
           </ProductPattern>
         </ListOfProductPatterns>
@@ -438,9 +438,9 @@
         </RateLaw>
         <Map>
           <MapItem sourceID="RR7_RP1_M1" targetID="RR7_PP1_M1"/>
-          <MapItem sourceID="RR7_RP1_M1_C1" targetID="RR7_PP1_M1_C1"/>
-          <MapItem sourceID="RR7_RP1_M1_C2" targetID="RR7_PP1_M1_C2"/>
-          <MapItem sourceID="RR7_RP1_M1_C3" targetID="RR7_PP1_M1_C3"/>
+          <MapItem sourceID="RR7_RP1_M1_C1" targetID="RR7_PP1_M1_C2"/>
+          <MapItem sourceID="RR7_RP1_M1_C2" targetID="RR7_PP1_M1_C3"/>
+          <MapItem sourceID="RR7_RP1_M1_C3" targetID="RR7_PP1_M1_C1"/>
           <MapItem sourceID="RR7_RP2_M1"/>
         </Map>
         <ListOfOperations>
@@ -525,7 +525,7 @@
     <ListOfObservables>
       <Observable id="O1" name="Rfree" type="Molecules" output="1">
         <ListOfPatterns>
-          <Pattern id="O1_P1">
+          <Pattern id="O1_P1" automorphisms="2">
             <ListOfMolecules>
               <Molecule id="O1_P1_M1" name="R">
                 <ListOfComponents>
@@ -549,7 +549,7 @@
       </Observable>
       <Observable id="O2" name="Lfree" type="Molecules" output="1">
         <ListOfPatterns>
-          <Pattern id="O2_P1">
+          <Pattern id="O2_P1" automorphisms="6">
             <ListOfMolecules>
               <Molecule id="O2_P1_M1" name="L">
                 <ListOfComponents>
@@ -594,7 +594,7 @@
       </Observable>
       <Observable id="O3" name="Rtot" type="Molecules" output="1">
         <ListOfPatterns>
-          <Pattern id="O3_P1">
+          <Pattern id="O3_P1" automorphisms="1">
             <ListOfMolecules>
               <Molecule id="O3_P1_M1" name="R"/>
             </ListOfMolecules>
@@ -608,7 +608,7 @@
       </Observable>
       <Observable id="O4" name="Ltot" type="Molecules" output="1">
         <ListOfPatterns>
-          <Pattern id="O4_P1">
+          <Pattern id="O4_P1" automorphisms="1">
             <ListOfMolecules>
               <Molecule id="O4_P1_M1" name="L"/>
             </ListOfMolecules>
@@ -622,7 +622,7 @@
       </Observable>
       <Observable id="O5" name="LRmotif" type="Molecules" output="1">
         <ListOfPatterns>
-          <Pattern id="O5_P1">
+          <Pattern id="O5_P1" automorphisms="1">
             <ListOfMolecules>
               <Molecule id="O5_P1_M1" name="L">
                 <ListOfComponents>
@@ -643,7 +643,7 @@
       </Observable>
       <Observable id="O6" name="R2" type="Species" output="1">
         <ListOfPatterns>
-          <Pattern id="O6_P1" relation="==" quantity="2">
+          <Pattern id="O6_P1" automorphisms="1" relation="==" quantity="2">
             <ListOfMolecules>
               <Molecule id="O6_P1_M1" name="R"/>
             </ListOfMolecules>
@@ -652,7 +652,7 @@
       </Observable>
       <Observable id="O7" name="R3" type="Species" output="1">
         <ListOfPatterns>
-          <Pattern id="O7_P1" relation="==" quantity="3">
+          <Pattern id="O7_P1" automorphisms="1" relation="==" quantity="3">
             <ListOfMolecules>
               <Molecule id="O7_P1_M1" name="R"/>
             </ListOfMolecules>
@@ -661,7 +661,7 @@
       </Observable>
       <Observable id="O8" name="R4" type="Species" output="1">
         <ListOfPatterns>
-          <Pattern id="O8_P1" relation="==" quantity="4">
+          <Pattern id="O8_P1" automorphisms="1" relation="==" quantity="4">
             <ListOfMolecules>
               <Molecule id="O8_P1_M1" name="R"/>
             </ListOfMolecules>
@@ -670,7 +670,7 @@
       </Observable>
       <Observable id="O9" name="R5" type="Species" output="1">
         <ListOfPatterns>
-          <Pattern id="O9_P1" relation=">" quantity="4">
+          <Pattern id="O9_P1" automorphisms="1" relation=">" quantity="4">
             <ListOfMolecules>
               <Molecule id="O9_P1_M1" name="R"/>
             </ListOfMolecules>

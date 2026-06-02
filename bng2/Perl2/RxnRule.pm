@@ -24,9 +24,6 @@ use RefineRule;
 
 
 
-# TODO: implement TotalRate feature for Network simulations
-# (currently implemented only for XML network-free output)
-#   --Justin  2dec2010
 
 struct RxnRule =>
 {
@@ -982,7 +979,6 @@ sub toStringSSC
 	    if ( $p == 1 ) {
 		    if ( exists $pattern2{$m} ) {
 		    	$curLabel = $pattern2{$m};
-		    	++$mol_index;   # TODO: missing increment here, is this correct now?  --Justin, 15dec2010
 		    }
 		    else {
 		    	$pattern2{$m} = $mol_index;
@@ -3345,12 +3341,15 @@ sub build_reaction
     
 	# Add any reactants with Fixed attribute to products list
 	# to insure concentration does not change
-    # TODO: the Fixed reactant feature will be depreacted in a future release
 	my $ri = 0;
+	our $warned_fixed_reactant;
 	foreach my $rpatt ( @{$rr->Reactants} )
 	{
 		if ( $rpatt->Fixed )
-		{   push @$product_species, $reactant_species->[$ri];   }
+		{
+			send_warning("The Fixed reactant feature will be deprecated in a future release.") unless $warned_fixed_reactant++;
+			push @$product_species, $reactant_species->[$ri];
+		}
 		++$ri;
 	}
         
@@ -3732,8 +3731,10 @@ sub apply_operations
 			# Should add pointer from product pattern to new molecules in $g
 
 			# save molecule addition for canonical labeling
-			# TODO: get real canonical label for molecule!!
-			push @$stack, $newMol->toString;
+			my $sg_tmp = SpeciesGraph->new();
+			push @{$sg_tmp->Molecules}, $newMol->copy();
+			$sg_tmp->sortLabel();
+			push @$stack, $sg_tmp->StringExact;
 		}
 
 		# add molecule addition operations to the canonical label
@@ -3996,7 +3997,7 @@ sub apply_operations
 				}
 				$ip1++;
 			}
-			unless ( defined $ref1 ) {  $ref1 = $g_ref1;  }
+			unless ( defined $ref1 ) {  $ref1 = '-1.' . $eadd->[0];  }
 
 			# now for the other end of the edge...
 			my $ref2 = undef;
@@ -4016,13 +4017,12 @@ sub apply_operations
 				}
 				$ip2++;
 			}
-			unless ( defined $ref2 ) {  $ref2 = $g_ref2;  }
+			unless ( defined $ref2 ) {  $ref2 = '-1.' . $eadd->[1];  }
 
 			# APPLY edge addition now
 			$g->addEdge( "ne${nedge}", $g_ref1, $g_ref2 );
 			++$nedge;
 
-			# TODO: edges added to new molecules may not be in canonical form!
 			# save edge addition for canonical labeling
 			push @$stack, join( ',', sort cmp_pointer ( $ref1, $ref2 ) );
 		}

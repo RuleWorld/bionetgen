@@ -245,31 +245,13 @@ AddBond::transform ( Map & map )
     // local variables
     PatternGraph * graph;
     Node * bond_node;
-    //Node * target_node1;
-    //Node * target_node2;
-    node_iter_t  node_iter;
 
     // get target graph   
     graph = map.get_target_graph();
-    // get target nodes
-    //Node * target_node1 = map.mapf( node1 );
-    //Node * target_node2 = map.mapf( node2 );
 
     // delete old bond nodes
     graph->delete_node( map.mapf(bond1) );
     graph->delete_node( map.mapf(bond2) );
-
-    //// delete old child bond nodes, if any
-    //for ( node_iter = target_node1->edges_out_begin();  node_iter != target_node1->edges_out_end();  ++node_iter )
-    //{
-    //    if ( (*node_iter)->get_type() < BOND_NODE_TYPE )
-    //        graph->delete_node( *node_iter );
-    //}
-    //for ( node_iter = target_node2->edges_out_begin();  node_iter != target_node2->edges_out_end();  ++node_iter )
-    //{
-    //    if ( (*node_iter)->get_type() < BOND_NODE_TYPE )
-    //        graph->delete_node( *node_iter );
-    //}
 
     // create bond node
     bond_node = new Node( BOND_NODE_TYPE );
@@ -406,32 +388,14 @@ DeleteBond::transform ( Map & map )
 {
     // local variables
     PatternGraph * graph;
-    Node * target_node1;
-    Node * target_node2;
     Node * nullbond1;
     Node * nullbond2;
-    node_iter_t  node_iter;
 
     // get target graph   
     graph = map.get_target_graph();
-    // get target nodes
-    //Node * target_node1 = map.mapf( node1 );
-    //Node * target_node2 = map.mapf( node2 );
 
     // delete bond node
     graph->delete_node( map.mapf(bond) );
-
-    //// delete old bond nodes, if any
-    //for ( node_iter = target_node1->edges_out_begin();  node_iter != target_node1->edges_out_end();  ++node_iter )
-    //{
-    //    if ( (*node_iter)->get_type() < BOND_NODE_TYPE )
-    //        graph.delete_node( *node_iter );
-    //}
-    //for ( node_iter = target_node2->edges_out_begin();  node_iter != target_node2->edges_out_end();  ++node_iter )
-    //{
-    //    if ( (*node_iter)->get_type() < BOND_NODE_TYPE )
-    //        graph.delete_node( *node_iter );
-    //}
 
     // create null bonds
     nullbond1 = new Node( BOND_NODE_TYPE );

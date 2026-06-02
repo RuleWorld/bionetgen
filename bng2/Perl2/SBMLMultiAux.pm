@@ -324,7 +324,7 @@ sub writeSBMLReactions
             {
                 $SBML .= sprintf  "          <speciesReference id=\"RR%d_R%d\" species=\"S%d\" constant=\"false\"/>\n", $index,$localCounter+1, $i;
                 $reactantHashHash{$localCounter}{'id'} = sprintf("RR%d_R%d",$index,$localCounter+1);
-                $reactantHashHash{$localCounter}{'sg'} = \%{dclone(\%{$speciesIdHash_ref->{'References'}})};
+                $reactantHashHash{$localCounter}{'sg'} = $speciesIdHash_ref->{'References'};
                 $localCounter += 1;
             }
             $SBML .=  "        </listOfReactants>\n";
@@ -338,36 +338,46 @@ sub writeSBMLReactions
             my $sfirstdot;
             my $tfirstdot;
             my $counter = 0;
+
+            # Construct mapF target hash outside of the loop for efficiency
+            my %mapF_by_target;
+            foreach my $source ( sort keys %{ $rxn->MapF } ) {
+                my $dots = $source =~ tr/././; #number of dots
+                #molecule information (2 dots is for component information)
+                if($dots == 1){
+                    my $target = $rxn->MapF->{$source};
+
+                    my $sfirstdot = index($source, ".");
+                    my $smolecule = substr($source, $sfirstdot+1, length($source));
+                    my $parsed_source = substr($source, 0, $sfirstdot);
+
+                    my $tfirstdot = index($target, ".");
+                    my $tmolecule = substr($target, $tfirstdot+1, length($target));
+                    my $parsed_target = substr($target, 0, $tfirstdot);
+
+                    if ($parsed_target =~ /^\d+?$/) {
+                        push @{ $mapF_by_target{$parsed_target} }, {
+                            source    => $parsed_source,
+                            smolecule => $smolecule,
+                            target    => $parsed_target,
+                            tmolecule => $tmolecule,
+                        };
+                    }
+                }
+            }
+
             foreach my $i (@pindices)
             {
 
-                my %productHash = %{dclone(\%{$speciesIdHash_ref->{'References'}})};
-
-                #FIXME: If i want to be efficient i should be constructing this outside of the loop and making a 
-                #hash containg this information
                 my $tmpSBML = '';
-                foreach my $source ( sort keys %{ $rxn->MapF } )
-                {
+                if (exists $mapF_by_target{$counter}) {
+                    foreach my $mapping ( @{ $mapF_by_target{$counter} } )
+                    {
+                        my $source    = $mapping->{source};
+                        my $smolecule = $mapping->{smolecule};
+                        my $target    = $mapping->{target};
+                        my $tmolecule = $mapping->{tmolecule};
 
-                    my $dots = $source =~ tr/././; #number of dots
-
-                    #molecule information (2 dots is for component information)
-                    if($dots == 1){
-
-                        my $target = $rxn->MapF->{$source};
-
-                        my $sfirstdot = index($source, ".");
-                        my $smolecule = substr($source, $sfirstdot+1, length($source));
-                        $source = substr($source, 0, $sfirstdot);
-                        
-
-                        my $tfirstdot = index($target, ".");
-                        my $tmolecule = substr($target, $sfirstdot+1, length($target));
-
-                        $target = substr($target, 0, $tfirstdot);
-                        unless ($target =~ /^\d+?$/) {
-                           next;
-                        }
                         if($target == $counter){
 
                             my $rspeciesType;
@@ -391,15 +401,17 @@ sub writeSBMLReactions
                                 
                                 my $reactantName = @{$reactant->Molecules}[$smolecule]->Name;
 
-                                # fixme: this shouldnt be zero, we should actually index the component we want, important if there are labels that change mapping order
-                                # that said, the index here is a $local$ index within the repeated elements of the same molecule type in a species
                                 #get the sbml multi id associated with this graph pattern's component id in the species type
 
-                                $rreverseReference = "cmp_" . $reactantHash->{$rspeciesType}{'moleculeReverseReferences'}{$reactantName}[0];
+                                my $rlocal_idx = 0;
+                                for (my $idx = 0; $idx < $smolecule; $idx++) {
+                                    if (@{$reactant->Molecules}[$idx]->Name eq $reactantName) {
+                                        $rlocal_idx++;
+                                    }
+                                }
+
+                                $rreverseReference = "cmp_" . $reactantHash->{$rspeciesType}{'moleculeReverseReferences'}{$reactantName}[$rlocal_idx];
                                 
-                                #fixme: once again it is not necessarely the first one that we are removing
-                                #we used this component so remove it from the available components pool
-                                splice(@{$reactantHash->{$rspeciesType}{'moleculeReverseReferences'}{$reactantName}}, 0, 1);
                             }
                             else{
                                 $rreverseReference =  $speciesIdHash_ref->{'Molecules'}->{@{$reactant->Molecules}[0]->Name};
@@ -408,8 +420,15 @@ sub writeSBMLReactions
                             if(scalar(@{$product->Molecules}) > 1){
                                 $pspeciesType = $speciesIdHash_ref->{'SpeciesType'}->{$psbmlMultiSpeciesTypeStr};
                                 my $productName = @{$product->Molecules}[$tmolecule]->Name;
-                                $preverseReference = "cmp_" . $productHash{$pspeciesType}{'moleculeReverseReferences'}{$productName}[0];
-                                splice(@{$productHash{$pspeciesType}{'moleculeReverseReferences'}{$productName}}, 0, 1);
+
+                                my $plocal_idx = 0;
+                                for (my $idx = 0; $idx < $tmolecule; $idx++) {
+                                    if (@{$product->Molecules}[$idx]->Name eq $productName) {
+                                        $plocal_idx++;
+                                    }
+                                }
+
+                                $preverseReference = "cmp_" . $speciesIdHash_ref->{'References'}->{$pspeciesType}{'moleculeReverseReferences'}{$productName}[$plocal_idx];
                             }
                             else{
                                 $preverseReference =  $speciesIdHash_ref->{'Molecules'}->{@{$product->Molecules}[0]->Name};   

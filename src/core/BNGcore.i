@@ -58,9 +58,7 @@ typedef  label_map_t::iterator                                           label_m
 typedef  std::pair < std::string, std::list <PatternGraph*>::iterator >  label_map_element_t;
 
 // Types for Ullmann subgraph algorithm
-typedef  std::map < Node*, node_container_t* >   ullmann_M_t;
-typedef  ullmann_M_t::iterator                   row_iter_t;
-typedef  ullmann_M_t::reverse_iterator           row_rev_iter_t;       
+typedef  std::vector < node_container_t >        ullmann_M_t;
 typedef  node_container_t::iterator              col_iter_t;
 
 // Types for the edge type maps in NodeType

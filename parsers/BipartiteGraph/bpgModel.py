@@ -315,7 +315,7 @@ class AtomizedRule:
 								self.context.append(AtomicPattern(makeBondWildcardPattern(mol,comp)))
 							else:
 								bonds.append([mol,comp,comp.bonds[0]])
-			bondnames = set([b for m,c,b in bonds])
+			bondnames = {b for m,c,b in bonds}
 			for bond in bondnames:
 				mc = [ [m,c] for m,c,b in bonds if b==bond]
 				if len(mc)==2:
@@ -346,13 +346,19 @@ class AtomizedRule:
 						# get bondname
 						bond = comp.bonds[0]
 						# find partner (should be in same pattern, should not be same component, should have same bondname, should not be in "other" transfomration
-						comp2list = [c for m in patt.molecules for c in m.components if (c.bonds and c.idx != c_idx and c.idx not in c_idxlist_other )]
-						for comp2 in comp2list:
-							if comp2.bonds[0] == bond:
-								p_idx2,m_idx2,c_idx2 = decompose_cidx(comp2.idx)
-								_,mol2,_ = getPMC(reactants,p_idx2,m_idx2,c_idx2)
-								# make the pattern
-								self.context.append(AtomicPattern(makeBondPattern([mol,comp],[mol2,comp2])))
+						# ⚡ Bolt: Use a direct loop instead of full list comprehension for early exit
+						found = False
+						for m in patt.molecules:
+							for c in m.components:
+								if c.bonds and c.idx != c_idx and c.idx not in c_idxlist_other:
+									if c.bonds[0] == bond:
+										p_idx2,m_idx2,c_idx2 = decompose_cidx(c.idx)
+										_,mol2,_ = getPMC(reactants,p_idx2,m_idx2,c_idx2)
+										# make the pattern
+										self.context.append(AtomicPattern(makeBondPattern([mol,comp],[mol2,c])))
+										found = True
+										break
+							if found: break
 			# for each component in "this" bond transformation, pick out its state patterns unless they were modified by "other" transformations
 			if tr.action in ['AddBond','DeleteBond']:
 				# there must be 2 components, so using forloop
@@ -369,8 +375,14 @@ class AtomizedRule:
 			# bond patterns will require you to look outside the created/deleted molecules
 			if tr.action in ['Add','Delete']:
 				patterns = reactants+products
-				# ⚡ Bolt: Use next() with generator instead of list comprehension + [0] for O(1) early exit
-				mol = next((m for patt in patterns for m in patt.molecules if m.idx==choppedrule.transf_center[idx][0]), None)
+				# ⚡ Bolt: Use simple for loop instead of generator expression to avoid generator initialization overhead, providing a much faster O(1) early exit
+				mol = None
+				for patt in patterns:
+					for m in patt.molecules:
+						if m.idx==choppedrule.transf_center[idx][0]:
+							mol = m
+							break
+					if mol: break
 				p_idx,m_idx = decompose_midx(mol.idx)
 				patt,_,_ = getPMC(patterns,p_idx,m_idx,None)
 				
@@ -392,18 +404,23 @@ class AtomizedRule:
 						# get the bond name
 						bond = comp.bonds[0]
 						# find partner (should be in same pattern, should not be same component, should have same bondname, 
-						comp2list = [c for m in patt.molecules for c in m.components if (c.bonds and c.idx != comp.idx)]
-						#comp2 = [c for m in patt.molecules for c in m.components if (c.idx != comp.idx and c.bonds[0] == bond )][0]
-						for comp2 in comp2list:
-							if comp2.bonds[0] == bond:
-								p_idx2,m_idx2,c_idx2 = decompose_cidx(comp2.idx)
-								_,mol2,_ = getPMC(patterns,p_idx2,m_idx2,c_idx2)
-								# make the pattern
-								self.syndel_context[idx].append(AtomicPattern(makeBondPattern([mol,comp],[mol2,comp2])))
-								if tr.action=='Add':
-									self.syncontext[idx].append(AtomicPattern(makeBondPattern([mol,comp],[mol2,comp2])))
-								else:
-									self.delcontext[idx].append(AtomicPattern(makeBondPattern([mol,comp],[mol2,comp2])))
+						# ⚡ Bolt: Use a direct loop instead of full list comprehension for early exit
+						found = False
+						for m in patt.molecules:
+							for c in m.components:
+								if c.bonds and c.idx != comp.idx:
+									if c.bonds[0] == bond:
+										p_idx2,m_idx2,c_idx2 = decompose_cidx(c.idx)
+										_,mol2,_ = getPMC(patterns,p_idx2,m_idx2,c_idx2)
+										# make the pattern
+										self.syndel_context[idx].append(AtomicPattern(makeBondPattern([mol,comp],[mol2,c])))
+										if tr.action=='Add':
+											self.syncontext[idx].append(AtomicPattern(makeBondPattern([mol,comp],[mol2,c])))
+										else:
+											self.delcontext[idx].append(AtomicPattern(makeBondPattern([mol,comp],[mol2,c])))
+										found = True
+										break
+							if found: break
 			
 		# remaking lists into sets
 		#self.transformations = choppedrule.transformations
@@ -453,11 +470,23 @@ def getPMC(patterns,p_idx,m_idx,c_idx):
 	If c_idx does not exist, it returns only pattern and molecule objects
 	'''
 
-	# ⚡ Bolt: Use next() with generator instead of list comprehension + [0] for O(1) early exit
-	patt = next((x for x in patterns if x.idx == p_idx), None)
-	mol = next((x for x in patt.molecules if x.idx == m_idx), None)
+	# ⚡ Bolt: Use simple for loop instead of generator expression to avoid generator initialization overhead, providing a much faster O(1) early exit
+	patt = None
+	for x in patterns:
+		if x.idx == p_idx:
+			patt = x
+			break
+	mol = None
+	for x in patt.molecules:
+		if x.idx == m_idx:
+			mol = x
+			break
 	if c_idx:
-		comp = next((x for x in mol.components if x.idx == c_idx), None)
+		comp = None
+		for x in mol.components:
+			if x.idx == c_idx:
+				comp = x
+				break
 	else:
 		comp = None
 	#state = comp.activeState
@@ -529,7 +558,7 @@ def makeMoleculePattern(mol):
 def getTransfCenterIDs(act,maps):
 	'''Finds components in both reactant and product that are part of the transformation center
 	'''
-	inv_maps = dict([(y,x) for x,y in maps.items()])
+	inv_maps = {y: x for x, y in maps.items()}
 	temp = []
 	
 	if act.action in ['AddBond','DeleteBond','StateChange']:
@@ -560,12 +589,12 @@ def getAtomizedRules(bngxml):
 	'''
 	_,rules = readBNGXML.parseXML(bngxml)
 
-	print "\nChopping and atomizing rules..."
+	print("\nChopping and atomizing rules...")
 	atomizedrules = []
 	for idx, [reactants, products, actions, mappings, nameDict] in enumerate(rules):
 		choppedrule = chopRule(reactants, products, actions, mappings, nameDict)
 		atomizedrules.append(AtomizedRule(choppedrule,reactants,products))
-	print len(atomizedrules), "rules atomized."
+	print(len(atomizedrules), "rules atomized.")
 	return atomizedrules
 	
 def getElements(atomizedrules):
@@ -574,7 +603,7 @@ def getElements(atomizedrules):
 	'''
 	patterns = set()
 	transformations = set()
-	print "\nExtracting basic patterns and transformations..."
+	print("\nExtracting basic patterns and transformations...")
 	for rule in atomizedrules:
 		transformations.update(rule.transformations)
 		for tr in rule.transformations:
@@ -589,8 +618,8 @@ def getElements(atomizedrules):
 	syndels = [x for x in transformations if x.isSynDel()]
 	molecpats = [x for x in patterns if x.isMolecule()]
 
-	print len(transformations),"transformations found ("+str(len(syndels)),"are syndels)."
-	print len(patterns),"basic patterns constructed, ("+str(len(molecpats)),"in syndels)."
+	print(len(transformations),"transformations found ("+str(len(syndels)),"are syndels).")
+	print(len(patterns),"basic patterns constructed, ("+str(len(molecpats)),"in syndels).")
 	
 	return patterns,transformations
 	
@@ -599,5 +628,5 @@ if __name__ == "__main__":
 	atomizedrules = getAtomizedRules(sys.argv[-1])
 	patterns,transformations = getElements(atomizedrules)
 	for item in atomizedrules:
-		print item
+		print(item)
 	

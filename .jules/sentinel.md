@@ -1,0 +1,4 @@
+## 2026-05-25 - Shell Injection via `system()` in Perl Scripts
+**Vulnerability:** Found `system()` calls in Perl scripts (e.g., `reformat_all.pl`, `run_all.pl`, `validate_examples.pl`) executing external commands with potentially unsanitized arguments, notably one iterating over filenames (`readdir`). This allows command injection if a maliciously crafted file exists.
+**Learning:** In Perl, using `system(@args)` doesn't completely avoid the shell if the array is inadvertently collapsed or contains shell metacharacters, and `system("cp $file $newfile")` explicitly invokes a subshell.
+**Prevention:** Use native Perl functions (`File::Copy::copy`) for file operations instead of spawning `cp`. For mandatory external command executions, strictly enforce the indirect object syntax `system { $args[0] } @args` which bypasses shell interpretation entirely regardless of input.

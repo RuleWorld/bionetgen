@@ -98,3 +98,75 @@ TEST_CASE("evaluateRateString error path", "[PlaSimulator]") {
     REQUIRE_THAT(evaluateRateString("valid_var", resolve), Catch::Matchers::WithinRel(42.0));
     REQUIRE_THAT(evaluateRateString("1.23abc", resolve), Catch::Matchers::WithinRel(0.0));
 }
+
+namespace bng::engine {
+class PlaSimulatorTestProxy {
+public:
+    static void fireReactionsEuler(PlaSimulator& sim, std::vector<double>& state, const std::vector<double>& a,
+                                   const std::vector<RxnClass>& classes, double tau, std::mt19937& rng) {
+        sim.fireReactionsEuler(state, a, classes, tau, rng);
+    }
+    static void setFixedSpecies(PlaSimulator& sim, const std::vector<bool>& fixed) { sim.fixedSpecies_ = fixed; }
+    static void setupDummyReactions(PlaSimulator& sim) {
+        sim.compiledRxns_.clear();
+        PlaSimulator::CompiledReaction rxn0;
+        rxn0.rateConstant = 1.0; rxn0.statFactor = 1.0; rxn0.stoich = {{0, -1}, {1, 1}};
+        sim.compiledRxns_.push_back(rxn0);
+        PlaSimulator::CompiledReaction rxn1;
+        rxn1.rateConstant = 1.0; rxn1.statFactor = 1.0; rxn1.stoich = {{1, -2}, {0, 1}};
+        sim.compiledRxns_.push_back(rxn1);
+        PlaSimulator::CompiledReaction rxn2;
+        rxn2.rateConstant = 1.0; rxn2.statFactor = 1.0; rxn2.stoich = {{0, 1}};
+        sim.compiledRxns_.push_back(rxn2);
+        sim.fixedSpecies_ = {false, false};
+        sim.nSpecies_ = 2;
+    }
+};
+}
+TEST_CASE("PlaSimulator::fireReactionsEuler", "[PlaSimulator]") {
+    Model model;
+    GeneratedNetwork network;
+    PlaSimulator sim(model, network);
+    bng::engine::PlaSimulatorTestProxy::setupDummyReactions(sim);
+    std::mt19937 rng(42);
+    SECTION("Deterministic") {
+        std::vector<double> state = {100.0, 50.0};
+        std::vector<double> a = {10.0, 4.0, 2.0};
+        std::vector<RxnClass> classes = {RxnClass::Deterministic, RxnClass::Deterministic, RxnClass::Deterministic};
+        bng::engine::PlaSimulatorTestProxy::fireReactionsEuler(sim, state, a, classes, 0.5, rng);
+        REQUIRE_THAT(state[0], Catch::Matchers::WithinAbs(98.0, 1e-6));
+        REQUIRE_THAT(state[1], Catch::Matchers::WithinAbs(51.0, 1e-6));
+    }
+    SECTION("ExactStochastic / Poisson") {
+        std::vector<double> state = {100.0, 50.0};
+        std::vector<double> a = {10.0, 0.0, 0.0};
+        std::vector<RxnClass> classes = {RxnClass::ExactStochastic, RxnClass::ExactStochastic, RxnClass::ExactStochastic};
+        bng::engine::PlaSimulatorTestProxy::fireReactionsEuler(sim, state, a, classes, 0.5, rng);
+        REQUIRE_THAT(state[0] + state[1], Catch::Matchers::WithinAbs(150.0, 1e-6));
+        REQUIRE(state[0] != 100.0);
+    }
+    SECTION("Langevin") {
+        std::vector<double> state = {100.0, 50.0};
+        std::vector<double> a = {100.0, 0.0, 0.0};
+        std::vector<RxnClass> classes = {RxnClass::Langevin, RxnClass::Langevin, RxnClass::Langevin};
+        bng::engine::PlaSimulatorTestProxy::fireReactionsEuler(sim, state, a, classes, 1.0, rng);
+        REQUIRE_THAT(state[0] + state[1], Catch::Matchers::WithinAbs(150.0, 1e-6));
+    }
+    SECTION("Fixed species are not updated") {
+        std::vector<double> state = {100.0, 50.0};
+        std::vector<double> a = {10.0, 0.0, 0.0};
+        std::vector<RxnClass> classes = {RxnClass::Deterministic, RxnClass::Deterministic, RxnClass::Deterministic};
+        bng::engine::PlaSimulatorTestProxy::setFixedSpecies(sim, {false, true});
+        bng::engine::PlaSimulatorTestProxy::fireReactionsEuler(sim, state, a, classes, 0.5, rng);
+        REQUIRE_THAT(state[0], Catch::Matchers::WithinAbs(95.0, 1e-6));
+        REQUIRE_THAT(state[1], Catch::Matchers::WithinAbs(50.0, 1e-6));
+    }
+    SECTION("Zero propensity skips reaction") {
+        std::vector<double> state = {100.0, 50.0};
+        std::vector<double> a = {0.0, 0.0, 0.0};
+        std::vector<RxnClass> classes = {RxnClass::Deterministic, RxnClass::Deterministic, RxnClass::Deterministic};
+        bng::engine::PlaSimulatorTestProxy::fireReactionsEuler(sim, state, a, classes, 1.0, rng);
+        REQUIRE_THAT(state[0], Catch::Matchers::WithinAbs(100.0, 1e-6));
+        REQUIRE_THAT(state[1], Catch::Matchers::WithinAbs(50.0, 1e-6));
+    }
+}

@@ -27,11 +27,8 @@ def extractMolecules(action, site1, site2, chemicalArray):
     for reactant in chemicalArray:
         ta, tr, tc = reactant.extractAtomicPatterns(action, site1, site2)
         atomicPatterns.update(ta)
-        for element in tr:
-            reactionCenter.add(element)
-
-        for element in tc:
-            context.add(element)
+        reactionCenter.update(tr)
+        context.update(tc)
 
         reactionCenterC.update(tr)
         contextC.update(tc)
@@ -45,13 +42,24 @@ def solveWildcards(atomicArray):
     to go through the list of atomic elements and find which patterns the '+'
     can potentially resolve to
     """
+    name_to_atomics = {}
+    wildcards = []
+
+    for key, value in atomicArray.items():
+        if '+' in key:
+            wildcards.append((key, value))
+        elif len(value.molecules) > 1:
+            for name in {m.name for m in value.molecules}:
+                name_to_atomics.setdefault(name, []).append(value)
+
     standinArray = {}
-    for wildcard in [ x for x in atomicArray if '+' in x ]:
-        for atomic in [ x for x in atomicArray if '+' not in x and len(atomicArray[x].molecules) > 1 ]:
-            if atomicArray[wildcard].molecules[0].name in [ x.name for x in atomicArray[atomic].molecules ]:
-                if wildcard not in standinArray:
-                    standinArray[wildcard] = []
-                standinArray[wildcard].append(atomicArray[atomic])
+    cached_lists = {}
+    for w_key, w_value in wildcards:
+        w_name = w_value.molecules[0].name
+        if w_name in name_to_atomics:
+            if w_name not in cached_lists:
+                cached_lists[w_name] = list(name_to_atomics[w_name])
+            standinArray[w_key] = cached_lists[w_name]
 
     atomicArray.update(standinArray)
 
@@ -59,8 +67,11 @@ def solveWildcards(atomicArray):
 def getMapping(mapp, site):
     for mapping in mapp:
         if site in mapping:
-            # ⚡ Bolt: Use next() with generator instead of list comprehension + [0] for O(1) best-case early exit
-            return next((x for x in mapping if x != site), None)
+            # ⚡ Bolt: Use simple for loop instead of generator expression to avoid generator initialization overhead, providing a much faster O(1) early exit
+            for x in mapping:
+                if x != site:
+                    return x
+            return None
 
 
 def extractTransformations(rules):

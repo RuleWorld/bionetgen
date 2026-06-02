@@ -1,3 +1,4 @@
+#include <unordered_map>
 #include "RegulatoryGraphWriter.hpp"
 
 #include <algorithm>
@@ -35,13 +36,14 @@ RegulatoryGraphWriter::RegulatoryGraph RegulatoryGraphWriter::build(
     }
 
     // Compute observable weights per species (which species contribute to which observable)
-    // observableWeights[obsIndex][speciesIndex] = weight
+    // observableWeights[obsIndex][s] = weight
     auto& mutableModel = const_cast<ast::Model&>(model);
     const std::size_t nObs = model.getObservables().size();
     const std::size_t nSpecies = network.species.size();
 
     std::vector<std::map<std::size_t, int>> observableWeights(nObs);
 
+    std::unordered_map<std::string, BNGcore::PatternGraph> parsedObservableCache;
     for (std::size_t o = 0; o < nObs; ++o) {
         const auto& observable = model.getObservables()[o];
 
@@ -50,20 +52,28 @@ RegulatoryGraphWriter::RegulatoryGraph RegulatoryGraphWriter::build(
 
             for (const auto& patternText : observable.getPatterns()) {
                 try {
-                    antlr4::ANTLRInputStream input(patternText);
-                    BNGLexer lexer(&input);
-                    antlr4::CommonTokenStream tokens(&lexer);
-                    BNGParser parser(&tokens);
-                    auto* species = parser.species_def();
+                    auto cacheIt = parsedObservableCache.find(patternText);
+                    if (cacheIt == parsedObservableCache.end()) {
+                        antlr4::ANTLRInputStream input(patternText);
+                        BNGLexer lexer(&input);
+                        antlr4::CommonTokenStream tokens(&lexer);
+                        BNGParser parser(&tokens);
+                        auto* species = parser.species_def();
 
-                    if (parser.getNumberOfSyntaxErrors() == 0) {
-                        const auto pattern = bng::parser::buildPatternGraph(species, mutableModel);
-                        BNGcore::UllmannSGIso matcher(pattern,
+                        if (parser.getNumberOfSyntaxErrors() == 0) {
+                            cacheIt = parsedObservableCache.emplace(patternText, bng::parser::buildPatternGraph(species, mutableModel)).first;
+                        }
+                    }
+
+                    if (cacheIt != parsedObservableCache.end()) {
+                        BNGcore::UllmannSGIso matcher(cacheIt->second,
                             network.species.get(s).getSpeciesGraph().getGraph());
                         BNGcore::List<BNGcore::Map> maps;
                         weight += matcher.find_maps(maps);
                     }
-                } catch (...) {}
+                } catch (...) {
+                    // Skip patterns that fail to parse
+                }
             }
 
             if (observable.getType() == "Species" && weight > 0) {

@@ -28,10 +28,6 @@ sub BNGconsole
 {   # take actions from interactive console!
     my $params = (@_) ? shift : {};
  
-    # TODO:
-    # + differentiate between STDIN from console and file?
-    # + add more model query commands
-
 
     # Am I interacting with a user, or a pipeline?
     my $interactive = ( -t STDIN ) ? 1 : 0;

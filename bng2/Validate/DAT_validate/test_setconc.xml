@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Created by BioNetGen 2.7.0  -->
+<!-- Created by BioNetGen 2.9.3  -->
 <sbml xmlns="http://www.sbml.org/sbml/level3" level="3" version="1">
   <model id="test_setconc">
     <ListOfParameters>
@@ -179,7 +179,7 @@
     <ListOfObservables>
       <Observable id="O1" name="LR" type="Species" output="1">
         <ListOfPatterns>
-          <Pattern id="O1_P1" matchOnce="1">
+          <Pattern id="O1_P1" matchOnce="1" automorphisms="1">
             <ListOfMolecules>
               <Molecule id="O1_P1_M1" name="R">
                 <ListOfComponents>

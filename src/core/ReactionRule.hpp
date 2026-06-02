@@ -926,8 +926,6 @@ ReactionRule::get_elementary_rules ( RuleContainerType & elem_rules )
         new_operation = ops_iter->clone_and_remap( aggregate_map );
         // get center nodes     
         new_operation->get_center( center_nodes );
-        // move to next operation if there are no center nodes
-        //if ( center_nodes.empty() )  continue;
         
         // trim reactants down to essential nodes!
         patt_iter = new_patterns.begin();

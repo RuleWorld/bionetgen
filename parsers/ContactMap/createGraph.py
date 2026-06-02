@@ -9,6 +9,7 @@ Created on Wed Nov 21 16:56:19 2012
 from readBNGXML import parseXML
 import pygraphviz as pgv
 import subprocess
+import shutil
 import pexpect
 
 
@@ -33,10 +34,8 @@ def extractMolecules(action,site1,site2,chemicalArray):
         #for element in ta:
         #    atomicPatterns.add(element)
         atomicPatterns.update(ta)
-        for element in tr:
-            reactionCenter.add(element)
-        for element in tc:
-            context.add(element)
+        reactionCenter.update(tr)
+        context.update(tc)
         
     
     return atomicPatterns,reactionCenter,context
@@ -45,8 +44,11 @@ def extractMolecules(action,site1,site2,chemicalArray):
 def getMapping(mapp,site):
     for mapping in mapp:
         if site in mapping:
-            # ⚡ Bolt: Use next() with generator instead of list comprehension + [0] for O(1) best-case early exit
-            return next((x for x in mapping if x != site), None)
+            # ⚡ Bolt: Use simple for loop instead of generator expression to avoid generator initialization overhead, providing a much faster O(1) early exit
+            for x in mapping:
+                if x != site:
+                    return x
+            return None
 
 
 def solveWildcards(atomicArray):
@@ -56,17 +58,22 @@ def solveWildcards(atomicArray):
     can potentially resolve to
     '''
     standinArray = {}
-    # Pre-filter atomics and pre-calculate their molecule names for faster lookup
     atomics = [x for x in atomicArray if '+' not in x and len(atomicArray[x].molecules) > 1]
-    atomic_mol_names = {atomic: set(m.name for m in atomicArray[atomic].molecules) for atomic in atomics}
+
+    # Inverted index: map molecule name to a list of atomics that contain it
+    mol_name_to_atomics = {}
+    for atomic in atomics:
+        for mol_name in {m.name for m in atomicArray[atomic].molecules}:
+            if mol_name not in mol_name_to_atomics:
+                mol_name_to_atomics[mol_name] = []
+            mol_name_to_atomics[mol_name].append(atomicArray[atomic])
 
     for wildcard in (x for x in atomicArray if '+' in x):
         wildcard_mol_name = atomicArray[wildcard].molecules[0].name
-        for atomic in atomics:
-            if wildcard_mol_name in atomic_mol_names[atomic]:
-                if wildcard not in standinArray:
-                    standinArray[wildcard] = []
-                standinArray[wildcard].append(atomicArray[atomic])
+        if wildcard_mol_name in mol_name_to_atomics:
+            # Create a shallow copy of the list so each wildcard gets its own instance
+            standinArray[wildcard] = list(mol_name_to_atomics[wildcard_mol_name])
+
     atomicArray.update(standinArray)
             
             
@@ -263,12 +270,13 @@ ranksep='1.5',rankdir='LR',compound='true')
         
     
     #output      
-    print '%s.dot' % fileName
+    print('%s.dot' % fileName)
     graph.write('%s.dot' % fileName)
     #graph = pgv.AGraph('%s.dot' % fileName)
     #graph.layout(prog='fdp')
     #graph.draw('%s.png' % fileName)
-    subprocess.call(['dot', '-Tsvg', '{0}.dot'.format(fileName),'-o{0}.svg'.format(fileName)])
+    dot_path = shutil.which('dot') or 'dot'
+    subprocess.call([dot_path, '-Tsvg', './{0}.dot'.format(fileName), '-o', './{0}.svg'.format(fileName)], shell=False)
     
 
 def addAnnotations(fileName):
@@ -316,7 +324,7 @@ def main(fileName):
     #                       reactionCenter=True, context=True, products=True)
     
     for element in [2]:
-        print element
+        print(element)
         createBiPartite(rules, [element], 'simple%i' % element, 
                     reactionCenter=True, context=True, products=True)
 
@@ -325,7 +333,7 @@ def main(fileName):
                             reactionCenter=True, context=True, products=True)
             
         except:
-            print 'xxx'
+            print('xxx')
             continue
     
 if __name__ == "__main__":

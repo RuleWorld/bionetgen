@@ -65,10 +65,6 @@ double RateHill::getRate(vector<double> X){
 	// Loop over reactant species
 	for (unsigned int i=0;i < X.size();i++){
 		// Error check
-//		if (X[i] < 0.0){
-//			cout << "Error in RateHill::getRate(): Negative population detected (X[" << i << "] = " << X[i] << "). Exiting." << endl;
-//			exit(1);
-//		}
 		// Loop over stoichiometry
 		double X_mult = 1.0;
 		int stoich_i = std::abs(this->rStoich[i]);
@@ -98,10 +94,6 @@ double RateHill::get_dRate_dX(unsigned int which, vector<double> X){
 		cout << "Error in RateHill::get_dRate_dX(): Parameter 'which' larger than size of 'X' vector. Exiting." << endl;
 		exit(1);
 	}
-//	if (X[0] < 0.0){
-//		cout << "Error in RateHill::get_dRate_dX(): Negative population detected (X[" << 0 << "] = " << X[0] << "). Exiting." << endl;
-//		exit(1);
-//	}
 	//
 	double dRate = this->Vmax;
 	//
@@ -148,10 +140,6 @@ double RateHill::get_dRate_dX(unsigned int which, vector<double> X){
 		dRate *= X0_h/( pow(this->Kh,this->h) + X0_h );
 		for (unsigned int i=1;i < X.size();i++){
 			// Error check
-//			if (X[i] < 0.0){
-//				cout << "Error in RateHill::get_dRate_dX(): Negative population detected (X[" << i << "] = " << X[i] << "). Exiting.\n";
-//				exit(1);
-//			}
 			//
 			int stoich_i = std::abs(this->rStoich[i]);
 			if (i == which){

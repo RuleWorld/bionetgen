@@ -164,11 +164,11 @@ PatternGraph::delete_node ( Node * node )
 
     // remove in edges
     for ( node_const_iter = node->edges_in_begin();  node_const_iter != node->edges_in_end();  ++node_const_iter  )
-        delete_edge ( *node_iter, node  );
+        delete_edge ( *node_const_iter, node  );
 
     // remove out edges
     for ( node_const_iter = node->edges_out_begin();  node_const_iter != node->edges_out_end();  ++node_const_iter  )
-        delete_edge ( node, *node_iter );
+        delete_edge ( node, *node_const_iter );
     
     // erase node from graph
     delete node;
@@ -633,13 +633,6 @@ PatternGraph::find_canonical_order ( bool preserve_prior_order ) const
     // sort nodes
     std::stable_sort ( node_vec.begin(), node_vec.end(), Node::less );
     
-    #if BNGCORE_DEBUG_NAUTY==1
-    //std::cout << "preliminary_node_sort:" << std::endl;
-    //for ( node_iter = node_vec.begin();  node_iter != node_vec.end();  ++node_iter )
-    //    std::cout << (*node_iter)->get_label() << ",";
-    //std::cout << std::endl;
-    #endif
-    
     // number of vertices and directed edges
     nv = size();
     nde = 0;
@@ -1016,10 +1009,10 @@ PatternGraph::splice ( PatternGraph & g2, Map & overlap_map )
         node1 = node_map.mapf( node2 );  
         // add inbound edges
         for ( node_const_iter = node2->edges_in_begin();  node_const_iter != node2->edges_in_end();  ++node_const_iter )
-            g1.add_edge ( node_map.mapf( *node_iter ), node1 );
+            g1.add_edge ( node_map.mapf( *node_const_iter ), node1 );
         // add outbound edges
         for ( node_const_iter = node2->edges_out_begin();  node_const_iter != node2->edges_out_end();  ++node_const_iter )
-            g1.add_edge ( node1, node_map.mapf( *node_iter ) );
+            g1.add_edge ( node1, node_map.mapf( *node_const_iter ) );
         // NOTE: some edges may be added twice, but this won't cause any problems (edges will simply be
         //  ignored when added the second time).
     }
@@ -1222,10 +1215,17 @@ PatternGraph::split_connected ( patterngraph_container_t & split_graphs )
         for ( node_iter = connected_nodes.begin();  node_iter != connected_nodes.end();  ++node_iter )
         {   // add node to new split graph
             split_graphs.back().add_node( *node_iter );
-            // remove node from the old graph  (move node at back into the old space)
-            *std::find(nodes.begin(), nodes.end(), *node_iter) = nodes.back();
-            nodes.pop_back();
         }
+
+        // efficiently remove components from the old graph
+        std::vector<Node*> sorted_connected = connected_nodes;
+        std::sort(sorted_connected.begin(), sorted_connected.end());
+        nodes.erase(
+            std::remove_if(nodes.begin(), nodes.end(),
+                [&sorted_connected](Node* node) {
+                    return std::binary_search(sorted_connected.begin(), sorted_connected.end(), node);
+                }),
+            nodes.end());
         connected_nodes.clear();
     }
 }

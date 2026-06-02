@@ -907,10 +907,17 @@ PatternGraph::split_connected ( patterngraph_container_t & split_graphs )
         for ( node_iter = connected_nodes.begin();  node_iter != connected_nodes.end();  ++node_iter )
         {   // add node to new split graph
             split_graphs.back().add_node( *node_iter );
-            // remove node from the old graph  (move node at back into the old space)
-            *std::find(nodes.begin(), nodes.end(), *node_iter) = nodes.back();
-            nodes.pop_back();
         }
+
+        // efficiently remove components from the old graph
+        std::vector<Node*> sorted_connected = connected_nodes;
+        std::sort(sorted_connected.begin(), sorted_connected.end());
+        nodes.erase(
+            std::remove_if(nodes.begin(), nodes.end(),
+                [&sorted_connected](Node* node) {
+                    return std::binary_search(sorted_connected.begin(), sorted_connected.end(), node);
+                }),
+            nodes.end());
         connected_nodes.clear();
     }
 }

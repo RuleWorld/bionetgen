@@ -24,12 +24,41 @@ using Perm = std::map<int, int>;
 namespace hnauty_detail {
 
 // ---- intersection ----
-// Set intersection of two int vectors
+// Set intersection of two int vectors using an allocation-light lookup table.
+// Uses an $O(|A| + |B|)$ allocation-free two-pointer method if both are sorted (common in HNauty).
 inline std::vector<int> intersection(const std::vector<int>& a, const std::vector<int>& b) {
-    std::set<int> setB(b.begin(), b.end());
+    if (a.empty() || b.empty()) return {};
+    
+    if (std::is_sorted(a.begin(), a.end()) && std::is_sorted(b.begin(), b.end())) {
+        std::vector<int> result;
+        result.reserve(std::min(a.size(), b.size()));
+        size_t i = 0, j = 0;
+        while (i < a.size() && j < b.size()) {
+            if (a[i] == b[j]) {
+                result.push_back(a[i]);
+                i++;
+                j++;
+            } else if (a[i] < b[j]) {
+                i++;
+            } else {
+                j++;
+            }
+        }
+        return result;
+    }
+    
+    int maxVal = 0;
+    for (int v : b) {
+        if (v > maxVal) maxVal = v;
+    }
+    std::vector<char> inB(maxVal + 1, 0);
+    for (int v : b) {
+        inB[v] = 1;
+    }
     std::vector<int> result;
+    result.reserve(std::min(a.size(), b.size()));
     for (int v : a) {
-        if (setB.count(v)) {
+        if (v <= maxVal && inB[v]) {
             result.push_back(v);
         }
     }
@@ -46,21 +75,20 @@ inline bool is_discrete(const Partition& partition) {
 }
 
 // ---- partition_value ----
-// Compute cell-size distribution as an indicator vector.
-// For each cell size from 1..max_size, count how many cells have that size.
+// Compute cell-size distribution as an indicator vector without std::map
 inline std::vector<int> partition_value(const Partition& part) {
-    std::map<int, int> tmp;
+    if (part.empty()) return {};
+    std::vector<int> counts(part.size() + 1, 0);
+    int maxSize = 0;
     for (auto& cell : part) {
-        tmp[(int)cell.size()] += 1;
+        int sz = (int)cell.size();
+        counts[sz]++;
+        if (sz > maxSize) maxSize = sz;
     }
-    int maxSize = tmp.rbegin()->first;
     std::vector<int> indicator;
+    indicator.reserve(maxSize);
     for (int j = 1; j <= maxSize; j++) {
-        if (tmp.count(j)) {
-            indicator.push_back(tmp[j]);
-        } else {
-            indicator.push_back(0);
-        }
+        indicator.push_back(counts[j]);
     }
     return indicator;
 }
