@@ -18,7 +18,8 @@ message("BioNetGen version ".BNGversion()."\n");
 
 #Calculation
 our $model;
-eval '$model = new '.$options->config->{ModelID};
+my $model_class = $options->config->{ModelID};
+$model = $model_class->new();
 $model->ProcessModel($options->config->{bnglfile});
 message("Processing complete.\n");
 
