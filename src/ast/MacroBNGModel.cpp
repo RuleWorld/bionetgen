@@ -91,12 +91,16 @@ std::string MacroBNGModel::replaceAll(const std::string& s,
                                        const std::string& from,
                                        const std::string& to) {
     if (from.empty()) return s;
-    std::string result = s;
+    std::string result;
+    result.reserve(s.length());
+    std::string::size_type last_pos = 0;
     std::string::size_type pos = 0;
-    while ((pos = result.find(from, pos)) != std::string::npos) {
-        result.replace(pos, from.size(), to);
-        pos += to.size();
+    while ((pos = s.find(from, last_pos)) != std::string::npos) {
+        result.append(s, last_pos, pos - last_pos);
+        result.append(to);
+        last_pos = pos + from.length();
     }
+    result.append(s, last_pos, s.length() - last_pos);
     return result;
 }
 
