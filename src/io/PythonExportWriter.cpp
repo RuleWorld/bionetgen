@@ -297,7 +297,7 @@ std::string PythonExportWriter::write(const ast::Model& model, const engine::Gen
     py << "    cdat_path = model_name + '.cdat'\n";
     py << "    with open(cdat_path, 'w') as f:\n";
     py << "        # Header\n";
-    py << "        header = '{:<18s}'.format('#') + '  '.join('{:<18s}'.format('time') if i == 0 else '{:<18s}'.format(species_names[i-1]) for i in range(N_SPECIES + 1))\n";
+    py << "        header = '{:<18s}'.format('#') + '  '.join(['{:<18s}'.format('time') if i == 0 else '{:<18s}'.format(species_names[i-1]) for i in range(N_SPECIES + 1)])\n";
     py << "        # Actually write: first column is time\n";
     py << "        for i in range(len(timepoints_sim)):\n";
     py << "            line = '{:<18.12e}'.format(timepoints_sim[i])\n";
