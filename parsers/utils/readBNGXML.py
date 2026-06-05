@@ -180,12 +180,28 @@ def parseComponent(component):
 def parseXML(xmlFile):
     parser = etree.XMLParser(resolve_entities=False, no_network=True)
     doc = etree.parse(xmlFile, parser)
-    molecules = doc.findall('.//{http://www.sbml.org/sbml/level3}MoleculeType')
-    rules = doc.findall('.//{http://www.sbml.org/sbml/level3}ReactionRule')
+
+    model = doc.getroot().find('{http://www.sbml.org/sbml/level3}model')
+    molecules = []
+    rules = []
+    parameters = []
+    observables = []
+    if model is not None:
+        lom = model.find('{http://www.sbml.org/sbml/level3}ListOfMoleculeTypes')
+        if lom is not None:
+            molecules = lom.findall('{http://www.sbml.org/sbml/level3}MoleculeType')
+        lor = model.find('{http://www.sbml.org/sbml/level3}ListOfReactionRules')
+        if lor is not None:
+            rules = lor.findall('{http://www.sbml.org/sbml/level3}ReactionRule')
+        lop = model.find('{http://www.sbml.org/sbml/level3}ListOfParameters')
+        if lop is not None:
+            parameters = lop.findall('{http://www.sbml.org/sbml/level3}Parameter')
+        loo = model.find('{http://www.sbml.org/sbml/level3}ListOfObservables')
+        if loo is not None:
+            observables = loo.findall('{http://www.sbml.org/sbml/level3}Observable')
+
     ruleDescription = []
     moleculeList = []
-
-    parameters = doc.findall('.//{http://www.sbml.org/sbml/level3}Parameter')
     parameterDict = {}
     for parameter in parameters:
         parameterDict[parameter.get('id')] = parameter.get('value')
@@ -205,7 +221,12 @@ def parseXML(xmlFile):
 def getNumObservablesXML(xmlFile):
     parser = etree.XMLParser(resolve_entities=False, no_network=True)
     doc = etree.parse(xmlFile, parser)
-    observables = doc.findall('.//{http://www.sbml.org/sbml/level3}Observable')
+    observables = []
+    model = doc.getroot().find('{http://www.sbml.org/sbml/level3}model')
+    if model is not None:
+        loo = model.find('{http://www.sbml.org/sbml/level3}ListOfObservables')
+        if loo is not None:
+            observables = loo.findall('{http://www.sbml.org/sbml/level3}Observable')
     return len(observables)
     
 if __name__ == "__main__":
