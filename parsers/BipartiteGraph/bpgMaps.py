@@ -996,7 +996,7 @@ def printDict(somedict):
 	return "\n".join(sorted([str(x)+":"+str(y) for x,y in sorted(somedict.items())]))
 	
 def defaultDict(somelist,defaultval):
-	return dict([(x,defaultval) for x in somelist])
+	return {x: defaultval for x in somelist}
 
 def assignVal(somedict,somelistofkeys,val):
 	tempdict = somedict
