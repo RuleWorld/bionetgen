@@ -89,6 +89,17 @@ target_include_directories(test_model PRIVATE
 target_link_libraries(test_model PRIVATE Catch2::Catch2WithMain Catch2::Catch2 bng_ast bng_parser bng_core antlr4_static)
 catch_discover_tests(test_model)
 
+
+add_executable(test_cpp_export_writer test_cpp_export_writer.cpp)
+target_include_directories(test_cpp_export_writer PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/parser
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/parser/generated
+    ${antlr4_runtime_SOURCE_DIR}/runtime/Cpp/runtime/src
+)
+target_link_libraries(test_cpp_export_writer PRIVATE Catch2::Catch2WithMain Catch2::Catch2 bng_engine bng_ast bng_parser bng_core antlr4_static)
+catch_discover_tests(test_cpp_export_writer)
+
 add_executable(test_python_export_writer test_python_export_writer.cpp)
 
 target_include_directories(test_python_export_writer PRIVATE
