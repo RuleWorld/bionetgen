@@ -343,7 +343,7 @@ class TransformationPairMap:
 		self.tp2p_forwardcontext = list(tp2p_forwardcontext_opt)
 		self.tp2p_reversecontext = list(tp2p_reversecontext_opt)
 
-		syndel_list = [(tp_id,t_id,dictNames.getElement('t',t_id).action) for tp_id,t_id in list(self.tp2t_forward.items())+list(self.tp2t_reverse.items()) ]
+		syndel_list = [(tp_id,t_id,dictNames.getElement('t',t_id).action) for tp_id,t_id in itertools.chain(self.tp2t_forward.items(), self.tp2t_reverse.items()) ]
 
 		t_to_syndel = {}
 		for t_id, p_id in tr_map.t2p_syndelcontext:
