@@ -139,6 +139,7 @@ class NameDictionary:
 		for idx,ir in enumerate(irrs):
 			self.irr[ir] = self.tp[ir]		
 
+
 	
 	def getIdx(self,elemtype,string):
 		# ⚡ Bolt: Use simple for loop instead of generator expression to avoid generator initialization overhead, providing a much faster O(1) early exit
@@ -591,10 +592,10 @@ class Trace:
 		self._set = set(trace)
 		
 	def __str__(self):
-		return "->".join([str(x) for x in self.trace])
+		return "->".join(str(x) for x in self.trace)
 		
 	def toString(self,names):
-		return "->".join([str(names.getElement(self.type,x)) for x in self.trace])
+		return "->".join(str(names.getElement(self.type,x)) for x in self.trace)
 	
 	def getLast(self):
 		return self.trace[-1]
