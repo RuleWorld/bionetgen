@@ -190,3 +190,31 @@ TEST_CASE("HybridModelGenerator isIsomorphic error handling", "[HybridModelGener
     REQUIRE(bng::engine::HybridModelGeneratorTest::callIsIsomorphic(generator, "!!InvalidBNGL!!", "A()") == false);
     REQUIRE(bng::engine::HybridModelGeneratorTest::callIsIsomorphic(generator, "A(x!1)) garbage", "A()") == false);
 }
+
+TEST_CASE("HybridModelGenerator isIsomorphic edge cases", "[HybridModelGenerator]") {
+    bng::ast::Model model;
+    model.addMoleculeType(bng::ast::MoleculeType("A", {{"x"}, {"y"}}));
+    model.addMoleculeType(bng::ast::MoleculeType("B", {{"x"}, {"y"}}));
+    bng::engine::GeneratedNetwork network;
+    bng::engine::HybridModelGenerator generator(model, network);
+
+    SECTION("Identical patterns") {
+        REQUIRE(bng::engine::HybridModelGeneratorTest::callIsIsomorphic(generator, "A(x)", "A(x)") == true);
+    }
+    SECTION("Isomorphic patterns (different order)") {
+        REQUIRE(bng::engine::HybridModelGeneratorTest::callIsIsomorphic(generator, "A(x!1).B(y!1)", "B(y!1).A(x!1)") == true);
+    }
+    SECTION("Not isomorphic: different molecule types") {
+        REQUIRE(bng::engine::HybridModelGeneratorTest::callIsIsomorphic(generator, "A()", "B()") == false);
+    }
+    SECTION("Not isomorphic: different components") {
+        REQUIRE(bng::engine::HybridModelGeneratorTest::callIsIsomorphic(generator, "A(x)", "A(y)") == false);
+    }
+    SECTION("Not isomorphic: subset (one way match)") {
+        REQUIRE(bng::engine::HybridModelGeneratorTest::callIsIsomorphic(generator, "A()", "A(x)") == false);
+        REQUIRE(bng::engine::HybridModelGeneratorTest::callIsIsomorphic(generator, "A(x)", "A()") == false);
+    }
+    SECTION("Syntax errors in pattern2") {
+        REQUIRE(bng::engine::HybridModelGeneratorTest::callIsIsomorphic(generator, "A()", "!!InvalidBNGL!!") == false);
+    }
+}
