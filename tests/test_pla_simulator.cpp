@@ -107,6 +107,9 @@ public:
         sim.fireReactionsEuler(state, a, classes, tau, rng);
     }
     static void setFixedSpecies(PlaSimulator& sim, const std::vector<bool>& fixed) { sim.fixedSpecies_ = fixed; }
+    static bool checkNegativePopulations(const PlaSimulator& sim, const std::vector<double>& state) {
+        return sim.checkNegativePopulations(state);
+    }
     static void setupDummyReactions(PlaSimulator& sim) {
         sim.compiledRxns_.clear();
         PlaSimulator::CompiledReaction rxn0;
@@ -168,5 +171,35 @@ TEST_CASE("PlaSimulator::fireReactionsEuler", "[PlaSimulator]") {
         bng::engine::PlaSimulatorTestProxy::fireReactionsEuler(sim, state, a, classes, 1.0, rng);
         REQUIRE_THAT(state[0], Catch::Matchers::WithinAbs(100.0, 1e-6));
         REQUIRE_THAT(state[1], Catch::Matchers::WithinAbs(50.0, 1e-6));
+    }
+}
+
+TEST_CASE("PlaSimulator::checkNegativePopulations", "[PlaSimulator]") {
+    Model model;
+    GeneratedNetwork network;
+    PlaSimulator sim(model, network);
+
+    // Setup dummy reactions to initialize fixedSpecies_ and nSpecies_
+    bng::engine::PlaSimulatorTestProxy::setupDummyReactions(sim);
+
+    SECTION("All positive populations") {
+        std::vector<double> state = {100.0, 50.0};
+        REQUIRE_FALSE(bng::engine::PlaSimulatorTestProxy::checkNegativePopulations(sim, state));
+    }
+
+    SECTION("Negative but > -0.5") {
+        std::vector<double> state = {-0.3, 50.0};
+        REQUIRE_FALSE(bng::engine::PlaSimulatorTestProxy::checkNegativePopulations(sim, state));
+    }
+
+    SECTION("Negative < -0.5") {
+        std::vector<double> state = {-0.6, 50.0};
+        REQUIRE(bng::engine::PlaSimulatorTestProxy::checkNegativePopulations(sim, state));
+    }
+
+    SECTION("Fixed species < -0.5 are ignored") {
+        bng::engine::PlaSimulatorTestProxy::setFixedSpecies(sim, {true, false});
+        std::vector<double> state = {-0.6, 50.0};
+        REQUIRE_FALSE(bng::engine::PlaSimulatorTestProxy::checkNegativePopulations(sim, state));
     }
 }
