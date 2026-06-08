@@ -3530,7 +3530,29 @@ sub writeCPYfile
 **
 **   Usage in Python :
 **
-**   TODO
+**   import ctypes
+**
+**   class RESULT(ctypes.Structure):
+**       _fields_ = [
+**           ("status", ctypes.c_int),
+**           ("n_observables", ctypes.c_int),
+**           ("n_species", ctypes.c_int),
+**           ("n_tpts", ctypes.c_int),
+**           ("obs_name_len", ctypes.c_int),
+**           ("spcs_name_len", ctypes.c_int),
+**           ("observables", ctypes.POINTER(ctypes.c_double)),
+**           ("species", ctypes.POINTER(ctypes.c_double)),
+**           ("obs_names", ctypes.c_char_p),
+**           ("spcs_names", ctypes.c_char_p)
+**       ]
+**
+**   lib = ctypes.CDLL('./$model_name.so')
+**   lib.simulate.restype = ctypes.POINTER(RESULT)
+**
+**   # Define inputs
+**   # ... define num_tpts, timepts, num_species_init, species_init, num_parameters, parameters ...
+**
+**   res = lib.simulate(num_tpts, timepts, num_species_init, species_init, num_parameters, parameters)
 */
 
 /* Library headers */
