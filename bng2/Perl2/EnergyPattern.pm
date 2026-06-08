@@ -162,12 +162,16 @@ sub toXML
 
 sub toMathMLString
 {
-        my $epatt  = shift;
-    my $string = '';
+    my $epatt  = shift;
+    my $plist  = (@_) ? shift : '';
+    my $indent = (@_) ? shift : '';
 
-    # TODO
+    if ($epatt->Gf)
+    {
+        return $epatt->Gf->toMathMLString($plist, $indent);
+    }
 
-    return $string, '';
+    return ('');
 }
 
 
