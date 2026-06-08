@@ -100,19 +100,20 @@ double RateElementary::get_dRate_dX(unsigned int which, vector<double> X){
 		}
 		else{
 			double dX_which = 0.0;
+			double inv_denom = 1.0;
+			for (int j=0;j < stoich;j++){
+				inv_denom /= ((double)j+1.0);
+			}
 			for (int k=0;k < stoich;k++){ // # of terms in summation
 				double prod = 1.0;
 				for (int j=0;j < stoich;j++){ // # of terms in each product of the summation
-					if (j == k){
-						prod *= 1.0/((double)j+1.0);
-					}
-					else{
-						prod *= (X[i]-(double)j)/((double)j+1.0);
+					if (j != k){
+						prod *= (X[i]-(double)j);
 					}
 				}
 				dX_which += prod;
 			}
-			dRate *= dX_which;
+			dRate *= (dX_which * inv_denom);
 		}
 	}
 	return dRate;
