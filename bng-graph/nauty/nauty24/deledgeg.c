@@ -14,6 +14,7 @@
 /*************************************************************************/
 
 #include "gtools.h" 
+#include "gutils.h"
 
 /**************************************************************************/
 
@@ -159,7 +160,7 @@ main(int argc, char *argv[])
 #if !MAXN
 		        DYNALLOC2(graph,h,h_sz,n,m,"deledgeg");
 #endif
-	 	        fcanonise(g,m,n,h,NULL,FALSE);  /* FIXME (loops) */
+		        fcanonise(g,m,n,h,NULL,loopcount(g,m,n)>0);
 		        gq = h;
 	            }
 	            if (outcode == SPARSE6) writes6(outfile,gq,m,n);

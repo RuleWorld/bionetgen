@@ -110,7 +110,7 @@ na_newedge(graph *g1, int m1, int n1, boolean dolabel)
 
                 if (dolabel)
                 {
-                    fcanonise(g2,m2,n2,h,NULL,FALSE);  /* FIXME (loops) */
+                    fcanonise(g2,m2,n2,h,NULL,loopcount(g2,m2,n2)>0);
                     gq = h;
                 }
                 if (outcode == SPARSE6) writes6(outfile,gq,m2,n2);
