@@ -366,13 +366,13 @@ writeline(FILE *f, char *s)
 }
 
 /*********************************************************************/
-/* The canonical name for this function is getline(), but this can be
+/* The canonical name for this function is nauty_getline(), but this can be
    changed at compile time to avoid conflict with the GNU function of
    that name.
 */
 
 char*
-getline(FILE *f)     /* read a line with error checking */
+nauty_getline(FILE *f)     /* read a line with error checking */
 /* includes \n (if present) and \0.  Immediate EOF causes NULL return. */
 {
     DYNALLSTAT(char,s,s_sz);
@@ -735,7 +735,7 @@ readg(FILE *f, graph *g, int reqm, int *pm, int *pn)
     char *s,*p;
     int m,n;
 
-    if ((readg_line = getline(f)) == NULL) return NULL;
+    if ((readg_line = nauty_getline(f)) == NULL) return NULL;
 
     s = readg_line;
     if (s[0] == ':')
@@ -1018,7 +1018,7 @@ read_sg_loops(FILE *f, sparsegraph *sg, int *nloops)
     char *s,*p;
     int n,loops;
 
-    if ((readg_line = getline(f)) == NULL) return NULL;
+    if ((readg_line = nauty_getline(f)) == NULL) return NULL;
 
     s = readg_line;
     if (s[0] == ':')
@@ -1652,7 +1652,7 @@ readpcle_sg(FILE *f,sparsegraph *sg)
 
 void
 writelast(FILE *f)
-/* write last graph read by readg() assuming no intervening getline() */
+/* write last graph read by readg() assuming no intervening nauty_getline() */
 {
     writeline(f,readg_line);
 }

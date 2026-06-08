@@ -1,9 +1,6 @@
 /* testg.c : Find properties of graphs.  This is the source file for
    both pickg (select by property) and countg (count by property).
    Version of Nov 19, 2003. */
-/* TODO - write a header if input has one */
-/* TODO - USERDEF should be long, not int */
-
 #define USAGE \
   "[pickg|countg] [-fp#:#q -V] [--keys] [-constraints -v] [ifile [ofile]]"
 
@@ -78,7 +75,7 @@ External user-defined parameters:
 */
 
 #ifdef USERDEF
-int USERDEF(graph*,int,int);
+long USERDEF(graph*,int,int);
 #endif
 #ifndef USERDEFNAME
 #define USERDEFNAME "userdef"
@@ -851,6 +848,12 @@ main(int argc, char *argv[])
 
 	if (codetype&SPARSE6) outcode = SPARSE6;
 	else                  outcode = GRAPH6;
+
+	if (dofilter && (codetype&HAS_HEADER))
+	{
+	    if (outcode == SPARSE6) writeline(outfile,SPARSE6_HEADER);
+	    else    		    writeline(outfile,GRAPH6_HEADER);
+	}
 
 	nin = nout = 0;
 	if (!pswitch || pval2 == NOLIMIT) maxin = NOLIMIT;
