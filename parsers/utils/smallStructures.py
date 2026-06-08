@@ -370,11 +370,14 @@ class Species:
             speciesDictionary.update(compDictionary)
             
         for bond in self.bonds:
-            if bond[0] in speciesDictionary and bond[1] in speciesDictionary:
-                if layout == 'RL':
-                    graph.add_edge(speciesDictionary[bond[1]],speciesDictionary[bond[0]],dir='none',len=0.1,weight=100)
-                else:
-                    graph.add_edge(speciesDictionary[bond[0]],speciesDictionary[bond[1]],dir='none',len=0.1,weight=100)
+            b0 = speciesDictionary.get(bond[0])
+            if b0 is not None:
+                b1 = speciesDictionary.get(bond[1])
+                if b1 is not None:
+                    if layout == 'RL':
+                        graph.add_edge(b1, b0, dir='none', len=0.1, weight=100)
+                    else:
+                        graph.add_edge(b0, b1, dir='none', len=0.1, weight=100)
         return speciesDictionary
         
     
