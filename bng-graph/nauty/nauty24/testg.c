@@ -2,7 +2,7 @@
    both pickg (select by property) and countg (count by property).
    Version of Nov 19, 2003. */
 /* TODO - write a header if input has one */
-/* TODO - USERDEF should be long, not int */
+
 
 #define USAGE \
   "[pickg|countg] [-fp#:#q -V] [--keys] [-constraints -v] [ifile [ofile]]"
@@ -74,11 +74,11 @@ External user-defined parameters:
   case the parameter is selected using the letter 'Q'.  The name of the
   parameter is "userdef" unless USERDEFNAME is defined.  The function
   is called with the parameters (graph *g, int m, int n) and must return
-  an integer value.
+  a long value.
 */
 
 #ifdef USERDEF
-int USERDEF(graph*,int,int);
+long USERDEF(graph*,int,int);
 #endif
 #ifndef USERDEFNAME
 #define USERDEFNAME "userdef"
