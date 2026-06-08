@@ -762,7 +762,6 @@ sub toCVodeString
     my $rl          = shift @_;
     my $stat_factor = shift @_;
     my $reactants   = shift @_;
-    my $rrefs       = shift @_;
     my $plist       = @_ ? shift @_ : undef;
     my $conv_expr   = @_ ? shift @_ : undef;  # expression for unit conversions
 
@@ -822,7 +821,7 @@ sub toCVodeString
         my $fcn = $fcn_param->Ref;
 
         # add references to the expressions and observables arrays
-        my $fcn_str = $fcn->toCVodeString( $plist, {'fcn_mode' => 'call', 'rrefs' => $rrefs, 'reactants' => $reactants});
+        my $fcn_str = $fcn->toCVodeString( $plist, {'fcn_mode' => 'call', 'reactants' => $reactants});
         if ($fcn_str =~ /^could not find/ || $fcn_str =~ /^ratelaw depends on/)
         {   return $fcn_str;   }
         push @rl_terms, $fcn_str;
@@ -852,7 +851,6 @@ sub toMatlabString
     my $rl          = shift @_;
     my $stat_factor = shift @_;
     my $reactants   = shift @_;
-    my $rrefs       = shift @_;
     my $plist       = @_ ? shift @_ : undef;
     my $conv_expr   = @_ ? shift @_ : undef;  # expression for unit conversions
 
@@ -907,7 +905,7 @@ sub toMatlabString
         
         my $fcn = $fcn_param->Ref;
 
-        my $fcn_str = $fcn->toMatlabString( $plist, {'fcn_mode' => 'call', 'rrefs' => $rrefs, 'reactants' => $reactants});
+        my $fcn_str = $fcn->toMatlabString( $plist, {'fcn_mode' => 'call', 'reactants' => $reactants});
         if ($fcn_str =~ /^could not find/ || $fcn_str =~ /^ratelaw depends on/)
         {   return $fcn_str;   }
         push @rl_terms, $fcn_str;
