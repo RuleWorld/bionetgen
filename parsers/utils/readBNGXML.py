@@ -36,20 +36,30 @@ def findBond(bondDefinitions, component):
     
 def createMolecule(molecule, bonds):
     nameDict = {}
-    mol = st.Molecule(molecule.get('name'),molecule.get('id'))
-    if molecule.get('compartment') not in ['',None]:
-        mol.setCompartment(molecule.get('compartment'))
-    nameDict[molecule.get('id')] = molecule.get('name')
+    mol_id = molecule.get('id')
+    mol_name = molecule.get('name')
+    mol = st.Molecule(mol_name, mol_id)
+    mol_comp = molecule.get('compartment')
+    if mol_comp not in ['', None]:
+        mol.setCompartment(mol_comp)
+    nameDict[mol_id] = mol_name
     listOfComponents =  _fast_find(molecule, 'ListOfComponents')
     if listOfComponents != None:
         for element in listOfComponents:
-            component = st.Component(element.get('name'),element.get('id'))
-            nameDict[element.get('id')] = element.get('name')
-            if element.get('numberOfBonds') in ['+','?']:
-                component.addBond(element.get('numberOfBonds'))
-            elif element.get('numberOfBonds') != '0':
-                component.addBond(findBond(bonds, element.get('id')))
-            state = element.get('state') if element.get('state') != None else ''
+            elem_id = element.get('id')
+            elem_name = element.get('name')
+            elem_bonds = element.get('numberOfBonds')
+            elem_state = element.get('state')
+
+            component = st.Component(elem_name, elem_id)
+            nameDict[elem_id] = elem_name
+
+            if elem_bonds in ['+', '?']:
+                component.addBond(elem_bonds)
+            elif elem_bonds != '0':
+                component.addBond(findBond(bonds, elem_id))
+
+            state = elem_state if elem_state != None else ''
             component.states.append(state)
             component.activeState = state
             mol.addComponent(component)
