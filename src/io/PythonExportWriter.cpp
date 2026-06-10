@@ -338,26 +338,40 @@ std::string PythonExportWriter::convertRateToPython(const std::string& rate, con
 
     for (const auto& [idx, name] : sorted) {
         std::string paramRef = "expressions[" + std::to_string(idx) + "]";
+        std::string new_result;
+        new_result.reserve(result.length());
         std::size_t pos = 0;
+        std::size_t last_pos = 0;
         while ((pos = result.find(name, pos)) != std::string::npos) {
             bool validStart = (pos == 0 || (!std::isalnum(static_cast<unsigned char>(result[pos - 1])) && result[pos - 1] != '_'));
             bool validEnd = (pos + name.length() >= result.length() ||
                            (!std::isalnum(static_cast<unsigned char>(result[pos + name.length()])) && result[pos + name.length()] != '_'));
             if (validStart && validEnd) {
-                result.replace(pos, name.length(), paramRef);
-                pos += paramRef.length();
+                new_result.append(result, last_pos, pos - last_pos);
+                new_result.append(paramRef);
+                pos += name.length();
+                last_pos = pos;
             } else {
                 pos += name.length();
             }
         }
+        new_result.append(result, last_pos, result.length() - last_pos);
+        result = new_result;
     }
 
     // Replace ^ with ** for Python exponentiation
+    std::string new_result_exp;
+    new_result_exp.reserve(result.length());
     std::size_t pos = 0;
+    std::size_t last_pos = 0;
     while ((pos = result.find('^', pos)) != std::string::npos) {
-        result.replace(pos, 1, "**");
-        pos += 2;
+        new_result_exp.append(result, last_pos, pos - last_pos);
+        new_result_exp.append("**");
+        pos += 1;
+        last_pos = pos;
     }
+    new_result_exp.append(result, last_pos, result.length() - last_pos);
+    result = new_result_exp;
 
     return result;
 }

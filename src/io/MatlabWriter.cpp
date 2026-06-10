@@ -326,18 +326,25 @@ std::string MatlabWriter::convertRateToMatlab(const std::string& rate, const std
 
     for (const auto& [idx, name] : sorted) {
         std::string paramRef = "expressions(" + std::to_string(idx + 1) + ")";
+        std::string new_result;
+        new_result.reserve(result.length());
         std::size_t pos = 0;
+        std::size_t last_pos = 0;
         while ((pos = result.find(name, pos)) != std::string::npos) {
-            bool validStart = (pos == 0 || !std::isalnum(static_cast<unsigned char>(result[pos - 1])) && result[pos - 1] != '_');
+            bool validStart = (pos == 0 || (!std::isalnum(static_cast<unsigned char>(result[pos - 1])) && result[pos - 1] != '_'));
             bool validEnd = (pos + name.length() >= result.length() ||
                            (!std::isalnum(static_cast<unsigned char>(result[pos + name.length()])) && result[pos + name.length()] != '_'));
             if (validStart && validEnd) {
-                result.replace(pos, name.length(), paramRef);
-                pos += paramRef.length();
+                new_result.append(result, last_pos, pos - last_pos);
+                new_result.append(paramRef);
+                pos += name.length();
+                last_pos = pos;
             } else {
                 pos += name.length();
             }
         }
+        new_result.append(result, last_pos, result.length() - last_pos);
+        result = new_result;
     }
 
     return result;
