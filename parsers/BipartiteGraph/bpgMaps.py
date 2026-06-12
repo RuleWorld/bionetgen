@@ -144,38 +144,38 @@ class NameDictionary:
 	def getIdx(self,elemtype,string):
 		# ⚡ Bolt: Use simple for loop instead of generator expression to avoid generator initialization overhead, providing a much faster O(1) early exit
 		if elemtype == 'p':
-			for x,idx in list(self.p.items()):
+			for x,idx in self.p.items():
 				if str(x)==string: return idx
 		if elemtype == 't':
-			for x,idx in list(self.t.items()):
+			for x,idx in self.t.items():
 				if str(x)==string: return idx
 		if elemtype == 'tp':
-			for x,idx in list(self.tp.items()):
+			for x,idx in self.tp.items():
 				if str(x)==string: return idx
 		if elemtype == 'r':
-			for x,idx in list(self.r.items()):
+			for x,idx in self.r.items():
 				if str(x)==string: return idx
 		if elemtype == 'irr':
-			for x,idx in list(self.irr.items()):
+			for x,idx in self.irr.items():
 				if str(x)==string: return idx
 		return None
 			
 	def getElement(self,elemtype,idx1):
 		# ⚡ Bolt: Use simple for loop instead of generator expression to avoid generator initialization overhead, providing a much faster O(1) early exit
 		if elemtype == 'p':
-			for x,idx in list(self.p.items()):
+			for x,idx in self.p.items():
 				if idx==idx1: return x
 		if elemtype == 't':
-			for x,idx in list(self.t.items()):
+			for x,idx in self.t.items():
 				if idx==idx1: return x
 		if elemtype == 'tp':
-			for x,idx in list(self.tp.items()):
+			for x,idx in self.tp.items():
 				if idx==idx1: return x
 		if elemtype == 'r':
-			for x,idx in list(self.r.items()):
+			for x,idx in self.r.items():
 				if idx==idx1: return x
 		if elemtype == 'irr':
-			for x,idx in list(self.irr.items()):
+			for x,idx in self.irr.items():
 				if idx==idx1: return x
 		return None
 			
@@ -183,7 +183,7 @@ class NameDictionary:
 		return str(self.getElement(elemtype,idx1))
 			
 	def printDict(self,elemtype,someDict,sortbywhat):
-		tuples = [(self.getString(elemtype,x),y) for x,y in list(someDict.items())]
+		tuples = [(self.getString(elemtype,x),y) for x,y in someDict.items()]
 		if sortbywhat == 'value':
 			tuples = sorted(tuples,key=lambda x: x[1])
 		return "\n".join([":".join([str(x) for x in z]) for z in tuples])
@@ -909,17 +909,17 @@ def writeJSON(names,all_maps,annot):
 	# Getting the node elements
 	# A node for each rule
 	nodes = []
-	for rule,idx in list(names.r.items()):
+	for rule,idx in names.r.items():
 		temp = rule.getJSON()
 		temp.update({"idx":idx,"annot":annot.r[idx]})
 		nodes.append(temp)
 	# A node for each pattern
-	for patt,idx in list(names.p.items()):
+	for patt,idx in names.p.items():
 		temp = patt.getJSON()
 		temp.update({"idx":idx,"annot":annot.p[idx]})
 		nodes.append(temp)
 	# A node for each transformation (how to deal with irreversibles)
-	for tr,idx in list(names.t.items()):
+	for tr,idx in names.t.items():
 		temp = tr.getJSON()
 		temp.update({"idx":idx,"annot":annot.p[idx]})
 		if idx in [str(x) for x in names.irr]:
@@ -929,7 +929,7 @@ def writeJSON(names,all_maps,annot):
 		nodes.append(temp)
 
 	# A node for each transformation pair
-	for tp,idx in list(names.tp.items()):
+	for tp,idx in names.tp.items():
 		temp = tp.getJSON()
 		temp.update({"idx":idx,"annot":annot.tp[idx]})
 		nodes.append(temp)
@@ -985,13 +985,13 @@ def writeJSON(names,all_maps,annot):
 def listify(set1):
 	return [list(x) for x in list(set1)]
 def listify2(dict1):
-	return [ [x,y] for x,y in list(dict1.items())]
+	return [ [x,y] for x,y in dict1.items()]
 
 def unq(list1):
 	return list(set(list1))
  
 def combineLists(listoflists):
-	return reduce(lambda x,y: x+y,listoflists)
+	return list(itertools.chain.from_iterable(listoflists))
 	
 def printDict(somedict):
 	return "\n".join(sorted([str(x)+":"+str(y) for x,y in sorted(somedict.items())]))
