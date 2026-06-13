@@ -823,15 +823,14 @@ void MacroBNGModel::skf0(const std::string& rp1,
         }
 
         // Remove the first occurrence of lnk1 from p1
-        p1 = replaceFirst(p1, lnk1, "");
+        p1.erase(bang_pos, lnk1.length());
 
         // Find the second occurrence of lnk1 in p1
-        if (p1.find(lnk1) == std::string::npos) {
+        auto bang_pos2 = p1.find(lnk1);
+        if (bang_pos2 == std::string::npos) {
             // No matching second link — skip
             continue;
         }
-
-        auto bang_pos2 = p1.find(lnk1);
         std::string lef2 = p1.substr(0, bang_pos2);
 
         // Extract skf2, sit2 from lef2 the same way
@@ -874,7 +873,7 @@ void MacroBNGModel::skf0(const std::string& rp1,
         }
 
         // Remove the second occurrence of lnk1 from p1
-        p1 = replaceFirst(p1, lnk1, "");
+        p1.erase(bang_pos2, lnk1.length());
 
         // add_skf both directions
         add_skf(skf1, skf2, sit1, skf, nm2_site);
