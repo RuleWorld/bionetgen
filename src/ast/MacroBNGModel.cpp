@@ -116,9 +116,29 @@ std::string MacroBNGModel::rtrim(const std::string& s) {
     return std::string(s.begin(), it.base());
 }
 
+
 std::string MacroBNGModel::trim(const std::string& s) {
     return ltrim(rtrim(s));
 }
+
+std::string MacroBNGModel::collapseWhitespace(const std::string& s) {
+    std::string result;
+    result.reserve(s.size());
+    bool in_space = false;
+    for (char c : s) {
+        if (std::isspace(static_cast<unsigned char>(c))) {
+            if (!in_space) {
+                result.push_back(' ');
+                in_space = true;
+            }
+        } else {
+            result.push_back(c);
+            in_space = false;
+        }
+    }
+    return result;
+}
+
 
 std::string MacroBNGModel::quotemeta(const std::string& s) {
     // Escape all non-alphanumeric, non-underscore characters for regex use
@@ -217,7 +237,7 @@ MacroBNGModel::read_block_array(const std::string& name) {
             std::string ename = trimmed.substr(4);
             // trim and normalize whitespace
             ename = trim(ename);
-            ename = std::regex_replace(ename, std::regex("\\s+"), " ");
+            ename = collapseWhitespace(ename);
             if (ename != name) {
                 return {{}, errgen("end " + ename + " does not match begin " + name)};
             }
@@ -386,7 +406,7 @@ std::string MacroBNGModel::pre_macr(const std::string& param_prefix) {
         if (std::regex_search(trimmed, m, re_begin)) {
             std::string name = m[1].str();
             name = trim(name);
-            name = std::regex_replace(name, std::regex("\\s+"), " ");
+            name = collapseWhitespace(name);
 
             auto [block_dat, block_err] = read_block_array(name);
             if (!block_err.empty()) {
@@ -680,7 +700,7 @@ void MacroBNGModel::del_blank(const std::vector<std::string>& str,
         // Strip trailing whitespace
         line = rtrim(line);
         // Collapse internal whitespace to single space
-        line = std::regex_replace(line, std::regex("\\s+"), " ");
+        line = collapseWhitespace(line);
         // Replace single spaces with semicolons
         line = replaceAll(line, " ", ";");
 

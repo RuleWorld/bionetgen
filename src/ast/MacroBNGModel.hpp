@@ -276,6 +276,7 @@ private:
     static std::string ltrim(const std::string& s);
     static std::string rtrim(const std::string& s);
     static std::string trim(const std::string& s);
+    static std::string collapseWhitespace(const std::string& s);
     // Perl quotemeta-like escape for use with regex
     static std::string quotemeta(const std::string& s);
 };
