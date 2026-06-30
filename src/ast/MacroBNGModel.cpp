@@ -617,10 +617,14 @@ void MacroBNGModel::pre_species1(std::map<std::string, int>& nm_site,
                 return;
             } else {
                 // Strip leading numeric index
-                std::regex_replace(entry, std::regex("^\\s*\\d+\\s+"), "");
-                std::smatch rm;
-                if (std::regex_search(entry, rm, std::regex("^\\s*\\d+\\s+"))) {
-                    entry = rm.suffix().str();
+                size_t i = 0;
+                while (i < entry.size() && std::isspace(entry[i])) i++;
+                if (i < entry.size() && std::isdigit(entry[i])) {
+                    while (i < entry.size() && std::isdigit(entry[i])) i++;
+                    if (i < entry.size() && std::isspace(entry[i])) {
+                        while (i < entry.size() && std::isspace(entry[i])) i++;
+                        entry = entry.substr(i);
+                    }
                 }
             }
         }
@@ -983,21 +987,25 @@ void MacroBNGModel::del_set(const std::vector<std::string>& rem,
 void MacroBNGModel::activ_sit(int /*typrul*/, std::string& reac, std::string& prod,
                                std::vector<std::string>& mreac) {
     while (!reac.empty()) {
-        // Match first (...) group
-        std::regex re_paren("[\\(].*?[)]");
-        std::smatch m;
-        if (!std::regex_search(reac, m, re_paren)) break;
+        auto p1 = reac.find('(');
+        if (p1 == std::string::npos) break;
+        auto p2 = reac.find(')', p1);
+        if (p2 == std::string::npos) break;
 
-        std::string name = m.prefix().str();  // molecule name before '('
-        std::string r1 = name + m[0].str();   // e.g. "R(a!1)"
-
-        // Remove the matched portion from reac
-        reac = m.suffix().str();
-        // Strip leading separators ;+.
-        reac = std::regex_replace(reac, std::regex("^[;+.]+"), "");
-
-        // Perl pushes r1 to mreac in both branches of the prod check
+        std::string r1 = reac.substr(0, p2 + 1);
         mreac.push_back(r1);
+
+        if (p2 + 1 < reac.size()) {
+            reac = reac.substr(p2 + 1);
+            size_t non_sep = reac.find_first_not_of(";+.");
+            if (non_sep != std::string::npos) {
+                reac = reac.substr(non_sep);
+            } else {
+                reac = "";
+            }
+        } else {
+            reac = "";
+        }
     }
 }
 
