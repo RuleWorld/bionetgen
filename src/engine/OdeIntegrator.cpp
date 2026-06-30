@@ -701,6 +701,12 @@ void OdeIntegrator::compileGroups() {
     // Note: const_cast needed because buildPatternGraph may infer molecule types
     auto& mutableModel = const_cast<ast::Model&>(model_);
 
+    struct CachedPattern {
+        BNGcore::PatternGraph graph;
+        std::string compartment;
+    };
+    std::unordered_map<std::string, CachedPattern> parsedObservableCache;
+
     for (const auto& observable : model_.getObservables()) {
         CompiledGroup group;
         group.name = observable.getName();
@@ -749,24 +755,32 @@ void OdeIntegrator::compileGroups() {
                         }
                     }
 
-                    antlr4::ANTLRInputStream input(cleanPattern);
-                    BNGLexer lexer(&input);
-                    antlr4::CommonTokenStream tokens(&lexer);
-                    BNGParser parser(&tokens);
-                    auto* species = parser.species_def();
+                    auto cacheIt = parsedObservableCache.find(cleanPattern);
+                    if (cacheIt == parsedObservableCache.end()) {
+                        antlr4::ANTLRInputStream input(cleanPattern);
+                        BNGLexer lexer(&input);
+                        antlr4::CommonTokenStream tokens(&lexer);
+                        BNGParser parser(&tokens);
+                        auto* species = parser.species_def();
 
-                    if (parser.getNumberOfSyntaxErrors() != 0) {
-                        throw std::runtime_error("Could not parse observable pattern: " + patternText);
+                        if (parser.getNumberOfSyntaxErrors() != 0) {
+                            throw std::runtime_error("Could not parse observable pattern: " + patternText);
+                        }
+
+                        CachedPattern cp;
+                        cp.graph = bng::parser::buildPatternGraph(species, mutableModel, false);
+                        cp.compartment = bng::parser::extractSpeciesCompartment(species);
+                        cacheIt = parsedObservableCache.emplace(cleanPattern, std::move(cp)).first;
                     }
 
-                    const auto pattern = bng::parser::buildPatternGraph(species, mutableModel, false);
+                    const auto& pattern = cacheIt->second.graph;
 
                     // Compartment matching strategy:
                     // 1. Molecule-level compartment (e.g., SARM()@Cyt) -- handled
                     //    by Ullmann matcher's Node::operator== compartment check.
                     // 2. Species-level prefix compartment (e.g., @PM:L) -- no
                     //    compartment on pattern nodes; filter at species level.
-                    const auto patternCompartment = bng::parser::extractSpeciesCompartment(species);
+                    const auto& patternCompartment = cacheIt->second.compartment;
                     if (!patternCompartment.empty()) {
                         bool patternHasMoleculeCompartment = false;
                         for (auto it = pattern.begin(); it != pattern.end(); ++it) {
