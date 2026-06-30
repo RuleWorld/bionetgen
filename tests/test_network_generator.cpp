@@ -221,6 +221,11 @@ TEST_CASE("withinStoichLimits enforces molecule counts", "[NetworkGenerator]") {
         std::map<std::string, std::size_t> limits = {{"A", 2}, {"C", 0}};
         REQUIRE(withinStoichLimits(graph, limits) == true);
     }
+
+    SECTION("Molecule in graph is not in limits") {
+        std::map<std::string, std::size_t> limits = {{"A", 2}};
+        REQUIRE(withinStoichLimits(graph, limits) == true);
+    }
 }
 
 
