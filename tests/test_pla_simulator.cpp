@@ -110,9 +110,6 @@ public:
     static bool checkNegativePopulations(const PlaSimulator& sim, const std::vector<double>& state) {
         return sim.checkNegativePopulations(state);
     }
-    static void clampNegatives(const PlaSimulator& sim, std::vector<double>& state) {
-        sim.clampNegatives(state);
-    }
     static void setupDummyReactions(PlaSimulator& sim) {
         sim.compiledRxns_.clear();
         PlaSimulator::CompiledReaction rxn0;
@@ -126,6 +123,23 @@ public:
         sim.compiledRxns_.push_back(rxn2);
         sim.fixedSpecies_ = {false, false};
         sim.nSpecies_ = 2;
+    }
+
+    static void setupDummyGroups(PlaSimulator& sim) {
+        sim.compiledGroups_.clear();
+        PlaSimulator::CompiledGroup g1;
+        g1.name = "Group1";
+        g1.entries = {{0, 2.0}, {1, 1.5}};
+        sim.compiledGroups_.push_back(g1);
+
+        PlaSimulator::CompiledGroup g2;
+        g2.name = "Group2";
+        g2.entries = {{1, 3.0}, {2, 0.5}};
+        sim.compiledGroups_.push_back(g2);
+    }
+
+    static void updateObservables(const PlaSimulator& sim, const std::vector<double>& state, std::vector<double>& obsValues) {
+        sim.updateObservables(state, obsValues);
     }
 };
 }
@@ -207,47 +221,34 @@ TEST_CASE("PlaSimulator::checkNegativePopulations", "[PlaSimulator]") {
     }
 }
 
-TEST_CASE("PlaSimulator::clampNegatives", "[PlaSimulator]") {
+TEST_CASE("PlaSimulator::updateObservables", "[PlaSimulator]") {
     Model model;
     GeneratedNetwork network;
     PlaSimulator sim(model, network);
 
-    // Setup dummy reactions to initialize fixedSpecies_ and nSpecies_ (sets nSpecies_ = 2)
-    bng::engine::PlaSimulatorTestProxy::setupDummyReactions(sim);
+    bng::engine::PlaSimulatorTestProxy::setupDummyGroups(sim);
 
-    SECTION("All positive populations") {
-        std::vector<double> state = {100.0, 50.0};
-        bng::engine::PlaSimulatorTestProxy::clampNegatives(sim, state);
-        REQUIRE_THAT(state[0], Catch::Matchers::WithinAbs(100.0, 1e-6));
-        REQUIRE_THAT(state[1], Catch::Matchers::WithinAbs(50.0, 1e-6));
+    SECTION("Calculates observables correctly") {
+        std::vector<double> state = {10.0, 5.0, 2.0};
+        std::vector<double> obsValues;
+
+        bng::engine::PlaSimulatorTestProxy::updateObservables(sim, state, obsValues);
+
+        REQUIRE(obsValues.size() == 2);
+        // Group 1: 10.0 * 2.0 + 5.0 * 1.5 = 20.0 + 7.5 = 27.5
+        REQUIRE_THAT(obsValues[0], Catch::Matchers::WithinAbs(27.5, 1e-6));
+        // Group 2: 5.0 * 3.0 + 2.0 * 0.5 = 15.0 + 1.0 = 16.0
+        REQUIRE_THAT(obsValues[1], Catch::Matchers::WithinAbs(16.0, 1e-6));
     }
 
-    SECTION("Zero populations") {
-        std::vector<double> state = {0.0, 0.0};
-        bng::engine::PlaSimulatorTestProxy::clampNegatives(sim, state);
-        REQUIRE_THAT(state[0], Catch::Matchers::WithinAbs(0.0, 1e-6));
-        REQUIRE_THAT(state[1], Catch::Matchers::WithinAbs(0.0, 1e-6));
-    }
+    SECTION("Empty state handles gracefully") {
+        std::vector<double> state = {0.0, 0.0, 0.0};
+        std::vector<double> obsValues;
 
-    SECTION("Mixed negative and positive populations") {
-        std::vector<double> state = {-10.5, 50.0};
-        bng::engine::PlaSimulatorTestProxy::clampNegatives(sim, state);
-        REQUIRE_THAT(state[0], Catch::Matchers::WithinAbs(0.0, 1e-6));
-        REQUIRE_THAT(state[1], Catch::Matchers::WithinAbs(50.0, 1e-6));
-    }
+        bng::engine::PlaSimulatorTestProxy::updateObservables(sim, state, obsValues);
 
-    SECTION("All negative populations") {
-        std::vector<double> state = {-0.6, -1.2};
-        bng::engine::PlaSimulatorTestProxy::clampNegatives(sim, state);
-        REQUIRE_THAT(state[0], Catch::Matchers::WithinAbs(0.0, 1e-6));
-        REQUIRE_THAT(state[1], Catch::Matchers::WithinAbs(0.0, 1e-6));
-    }
-
-    SECTION("Values beyond nSpecies_ are not modified") {
-        std::vector<double> state = {-1.0, -2.0, -3.0};
-        bng::engine::PlaSimulatorTestProxy::clampNegatives(sim, state);
-        REQUIRE_THAT(state[0], Catch::Matchers::WithinAbs(0.0, 1e-6));
-        REQUIRE_THAT(state[1], Catch::Matchers::WithinAbs(0.0, 1e-6));
-        REQUIRE_THAT(state[2], Catch::Matchers::WithinAbs(-3.0, 1e-6));
+        REQUIRE(obsValues.size() == 2);
+        REQUIRE_THAT(obsValues[0], Catch::Matchers::WithinAbs(0.0, 1e-6));
+        REQUIRE_THAT(obsValues[1], Catch::Matchers::WithinAbs(0.0, 1e-6));
     }
 }
