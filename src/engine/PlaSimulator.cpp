@@ -4,6 +4,7 @@
 #include <cmath>
 #include <limits>
 #include <numeric>
+#include <unordered_map>
 #include <sstream>
 #include <stdexcept>
 
@@ -193,6 +194,8 @@ void PlaSimulator::compileGroups() {
     compiledGroups_.clear();
     auto& mutableModel = const_cast<ast::Model&>(model_);
 
+    std::unordered_map<std::string, BNGcore::PatternGraph> parsedObservableCache;
+
     for (const auto& observable : model_.getObservables()) {
         CompiledGroup group;
         group.name = observable.getName();
@@ -201,14 +204,20 @@ void PlaSimulator::compileGroups() {
             std::size_t weight = 0;
             for (const auto& patternText : observable.getPatterns()) {
                 try {
-                    antlr4::ANTLRInputStream input(patternText);
-                    BNGLexer lexer(&input);
-                    antlr4::CommonTokenStream tokens(&lexer);
-                    BNGParser parser(&tokens);
-                    auto* species = parser.species_def();
-                    if (parser.getNumberOfSyntaxErrors() == 0) {
-                        const auto pattern = bng::parser::buildPatternGraph(species, mutableModel);
-                        BNGcore::UllmannSGIso matcher(pattern,
+                    auto cacheIt = parsedObservableCache.find(patternText);
+                    if (cacheIt == parsedObservableCache.end()) {
+                        antlr4::ANTLRInputStream input(patternText);
+                        BNGLexer lexer(&input);
+                        antlr4::CommonTokenStream tokens(&lexer);
+                        BNGParser parser(&tokens);
+                        auto* species = parser.species_def();
+                        if (parser.getNumberOfSyntaxErrors() == 0) {
+                            cacheIt = parsedObservableCache.emplace(patternText, bng::parser::buildPatternGraph(species, mutableModel)).first;
+                        }
+                    }
+
+                    if (cacheIt != parsedObservableCache.end()) {
+                        BNGcore::UllmannSGIso matcher(cacheIt->second,
                             network_.species.get(speciesIndex).getSpeciesGraph().getGraph());
                         BNGcore::List<BNGcore::Map> maps;
                         weight += matcher.find_maps(maps);
