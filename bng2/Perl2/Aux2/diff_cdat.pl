@@ -44,7 +44,7 @@ $rfilename2= shift;
 
 #print "Comparing $rfilename $rfilename2\n";
 
-open (RFILE, $rfilename) or die "Can't open $rfilename: $!\n";
+open (RFILE, '<', $rfilename) or die "Can't open $rfilename: $!\n";
 $i=0;
 @data=();
 @times=();
@@ -60,7 +60,7 @@ while (<RFILE>){
 }
 close(RFILE);
 
-open (RFILE, $rfilename2) or die "Can't open $rfilename2: $!\n";
+open (RFILE, '<', $rfilename2) or die "Can't open $rfilename2: $!\n";
 $i=0;
 @data2=();
 @times2=();
