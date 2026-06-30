@@ -2908,10 +2908,27 @@ void MacroBNGModel::delsites(
     for (size_t j = 0; j < rr1out.size(); ++j) {
         if (rr1out[j].empty()) continue;
         // Create sort key: replace bond labels with #,
-        std::string sortKey = rr1out[j];
-        // Replace !xxx, and !xxx) patterns with #,
-        std::regex bondPat("![^,)]+([,)])");
-        sortKey = std::regex_replace(sortKey, bondPat, "#,");
+        std::string sortKey;
+        sortKey.reserve(rr1out[j].size());
+        for (size_t i = 0; i < rr1out[j].size(); ) {
+            if (rr1out[j][i] == '!') {
+                // look ahead for ',' or ')'
+                size_t end = i + 1;
+                while (end < rr1out[j].size() && rr1out[j][end] != ',' && rr1out[j][end] != ')') {
+                    end++;
+                }
+                if (end < rr1out[j].size() && end > i + 1) {
+                    sortKey += "#,";
+                    i = end + 1;
+                } else {
+                    sortKey += rr1out[j][i];
+                    i++;
+                }
+            } else {
+                sortKey += rr1out[j][i];
+                i++;
+            }
+        }
         rr1s[sortKey] = j;
     }
 
@@ -2946,14 +2963,15 @@ void MacroBNGModel::delsites(
 
     // Renumber bond labels sequentially
     int bondNum = 0;
-    while (ou1.find('!') != std::string::npos) {
+    size_t pos = 0;
+    while ((pos = ou1.find('!')) != std::string::npos) {
         bondNum++;
-        // Find first bond label: !<label> terminated by , or ) or !
-        std::regex firstBond("![^,)!]+");
-        std::smatch m;
-        if (std::regex_search(ou1, m, firstBond)) {
-            std::string oldLabel = m[0].str();
-            // Replace all occurrences of this label
+        size_t end = pos + 1;
+        while (end < ou1.size() && ou1[end] != ',' && ou1[end] != ')' && ou1[end] != '!') {
+            end++;
+        }
+        if (end > pos + 1) {
+            std::string oldLabel = ou1.substr(pos, end - pos);
             std::string replacement = "#" + std::to_string(bondNum);
             ou1 = replaceAll(ou1, oldLabel, replacement);
         } else {
