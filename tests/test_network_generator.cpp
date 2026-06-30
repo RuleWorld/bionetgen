@@ -417,3 +417,46 @@ TEST_CASE("generateNative drives network generation", "[NetworkGenerator]") {
         REQUIRE(network.reactions.size() == 1);
     }
 }
+
+
+TEST_CASE("isComponentNode behaves correctly", "[NetworkGenerator]") {
+    Model model;
+
+    // Molecule with one component and a bond
+    // Pattern A(b!1).A(b!1) has molecules, components, and bonds.
+    ComponentType b_comp;
+    b_comp.name = "b";
+
+    std::vector<ComponentType> comps;
+    comps.push_back(b_comp);
+
+    model.addMoleculeType(MoleculeType("A", comps, false));
+    SpeciesGraph graph = makeSpeciesGraph("A(b!1).A(b!1)", model);
+
+    int moleculeCount = 0;
+    int componentCount = 0;
+    int bondCount = 0;
+
+    for (auto nodeIter = graph.getGraph().begin(); nodeIter != graph.getGraph().end(); ++nodeIter) {
+        if (isBondNode(**nodeIter)) {
+            bondCount++;
+            REQUIRE_FALSE(isComponentNode(**nodeIter));
+        } else if (isComponentNode(**nodeIter)) {
+            componentCount++;
+            REQUIRE_FALSE(isBondNode(**nodeIter));
+            REQUIRE_FALSE(isMoleculeNode(**nodeIter));
+        } else if (isMoleculeNode(**nodeIter)) {
+            moleculeCount++;
+            REQUIRE_FALSE(isBondNode(**nodeIter));
+            REQUIRE_FALSE(isComponentNode(**nodeIter));
+        }
+    }
+
+    // For A(b!1).A(b!1) we expect:
+    // 2 Molecule nodes ("A")
+    // 2 Component nodes ("b")
+    // 1 Bond node ("!1")
+    REQUIRE(moleculeCount == 2);
+    REQUIRE(componentCount == 2);
+    REQUIRE(bondCount == 1);
+}
