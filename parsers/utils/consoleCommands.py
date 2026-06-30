@@ -24,7 +24,7 @@ def getBngExecutable():
 
 def bngl2xml(bnglFile,timeout=60):
     try:
-        bngconsole = pexpect.spawn('{0} --console'.format(getBngExecutable()),timeout=timeout)
+        bngconsole = pexpect.spawn(getBngExecutable(), ['--console'], timeout=timeout)
         bngconsole.expect('BNG>')
         bngconsole.sendline('load {0}'.format(bnglFile))
         bngconsole.expect('BNG>')
@@ -38,7 +38,7 @@ def bngl2xml(bnglFile,timeout=60):
 
 def bngl2sbml(bnglFile,timeout=60):
     try:
-        bngconsole = pexpect.spawn('{0} --console'.format(getBngExecutable()),timeout=timeout)
+        bngconsole = pexpect.spawn(getBngExecutable(), ['--console'], timeout=timeout)
         bngconsole.expect('BNG>')
         bngconsole.sendline('load {0}'.format(bnglFile))
         bngconsole.expect('BNG>')
@@ -53,7 +53,7 @@ def bngl2sbml(bnglFile,timeout=60):
             subprocess.call([killall_path, 'bngdev'], shell=False)  # nosec
     
 def correctness(bnglFile):
-    bngconsole = pexpect.spawn('{0} --console'.format(getBngExecutable()))
+    bngconsole = pexpect.spawn(getBngExecutable(), ['--console'])
     bngconsole.expect('BNG>')
     bngconsole.sendline('load {0}'.format(bnglFile))
     bngconsole.expect('BNG>')
@@ -65,7 +65,7 @@ def correctness(bnglFile):
 
     
 def writeNetwork(bnglFile):
-    bngconsole = pexpect.spawn('{0} --console'.format(getBngExecutable()))
+    bngconsole = pexpect.spawn(getBngExecutable(), ['--console'])
     bngconsole.expect('BNG>')
     bngconsole.sendline('load {0}'.format(bnglFile))
     bngconsole.expect('BNG>')
@@ -78,7 +78,7 @@ def generateGraph(bnglFile,graphType):
     directory = os.sep.join(bnglFile.split(os.sep)[:-1])
     os.chdir(directory)
     print(directory)
-    bngconsole = pexpect.spawn('{0} --console'.format(getBngExecutable()))
+    bngconsole = pexpect.spawn(getBngExecutable(), ['--console'])
     bngconsole.expect('BNG>')
     bngconsole.sendline('load {0}'.format(bnglFile))
     bngconsole.expect('BNG>')
