@@ -74,6 +74,33 @@ std::string stripQuotes(const std::string& text) {
     return text;
 }
 
+
+void validateNFSimPath(const std::string& path) {
+    if (path.empty()) return;
+
+    // Ensure the executable is named NFsim or NFsim.exe to prevent arbitrary command execution
+    std::filesystem::path p(path);
+    std::string filename = p.filename().string();
+    if (filename != "NFsim" && filename != "NFsim.exe") {
+        throw std::runtime_error("Invalid nfsim_exec path: executable must be named 'NFsim' or 'NFsim.exe'");
+    }
+}
+
+void validateNumeric(const std::string& arg, const std::string& argName) {
+    if (arg.empty()) return;
+
+    // Ensure the argument is a valid number (integer or float)
+    try {
+        size_t pos = 0;
+        std::stod(arg, &pos);
+        if (pos != arg.length()) {
+            throw std::invalid_argument("not fully parsed");
+        }
+    } catch (...) {
+        throw std::runtime_error("Invalid argument for NFSim parameter '" + argName + "': must be numeric");
+    }
+}
+
 std::string lowercase(std::string value) {
     std::transform(value.begin(), value.end(), value.begin(), [](unsigned char c) {
         return static_cast<char>(std::tolower(c));
@@ -1294,6 +1321,12 @@ void ActionDispatch::execute(ast::Model& model, const std::filesystem::path& sou
                 const auto speciesPath = sourcePath.parent_path() / (prefix + ".species");
                 cmd += " -ss \"" + speciesPath.string() + "\"";
             }
+
+
+            validateNumeric(tEnd, "t_end");
+            validateNumeric(nSteps, "n_steps");
+            if (!seedText.empty()) validateNumeric(seedText, "seed");
+            validateNFSimPath(nfsimExec);
 
             if (verbose) {
                 std::cerr << "[bng_cpp] Running NFSim: " << cmd << "\n";
