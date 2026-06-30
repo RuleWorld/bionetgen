@@ -110,6 +110,9 @@ public:
     static bool checkNegativePopulations(const PlaSimulator& sim, const std::vector<double>& state) {
         return sim.checkNegativePopulations(state);
     }
+    static void clampNegatives(const PlaSimulator& sim, std::vector<double>& state) {
+        sim.clampNegatives(state);
+    }
     static void setupDummyReactions(PlaSimulator& sim) {
         sim.compiledRxns_.clear();
         PlaSimulator::CompiledReaction rxn0;
@@ -201,5 +204,50 @@ TEST_CASE("PlaSimulator::checkNegativePopulations", "[PlaSimulator]") {
         bng::engine::PlaSimulatorTestProxy::setFixedSpecies(sim, {true, false});
         std::vector<double> state = {-0.6, 50.0};
         REQUIRE_FALSE(bng::engine::PlaSimulatorTestProxy::checkNegativePopulations(sim, state));
+    }
+}
+
+TEST_CASE("PlaSimulator::clampNegatives", "[PlaSimulator]") {
+    Model model;
+    GeneratedNetwork network;
+    PlaSimulator sim(model, network);
+
+    // Setup dummy reactions to initialize fixedSpecies_ and nSpecies_ (sets nSpecies_ = 2)
+    bng::engine::PlaSimulatorTestProxy::setupDummyReactions(sim);
+
+    SECTION("All positive populations") {
+        std::vector<double> state = {100.0, 50.0};
+        bng::engine::PlaSimulatorTestProxy::clampNegatives(sim, state);
+        REQUIRE_THAT(state[0], Catch::Matchers::WithinAbs(100.0, 1e-6));
+        REQUIRE_THAT(state[1], Catch::Matchers::WithinAbs(50.0, 1e-6));
+    }
+
+    SECTION("Zero populations") {
+        std::vector<double> state = {0.0, 0.0};
+        bng::engine::PlaSimulatorTestProxy::clampNegatives(sim, state);
+        REQUIRE_THAT(state[0], Catch::Matchers::WithinAbs(0.0, 1e-6));
+        REQUIRE_THAT(state[1], Catch::Matchers::WithinAbs(0.0, 1e-6));
+    }
+
+    SECTION("Mixed negative and positive populations") {
+        std::vector<double> state = {-10.5, 50.0};
+        bng::engine::PlaSimulatorTestProxy::clampNegatives(sim, state);
+        REQUIRE_THAT(state[0], Catch::Matchers::WithinAbs(0.0, 1e-6));
+        REQUIRE_THAT(state[1], Catch::Matchers::WithinAbs(50.0, 1e-6));
+    }
+
+    SECTION("All negative populations") {
+        std::vector<double> state = {-0.6, -1.2};
+        bng::engine::PlaSimulatorTestProxy::clampNegatives(sim, state);
+        REQUIRE_THAT(state[0], Catch::Matchers::WithinAbs(0.0, 1e-6));
+        REQUIRE_THAT(state[1], Catch::Matchers::WithinAbs(0.0, 1e-6));
+    }
+
+    SECTION("Values beyond nSpecies_ are not modified") {
+        std::vector<double> state = {-1.0, -2.0, -3.0};
+        bng::engine::PlaSimulatorTestProxy::clampNegatives(sim, state);
+        REQUIRE_THAT(state[0], Catch::Matchers::WithinAbs(0.0, 1e-6));
+        REQUIRE_THAT(state[1], Catch::Matchers::WithinAbs(0.0, 1e-6));
+        REQUIRE_THAT(state[2], Catch::Matchers::WithinAbs(-3.0, 1e-6));
     }
 }
