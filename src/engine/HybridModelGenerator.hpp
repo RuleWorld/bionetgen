@@ -2,9 +2,12 @@
 
 #include <filesystem>
 #include <string>
+#include <mutex>
+#include <unordered_map>
 #include <vector>
 
 #include "ast/Model.hpp"
+#include "parser/PatternGraphBuilder.hpp"
 #include "NetworkGenerator.hpp"
 
 namespace bng::engine {
@@ -77,6 +80,8 @@ public:
 
     friend class HybridModelGeneratorTest;
 
+
+
 private:
     /**
      * Check if two species patterns are isomorphic.
@@ -89,6 +94,14 @@ private:
      * Used in Step 7 to find population matches for observables.
      */
     std::size_t countMatches(const std::string& obsPattern, const std::string& speciesPattern) const;
+
+    /**
+     * Helper to get or build a PatternGraph for a given pattern string.
+     */
+    const BNGcore::PatternGraph& getPatternGraph(const std::string& pattern) const;
+
+    mutable std::unordered_map<std::string, BNGcore::PatternGraph> patternGraphCache_;
+    mutable std::mutex cacheMutex_;
 
     ast::Model& model_;
     const GeneratedNetwork& network_;
