@@ -2780,7 +2780,9 @@ sub generate_network
         my $vmem = 0;
         if ($^O eq 'MSWin32') {
             # Windows: use tasklist
-            my $output = `tasklist /FI "PID eq $$" /NH /FO CSV`;
+            open(my $ph, '-|', 'tasklist', '/FI', "PID eq $$", '/NH', '/FO', 'CSV') or return (0, 0);
+            my $output = do { local $/; <$ph> };
+            close($ph);
             if ($output =~ /"([^"]+)"\s*$/) {
                 my $mem_str = $1;
                 $mem_str =~ s/[^\d]//g;
@@ -2790,7 +2792,9 @@ sub generate_network
         }
         else {
             # Linux/Unix: use ps
-            my $ps_out = `ps -o rss,vsz -p $$`;
+            open(my $ph, '-|', 'ps', '-o', 'rss,vsz', '-p', $$) or return (0, 0);
+            my $ps_out = do { local $/; <$ph> };
+            close($ph);
             my @lines = split /\n/, $ps_out;
             if (@lines > 1) {
                 my @cols = split ' ', $lines[1];

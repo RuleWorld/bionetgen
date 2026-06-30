@@ -86,7 +86,7 @@ $err = $slist->readString($entry,$base_model->ParamList,$base_model->MoleculeTyp
     $file= "macr_".$param_prefix.".bngl";  
     rename($file,$filen);                   
 
-    open (WFILEbngl, ">$file") or die "Can't open $file: $!\n";
+    open( WFILEbngl, '>', $file ) or die "Can't open $file: $!\n";
       print WFILEbngl $simul1;
     close (WFILEbngl);
     $params{file}=$file;   # macr_fceri_ji3.bngl
