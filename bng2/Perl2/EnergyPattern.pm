@@ -113,24 +113,32 @@ sub toString
 
 sub toMatlabString
 {
-   my $epatt = shift;
-   my $string = '';
-   
-   # TODO
-     
-   return $string, '';
+    my $epatt  = shift;
+    my $plist  = (@_) ? shift : '';
+    my $indent = (@_) ? shift : '';
+
+    if ($epatt->Gf)
+    {
+        return $epatt->Gf->toMatlabString($plist, $indent), '';
+    }
+
+    return '', '';
 }
 
 
 
 sub toMexString
 {
-    my $epatt = shift;
-    my $string = '';
-   
-    # TODO
-   
-    return $string, '';
+    my $epatt  = shift;
+    my $plist  = (@_) ? shift : '';
+    my $indent = (@_) ? shift : '';
+
+    if ($epatt->Gf)
+    {
+        return $epatt->Gf->toMexString($plist, $indent), '';
+    }
+
+    return '', '';
 }
 
 
