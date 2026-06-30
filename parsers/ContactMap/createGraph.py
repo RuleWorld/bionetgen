@@ -307,14 +307,8 @@ def processBNGL(bngl,center,context,product):
                            reactionCenter=center, context=context, products=product)
                            
 def bngl2xml(bnglFile):
-
-    bngconsole = pexpect.spawn('bngdev --console')
-    bngconsole.expect('BNG>')
-    bngconsole.sendline('load {0}'.format(bnglFile))
-    bngconsole.expect('BNG>')
-    bngconsole.sendline('action writeXML()')
-    bngconsole.expect('BNG>')
-    bngconsole.close() 
+    import subprocess
+    subprocess.call(['bngdev', bnglFile, '--xml'], shell=False)
 
     
 def main(fileName):
