@@ -64,6 +64,59 @@ TEST_CASE("parsePrintIter behaves correctly", "[NetworkGenerator]") {
     unsetenv("BNG_CPP_PROGRESS");
 }
 
+
+TEST_CASE("parsePrintRules behaves correctly", "[NetworkGenerator]") {
+    // default case: empty model
+    bng::ast::Model model;
+
+    // ensure env var is unset
+    unsetenv("BNG_CPP_PROGRESS_RULES");
+    REQUIRE(parsePrintRules(model) == false);
+
+    // action without print_rule_progress
+    bng::ast::Action generateNetAction;
+    generateNetAction.name = "generate_network";
+    model.addAction(generateNetAction);
+    REQUIRE(parsePrintRules(model) == false);
+
+    // non-matching action with print_rule_progress
+    bng::ast::Model modelDiffAction;
+    bng::ast::Action otherAction;
+    otherAction.name = "simulate";
+    otherAction.arguments["print_rule_progress"] = "1";
+    modelDiffAction.addAction(otherAction);
+    REQUIRE(parsePrintRules(modelDiffAction) == false);
+
+    // matching action with print_rule_progress=1
+    bng::ast::Model modelWithPrintRules;
+    bng::ast::Action generateNetPrintAction;
+    generateNetPrintAction.name = "generate_network";
+    generateNetPrintAction.arguments["print_rule_progress"] = "1";
+    modelWithPrintRules.addAction(generateNetPrintAction);
+    REQUIRE(parsePrintRules(modelWithPrintRules) == true);
+
+    // matching action with print_rule_progress=0
+    bng::ast::Model modelWithPrintRulesFalse;
+    bng::ast::Action generateNetPrintActionFalse;
+    generateNetPrintActionFalse.name = "generate_network";
+    generateNetPrintActionFalse.arguments["print_rule_progress"] = "0";
+    modelWithPrintRulesFalse.addAction(generateNetPrintActionFalse);
+    REQUIRE(parsePrintRules(modelWithPrintRulesFalse) == false);
+
+    // env var overrides model false -> true
+    setenv("BNG_CPP_PROGRESS_RULES", "1", 1);
+    REQUIRE(parsePrintRules(model) == true);
+    REQUIRE(parsePrintRules(modelDiffAction) == true);
+    REQUIRE(parsePrintRules(modelWithPrintRulesFalse) == true);
+
+    // env var overrides model true -> false
+    setenv("BNG_CPP_PROGRESS_RULES", "0", 1);
+    REQUIRE(parsePrintRules(modelWithPrintRules) == false);
+
+    // clean up
+    unsetenv("BNG_CPP_PROGRESS_RULES");
+}
+
 TEST_CASE("parseBooleanLike behaves correctly", "[NetworkGenerator]") {
     // positive cases
     REQUIRE(parseBooleanLike("1") == true);
