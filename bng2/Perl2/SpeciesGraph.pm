@@ -3435,7 +3435,6 @@ sub findMaps
 #
 # should this be in Map module?
 # REVISED by justinshogg@gmail.com 19feb2009
-# TODO: findMaps respects molecule and component tags, but does not attempt to reconile Pattern tags.
 {
 	# get species graphs
 	my $sg1 = shift @_;
