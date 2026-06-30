@@ -151,6 +151,36 @@ static SpeciesGraph makeSpeciesGraph(const std::string& patternText, Model& mode
     return SpeciesGraph(std::move(graph));
 }
 
+TEST_CASE("isMoleculeNode correctly identifies molecule nodes", "[NetworkGenerator]") {
+    Model model;
+    model.addMoleculeType(MoleculeType("A", {ComponentType{"b", {}}}));
+
+    // Create a graph A(b!1).A(b!1) which has two molecule nodes (A), two component nodes (b), and one bond node.
+    SpeciesGraph graph = makeSpeciesGraph("A(b!1).A(b!1)", model);
+
+    int moleculeNodes = 0;
+    int componentNodes = 0;
+    int bondNodes = 0;
+
+    for (auto nodeIter = graph.getGraph().begin(); nodeIter != graph.getGraph().end(); ++nodeIter) {
+        const BNGcore::Node& node = **nodeIter;
+        if (isMoleculeNode(node)) {
+            moleculeNodes++;
+        } else if (isComponentNode(node)) {
+            componentNodes++;
+        } else if (isBondNode(node)) {
+            bondNodes++;
+        }
+    }
+
+    // We expect 2 molecule nodes (A and A)
+    REQUIRE(moleculeNodes == 2);
+    // We expect 2 component nodes (b and b)
+    REQUIRE(componentNodes == 2);
+    // We expect 1 bond node
+    REQUIRE(bondNodes == 1);
+}
+
 TEST_CASE("withinStoichLimits handles empty limits", "[NetworkGenerator]") {
     Model model;
     model.addMoleculeType(MoleculeType("A", {}));
