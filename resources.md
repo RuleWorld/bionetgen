@@ -35,7 +35,7 @@ These sections include links to documentation, tutorials, and literature relatin
     free](https://www.dropbox.com/s/rm0535pgom2zr6i/Sekar-RuleBasedPrimer-2012.pdf?dl=0))
     - [BioNetGen Bible](https://link.springer.com/protocol/10.1007%2F978-1-59745-525-1_5) ([pdf
     –
-    free](https://www.csb.pitt.edu/Faculty/Faeder/Publications/Reprints/Faeder_2009.pdf))
+    free](https://github.com/RuleWorld/SIAMLS26/blob/main/papers/Faeder_2009.pdf))
     - [Published BioNetGen models](/applications)
 - Educational
     - [Biological Modeling](https://biologicalmodeling.org/): [Module 2](https://biologicalmodeling.org/chemotaxis/home) uses BioNetGen, including step-by-step tutorials
