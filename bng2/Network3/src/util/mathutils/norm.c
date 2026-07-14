@@ -12,7 +12,7 @@ double NORM( double *a, int dim){
     int n;
     int inca=1;
     double norm;
-    extern double DNRM2();
+    extern double DNRM2(int *, double *, int *);
 
     n=dim;
     return(DNRM2(&n, a, &inca));

@@ -17,7 +17,7 @@ int LINSOLVE(double **a, double **b, int nrhs, int dim){
     int *ipiv;
     int Nrhs, Dim;
     int info;
-    extern void DGESV();
+    extern void DGESV(int *, int *, double *, int *, int *, double *, int *, int *);
     
     /* calculate transpose of a-- this is done because matrices in Fortran */
     /* and C have row and column indices interchanged */

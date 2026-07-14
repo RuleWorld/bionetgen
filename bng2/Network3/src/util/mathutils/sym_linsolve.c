@@ -26,7 +26,7 @@ int SYM_LINSOLVE(double **A, double **B, int nrhs, int dim){
     static int lwork;
     static int olddim;
     static int initflag=1;
-    extern void DSYSV();
+    extern void DSYSV(char *, int *, int *, double *, int *, int *, double *, int *, double *, int *, int *);
 
     if(dim==2){
 	a= A[0][0];  c=A[0][1]; b = A[1][1];

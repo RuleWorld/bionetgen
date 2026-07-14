@@ -135,8 +135,8 @@ PopulationMappingRuleResult newPopulationMappingRule(
     // ---- Extract optional name/label (Perl lines 26-36) ----
     std::string name;
     // Check for alphanumeric name followed by colon: name: ...
-    std::regex nameColonRe("^([\\w\\s*]+):\\s*");
-    std::regex indexRe("^(\\d+)\\s+");
+    static const std::regex nameColonRe("^([\\w\\s*]+):\\s*");
+    static const std::regex indexRe("^(\\d+)\\s+");
     std::smatch match;
     if (std::regex_search(str, match, nameColonRe)) {
         name = match[1].str();

@@ -12,7 +12,7 @@ void MATRIX_MULT(double **a, double **b, double **c, int dim){
   int n=dim;
   double alpha=1.0;
   double beta=0.0;
-  extern void DGEMM();
+  extern void DGEMM(char *, char *, int *, int *, int *, double *, double *, int *, double *, int *, double *, double *, int *);
 
   /* need to call dgemm_ with transposed matrices because C and Fortran */
   /* reference matrices in the opposite sense */

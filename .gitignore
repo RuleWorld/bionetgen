@@ -100,3 +100,5 @@ bng2/Network3/cmake_install.cmake
 statfactor_*.txt
 bng2/Network3/run_network
 *.o
+.jules/
+patch_*.py

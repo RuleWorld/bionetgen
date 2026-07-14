@@ -11,7 +11,7 @@ double ZNORM( dcomplex *a, int dim){
 #endif
     int n;
     int inca=1;
-    extern double DZNRM2();
+    extern double DZNRM2(int *, dcomplex *, int *);
     
     n=dim;
     return (DZNRM2(&n, a, &inca));

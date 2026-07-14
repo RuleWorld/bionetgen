@@ -377,7 +377,7 @@ TEST_CASE("parseOverwrite behaves correctly", "[NetworkGenerator]") {
     }
 }
 
-TEST_CASE("parseCheckIso behaves correctly", "[NetworkGenerator]") {
+TEST_CASE("parseCheckIso behaves correctly duplicate", "[NetworkGenerator]") {
     bng::ast::Model model;
 
     SECTION("returns true by default (no actions)") {
@@ -455,7 +455,7 @@ TEST_CASE("parseMaxAgg behaves correctly", "[NetworkGenerator]") {
     }
 }
 
-TEST_CASE("parsePrintRules behaves correctly", "[NetworkGenerator]") {
+TEST_CASE("parsePrintRules behaves correctly duplicate", "[NetworkGenerator]") {
     bng::ast::Model model;
 
     SECTION("returns false by default") {
