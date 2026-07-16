@@ -240,7 +240,7 @@ if ($log)
 #}
 
 # Read file 
-open(IN, $file) or die "Couldn't open file $file: $?\n";
+open(IN, '<', $file) or die "Couldn't open file $file: $?\n";
 my $script = "";
 while ( my $line = <IN> )
 {

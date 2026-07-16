@@ -113,18 +113,18 @@ my ($param_prefix) = @_;
   my %bngdata;
 
 
- $bnglfile= "<${param_prefix}.bngl";     # $bnglfile= "<${param_prefix}.bngl";
- $recfile= ">macr_${param_prefix}.rec";  # $recfile= ">macr_${param_prefix}.rec";
- $parfile= ">macr_${param_prefix}.par";  # $parfile= ">macr_${param_prefix}.par";
+ $bnglfile= "${param_prefix}.bngl";     # $bnglfile= "${param_prefix}.bngl";
+ $recfile= "macr_${param_prefix}.rec";  # $recfile= "macr_${param_prefix}.rec";
+ $parfile= "macr_${param_prefix}.par";  # $parfile= "macr_${param_prefix}.par";
 
- open (WFILErec, $recfile) or die "Can't open $recfile: $!\n";
- open (WFILEpar, $parfile) or die "Can't open $parfile: $!\n";
+ open (WFILErec, '>', $recfile) or die "Can't open $recfile: $!\n";
+ open (WFILEpar, '>', $parfile) or die "Can't open $parfile: $!\n";
 
  print WFILErec $recfile,"\n";
 
 READ: 
       print "Reading from file $bnglfile\n";
-      if (!open(FH, $bnglfile)) {
+      if (!open(FH, '<', $bnglfile)) {
 	return("Couldn't read from file $bnglfile: $!");
       }
       $file_dat=[<FH>];
@@ -143,7 +143,7 @@ READ:
 	  if ($err){ last READ;}
 	  $bngdata{$name}=1;
 	  if ($name eq "parameters"){
-            open (WFILEpar, $parfile) or die "Can't open $parfile: $!\n";
+            open (WFILEpar, '>', $parfile) or die "Can't open $parfile: $!\n";
             print WFILEpar "begin parameters\n"; 
 	    for my $line (@{$block_dat}){
 	      my ($entry, $lno)= @{$line};
@@ -334,17 +334,17 @@ READ:
  print WFILErec " BEGIN COR_NET \n";
 
 
- $macrfile= ">macr_${param_prefix}.bngl";   # $macrfile= ">macr_${param_prefix}.bngl";
- $parfile= "<macr_${param_prefix}.par";  # $parfile= "<macr_${param_prefix}.par";
- $spec2file= "<macr_${param_prefix}.spec2";  # $spec2file= "<macr_${param_prefix}.spec2";
- $rulesfile= "<macr_${param_prefix}.rules";  # $rulesfile= "<macr_${param_prefix}.rules";
- $obserfile= "<macr_${param_prefix}.obser";  # $obserfile= "<macr_${param_prefix}.obser";
+ $macrfile= "macr_${param_prefix}.bngl";   # $macrfile= "macr_${param_prefix}.bngl";
+ $parfile= "macr_${param_prefix}.par";  # $parfile= "macr_${param_prefix}.par";
+ $spec2file= "macr_${param_prefix}.spec2";  # $spec2file= "macr_${param_prefix}.spec2";
+ $rulesfile= "macr_${param_prefix}.rules";  # $rulesfile= "macr_${param_prefix}.rules";
+ $obserfile= "macr_${param_prefix}.obser";  # $obserfile= "macr_${param_prefix}.obser";
 
- open (WFILEmacr, $macrfile) or die "Can't open $macrfile: $!\n";
- open (RFILEpar, $parfile) or die "Can't open $parfile: $!\n";
- open (RFILEspec2, $spec2file) or die "Can't open $spec2file: $!\n";
- open (RFILErules, $rulesfile) or die "Can't open $rulesfile: $!\n";
- open (RFILEobser, $obserfile) or die "Can't open $obserfile: $!\n";
+ open (WFILEmacr, '>', $macrfile) or die "Can't open $macrfile: $!\n";
+ open (RFILEpar, '<', $parfile) or die "Can't open $parfile: $!\n";
+ open (RFILEspec2, '<', $spec2file) or die "Can't open $spec2file: $!\n";
+ open (RFILErules, '<', $rulesfile) or die "Can't open $rulesfile: $!\n";
+ open (RFILEobser, '<', $obserfile) or die "Can't open $obserfile: $!\n";
 
  while ($line=<RFILEpar>) {        # *.par
    print WFILEmacr "$line";        # macr_*.bngl
@@ -419,8 +419,8 @@ my ($nm_site, $nm2_site, $param_prefix, $skf, $dpp_site, $lis1h) = @_;
 
                  #     ----------RULES-------------
 
- $rulesfile= ">macr_${param_prefix}.rules"; 
- open (WFILErules, $rulesfile) or die "Can't open $rulesfile: $!\n";
+ $rulesfile= "macr_${param_prefix}.rules";
+ open (WFILErules, '>', $rulesfile) or die "Can't open $rulesfile: $!\n";
  print WFILErules "begin reaction_rules\n";
  @lis1 = ();
  &del_blank(\@reac1tion,\@lis1);   
@@ -935,8 +935,8 @@ my (%m_spe,%s_spe,%rea_l,%rea_r,%rrea_l,%rrea_r,%dubl);
  %ts3n = ();
  @species = ();
 
- $recfile= "<macr_${param_prefix}.rec";
- open (RFILErec, $recfile) or die "Can't open $recfile: $!\n";
+ $recfile= "macr_${param_prefix}.rec";
+ open (RFILErec, '<', $recfile) or die "Can't open $recfile: $!\n";
  $fl=0;   %croc = ();
  while ( $line=<RFILErec> ) {
    if ( ($line =~ / MINIMUM set/) ) {
@@ -989,8 +989,8 @@ my (%m_spe,%s_spe,%rea_l,%rea_r,%rrea_l,%rrea_r,%dubl);
 
  $rabfile= "macr_${param_prefix}.rab";
  $netfile= "macr_${param_prefix}.net";
- open (RFILEnet, "<", $netfile) or die "Can't open $netfile: $!\n";
- open (WFILErab, ">", $rabfile) or die "Can't open $netfile: $!\n";
+ open (RFILEnet, '<', $netfile) or die "Can\'t open $netfile: $!\n";
+ open (WFILErab, '>', $rabfile) or die "Can\'t open $netfile: $!\n";
 
  while ( $line=<RFILEnet> ) {            # search-copy "begin molecule types"
    if ( $line =~ /begin molecule types/ ) {
@@ -1395,8 +1395,8 @@ my ($nm_site, $nm2_site, $param_prefix, $skf, $dpp_site, $lis1h) = @_;
  my ($ii);
  my (@lis1);
 
- $obserfile= ">macr_${param_prefix}.obser";  # $obserfile= ">macr_${param_prefix}.obser";
- open (WFILEobser, $obserfile) or die "Can't open $obserfile: $!\n";
+ $obserfile= "macr_${param_prefix}.obser";  # $obserfile= "macr_${param_prefix}.obser";
+ open (WFILEobser, '>', $obserfile) or die "Can't open $obserfile: $!\n";
  print WFILEobser "begin observables\n";
 
  @lis1 = ();
@@ -1420,8 +1420,8 @@ close(WFILEobser);
 
                   #    ---------  SPECIES2-------------
 
- $spec2file= ">macr_${param_prefix}.spec2";  # $spec2file= ">macr_${param_prefix}.spec2";
- open (WFILEspec2, $spec2file) or die "Can't open $spec2file: $!\n";
+ $spec2file= "macr_${param_prefix}.spec2";  # $spec2file= "macr_${param_prefix}.spec2";
+ open (WFILEspec2, '>', $spec2file) or die "Can't open $spec2file: $!\n";
  print WFILEspec2 "begin species\n";          # *.spec2
 
  @lis1 = ();

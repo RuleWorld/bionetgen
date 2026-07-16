@@ -2819,7 +2819,7 @@ sub findMap
 		my $modelname = $BNGModel::GLOBAL_MODEL->Name;
 		my $rulename = $rr->Name;
 		my $filename = join("_",($modelname,$rulename,"StatFactorCalculation")).".txt";
-		open($autfile,">".$filename) or die;
+		open($autfile, '>', $filename) or die;
 		print $autfile $rr->toString()."\n";
 		print $autfile "Reactants: ".$rg->toString()."\n";
 		print $autfile "Products:  ".$pg->toString()."\n";
