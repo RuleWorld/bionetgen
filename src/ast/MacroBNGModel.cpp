@@ -473,7 +473,9 @@ std::string MacroBNGModel::pre_macr(const std::string& param_prefix) {
                     std::string nam1e;
                     // Check for user-named rule "name: ..."
                     std::smatch rm;
-                    if (std::regex_search(str1ing, rm, std::regex("^\\s*([^:].*)[:]\\s*"))) {
+                    // BOLT OPTIMIZATION: Cache std::regex to avoid O(N) regex compilation overhead in loop
+                    static const std::regex re_name("^\\s*([^:].*)[:]\\s*");
+                    if (std::regex_search(str1ing, rm, re_name)) {
                         nam1e = rm[1].str();
                         std::cerr << "ERROR 1002   rules  (user) name=" << nam1e << "\n";
                         return "ERROR 1002: named rules not supported";
@@ -621,7 +623,9 @@ void MacroBNGModel::pre_species1(std::map<std::string, int>& nm_site,
         // Strip leading label "name: ..."
         {
             std::smatch m;
-            if (std::regex_search(entry, m, std::regex("^\\s*([^:].*)[:]\\s*"))) {
+            // BOLT OPTIMIZATION: Cache std::regex to avoid O(N) regex compilation overhead in loop
+            static const std::regex re_name("^\\s*([^:].*)[:]\\s*");
+            if (std::regex_search(entry, m, re_name)) {
                 name = m[1].str();
                 std::cerr << "ERROR 1001 block species      (user) name=" << name << "\n";
                 return;
