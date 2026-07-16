@@ -139,45 +139,31 @@ class NameDictionary:
 		for idx,ir in enumerate(irrs):
 			self.irr[ir] = self.tp[ir]		
 
+		self._str_maps = {
+			'p': {str(k): v for k, v in self.p.items()},
+			't': {str(k): v for k, v in self.t.items()},
+			'tp': {str(k): v for k, v in self.tp.items()},
+			'r': {str(k): v for k, v in self.r.items()},
+			'irr': {str(k): v for k, v in self.irr.items()}
+		}
+
+		self._rev_maps = {
+			'p': {v: k for k, v in self.p.items()},
+			't': {v: k for k, v in self.t.items()},
+			'tp': {v: k for k, v in self.tp.items()},
+			'r': {v: k for k, v in self.r.items()},
+			'irr': {v: k for k, v in self.irr.items()}
+		}
+
 
 	
 	def getIdx(self,elemtype,string):
-		# ⚡ Bolt: Use simple for loop instead of generator expression to avoid generator initialization overhead, providing a much faster O(1) early exit
-		if elemtype == 'p':
-			for x,idx in self.p.items():
-				if str(x)==string: return idx
-		if elemtype == 't':
-			for x,idx in self.t.items():
-				if str(x)==string: return idx
-		if elemtype == 'tp':
-			for x,idx in self.tp.items():
-				if str(x)==string: return idx
-		if elemtype == 'r':
-			for x,idx in self.r.items():
-				if str(x)==string: return idx
-		if elemtype == 'irr':
-			for x,idx in self.irr.items():
-				if str(x)==string: return idx
-		return None
+		# ⚡ Bolt: Use pre-computed O(1) hash map lookup instead of O(N) loops or generators
+		return self._str_maps.get(elemtype, {}).get(string)
 			
 	def getElement(self,elemtype,idx1):
-		# ⚡ Bolt: Use simple for loop instead of generator expression to avoid generator initialization overhead, providing a much faster O(1) early exit
-		if elemtype == 'p':
-			for x,idx in self.p.items():
-				if idx==idx1: return x
-		if elemtype == 't':
-			for x,idx in self.t.items():
-				if idx==idx1: return x
-		if elemtype == 'tp':
-			for x,idx in self.tp.items():
-				if idx==idx1: return x
-		if elemtype == 'r':
-			for x,idx in self.r.items():
-				if idx==idx1: return x
-		if elemtype == 'irr':
-			for x,idx in self.irr.items():
-				if idx==idx1: return x
-		return None
+		# ⚡ Bolt: Use pre-computed O(1) hash map lookup instead of O(N) loops or generators
+		return self._rev_maps.get(elemtype, {}).get(idx1)
 			
 	def getString(self,elemtype,idx1):
 		return str(self.getElement(elemtype,idx1))
