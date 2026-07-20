@@ -63,7 +63,7 @@ begin parameters
     km24        0.0429 # diss. of Grb2-Sos from RP-ShcP
 
     kp21     1.667e-06 # binding of ShcP to Grb2 in cytosol (scaled)
-    km21          0.01 # diss. of Grb2 and SchP in cytosol
+    km21           0.1 # diss. of Grb2 and ShcP in cytosol  (k-21 per Blinov 2006 Table 1; corrected from a 0.01 typo that violated detailed balance)
 
     kp23     1.167e-05 # binding of ShcP to Grb2-Sos in cytosol (scaled)
     km23           0.1 # diss. of Grb2-Sos and SchP in cytosol
