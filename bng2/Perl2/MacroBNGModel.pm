@@ -990,7 +990,7 @@ my (%m_spe,%s_spe,%rea_l,%rea_r,%rrea_l,%rrea_r,%dubl);
  $rabfile= "macr_${param_prefix}.rab";
  $netfile= "macr_${param_prefix}.net";
  open (RFILEnet, "<", $netfile) or die "Can't open $netfile: $!\n";
- open (WFILErab, ">", $rabfile) or die "Can't open $netfile: $!\n";
+ open (WFILErab, ">", $rabfile) or die "Can't open $rabfile: $!\n";
 
  while ( $line=<RFILEnet> ) {            # search-copy "begin molecule types"
    if ( $line =~ /begin molecule types/ ) {
