@@ -12,7 +12,7 @@ void ZMATRIX_MULT(dcomplex **a, dcomplex **b, dcomplex **c, int dim){
     int n=dim;
     dcomplex alpha={1.0,0.0};
     dcomplex beta={0.0,0.0};
-    extern void ZGEMM();
+    extern void ZGEMM(char*, char*, int*, int*, int*, dcomplex*, dcomplex*, int*, dcomplex*, int*, dcomplex*, dcomplex*, int*);
     
     /* need to call dgemm_ with transposed matrices because C and Fortran */
     /* reference matrices in the opposite sense */

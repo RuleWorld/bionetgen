@@ -14,9 +14,10 @@ void ZMATRIX_VECTOR_MULT(dcomplex **a, dcomplex *x, dcomplex *y, int dim){
     int incy=1;
     dcomplex alpha={1.0,0.0};
     dcomplex beta={0.0,0.0};
-    extern void ZGEMV();
+    extern void ZGEMV(char*, int*, int*, dcomplex*, dcomplex*, int*, dcomplex*, int*, dcomplex*, dcomplex*, int*);
     
     /* transpose because of difference between Fortran and C array */
     /* handling */
     ZGEMV("t", &n, &n, &alpha, a[0], &n, x, &incx, &beta, y, &incy);
 }
+

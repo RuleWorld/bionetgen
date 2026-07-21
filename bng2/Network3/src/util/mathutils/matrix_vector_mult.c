@@ -14,9 +14,10 @@ void MATRIX_VECTOR_MULT(double **a, double *x, double *y, int dim){
     int incy=1;
     double alpha=1.0;
     double beta=0.0;
-    extern void DGEMV();
+    extern void DGEMV(char*, int*, int*, double*, double*, int*, double*, int*, double*, double*, int*);
     
     /* take the transpose of the multiplying matrix because matrices */
     /* referenced opposite in Fortran */
     DGEMV("t", &n, &n, &alpha, a[0], &n, x, &incx, &beta, y, &incy);
 }
+

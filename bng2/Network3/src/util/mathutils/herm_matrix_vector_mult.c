@@ -15,9 +15,10 @@ void HERM_MATRIX_VECTOR_MULT(dcomplex **a, dcomplex *x, dcomplex *y, int
     int incy=1;
     dcomplex alpha={1.0,0.0};
     dcomplex beta={0.0,0.0};
-    extern void ZHEMV();
+    extern void ZHEMV(char*, int*, dcomplex*, dcomplex*, int*, dcomplex*, int*, dcomplex*, dcomplex*, int*);
     
     ZMATRIX_TRANSPOSE(a,dim);
     ZHEMV("u", &n, &alpha, a[0], &n, x, &incx, &beta, y, &incy);
     ZMATRIX_TRANSPOSE(a,dim);
 }
+
