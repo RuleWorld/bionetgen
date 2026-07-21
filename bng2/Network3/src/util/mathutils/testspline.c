@@ -4,7 +4,7 @@
 #define XMIN (-3.0)
 #define XMAX  3.0
 
-main()
+int main(void)
 {
   int i;
   double *xa, *ya, *y2a, x;

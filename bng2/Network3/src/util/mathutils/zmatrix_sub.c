@@ -19,7 +19,7 @@ void ZMATRIX_SUB(dcomplex **a, dcomplex **b, dcomplex **c, int dim){
 #ifdef TESTMAIN
 #include <stdlib.h>                
 #include <stdio.h>                
-main(){
+int main(void){
     int i,j,n;
     int incx=1;
     dcomplex **a, **b, *x;
