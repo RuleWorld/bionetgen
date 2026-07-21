@@ -12,7 +12,7 @@ void ZRSCALE_VECTOR( double alpha, dcomplex *a, int dim){
     int n=dim;
     int inca=1;
     double scalef=alpha;
-    extern void ZDSCAL();
+    extern void ZDSCAL(int *n, double *scalef, dcomplex *a, int *inca);
     
     scalef=alpha;
     ZDSCAL(&n, &scalef, a, &inca);
