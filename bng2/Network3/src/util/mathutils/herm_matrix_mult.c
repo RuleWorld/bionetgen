@@ -13,7 +13,7 @@ void HERM_MATRIX_MULT(dcomplex **a, dcomplex **b, dcomplex **c, int dim){
     int n=dim;
     dcomplex alpha={1.0,0.0};
     dcomplex beta={0.0,0.0};
-    extern void ZHEMM();
+    extern void ZHEMM(char*, char*, int*, int*, dcomplex*, dcomplex*, int*, dcomplex*, int*, dcomplex*, dcomplex*, int*);
     
     /* transpose necessary because of opposite way Fortran references */
     /* arrays */
