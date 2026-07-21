@@ -3,7 +3,7 @@
 
 #define TOL 1.0e-14
 
-main (int argc, char *argv[])
+int main (int argc, char *argv[])
 {
   int i,j,k;
   int dim;

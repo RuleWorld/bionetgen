@@ -1,6 +1,6 @@
 #include "mathutils.h"
 
-main(int argc, char *argv[]){
+int main(int argc, char *argv[]){
   int i,j,k;
   int nr, n_run;
   int n,m;

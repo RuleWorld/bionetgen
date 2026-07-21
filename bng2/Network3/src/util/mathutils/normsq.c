@@ -11,7 +11,7 @@ double NORMSQ( double *a, int dim)
     int n;
     int inca=1;
     double norm;
-    extern double DNRSQ();
+    extern double DNRSQ(int *n, double *a, int *inca);
 
     n=dim;
 

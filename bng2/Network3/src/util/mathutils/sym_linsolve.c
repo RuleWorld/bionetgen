@@ -26,7 +26,14 @@ int SYM_LINSOLVE(double **A, double **B, int nrhs, int dim){
     static int lwork;
     static int olddim;
     static int initflag=1;
-    extern void DSYSV();
+#ifdef __cplusplus
+extern "C" {
+#endif
+    /* Fortran dsysv: SUBROUTINE DSYSV( UPLO, N, NRHS, A, LDA, IPIV, B, LDB, WORK, LWORK, INFO ) */
+    void DSYSV(char *uplo, int *n, int *nrhs, double *a, int *lda, int *ipiv, double *b, int *ldb, double *work, int *lwork, int *info);
+#ifdef __cplusplus
+}
+#endif
 
     if(dim==2){
 	a= A[0][0];  c=A[0][1]; b = A[1][1];
@@ -66,5 +73,3 @@ int SYM_LINSOLVE(double **A, double **B, int nrhs, int dim){
     free(ipiv);
     return(info);
 }
-
-

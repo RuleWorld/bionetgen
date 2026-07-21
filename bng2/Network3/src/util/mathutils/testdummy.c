@@ -1,6 +1,6 @@
 #include "mathutils.h"
 
-main(){
+int main(void){
     int i,n;
     int incx=1;
     double *x;
