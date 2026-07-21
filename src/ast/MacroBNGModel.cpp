@@ -650,12 +650,16 @@ void MacroBNGModel::pre_species1(std::map<std::string, int>& nm_site,
 
         // Extract molecule(site,site,...) patterns
         // Repeatedly match (...) groups
-        static const std::regex re_paren("([\\(])(.*?)([\\)])");
-        std::smatch pm;
         std::string remaining = spec_entry;
-        while (std::regex_search(remaining, pm, re_paren)) {
+        size_t search_pos = 0;
+        while (true) {
+            size_t open_pos = remaining.find('(', search_pos);
+            if (open_pos == std::string::npos) break;
+            size_t close_pos = remaining.find(')', open_pos);
+            if (close_pos == std::string::npos) break;
+
             // name is everything before the '('
-            std::string prefix_str = pm.prefix().str();
+            std::string prefix_str = remaining.substr(0, open_pos);
             // Get the molecule name: last segment after '.'
             auto dot_pos = prefix_str.rfind('.');
             if (dot_pos != std::string::npos) {
@@ -665,7 +669,7 @@ void MacroBNGModel::pre_species1(std::map<std::string, int>& nm_site,
             }
 
             if (nm_site.find(name) == nm_site.end()) {
-                std::string inside = pm[2].str();  // contents inside parentheses
+                std::string inside = remaining.substr(open_pos + 1, close_pos - open_pos - 1);  // contents inside parentheses
                 auto sits = split(inside, ',');
                 // Strip modifiers from site names
                 for (auto& s : sits) {
@@ -688,7 +692,8 @@ void MacroBNGModel::pre_species1(std::map<std::string, int>& nm_site,
                 nm_site[name] = static_cast<int>(sits.size());
             }
 
-            remaining = pm.suffix().str();
+            remaining = remaining.substr(close_pos + 1);
+            search_pos = 0;
             // Also strip "name." prefix from remaining
             if (!remaining.empty() && remaining[0] == '.') {
                 remaining = remaining.substr(1);
@@ -723,10 +728,19 @@ void MacroBNGModel::del_blank(const std::vector<std::string>& str,
         line = replaceAll(line, " ", ";");
 
         // If starts with digit followed by ';', strip the leading number
-        std::smatch m;
-        static const std::regex re_leading_num("^\\d+?;");
-        if (std::regex_search(line, m, re_leading_num)) {
-            line = ";" + m.suffix().str();
+        size_t semicolon_pos = line.find(';');
+        bool has_leading_num = false;
+        if (semicolon_pos != std::string::npos && semicolon_pos > 0) {
+            has_leading_num = true;
+            for (size_t i = 0; i < semicolon_pos; ++i) {
+                if (!std::isdigit(static_cast<unsigned char>(line[i]))) {
+                    has_leading_num = false;
+                    break;
+                }
+            }
+        }
+        if (has_leading_num) {
+            line = ";" + line.substr(semicolon_pos + 1);
         } else {
             line = ";" + line;
         }
