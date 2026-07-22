@@ -19,6 +19,7 @@
 #include "core/Ullmann.hpp"
 #include "generated/BNGLexer.h"
 #include "generated/BNGParser.h"
+#include "parser/BNGAstVisitor.hpp"
 #include "parser/PatternGraphBuilder.hpp"
 
 namespace bng::io {
@@ -744,6 +745,7 @@ std::unordered_map<std::string, DerivedRateInfo> NetWriter::buildDerivedRatePara
                 std::size_t rxnIdx = 0;
                 // Track (speciesIdx, localSuffix) → paramName to merge reactions with same context
                 std::map<std::pair<std::size_t, std::string>, std::pair<std::string, double>> contextToRate;
+                std::map<std::pair<std::size_t, std::string>, ast::Expression> contextToExpr;
                 for (const auto& rxn : network.reactions.all()) {
                     if (rxn.getOriginRuleName() != ruleName) { ++rxnIdx; continue; }
                     if (rxn.getReactants().empty()) { ++rxnIdx; continue; }
@@ -764,6 +766,10 @@ std::unordered_map<std::string, DerivedRateInfo> NetWriter::buildDerivedRatePara
                         // Reuse existing rate param for this context
                         if (hasLocalSuffix) {
                             info.perReactionRates[rxnIdx] = ctxIt->second;
+                            auto exprIt = contextToExpr.find(contextKey);
+                            if (exprIt != contextToExpr.end()) {
+                                info.perReactionExpr[rxnIdx] = exprIt->second;
+                            }
                         }
                         ++rxnIdx;
                         continue;
@@ -865,11 +871,31 @@ std::unordered_map<std::string, DerivedRateInfo> NetWriter::buildDerivedRatePara
                             });
                     } catch (...) {}
 
+                    // Parse the same (already observable-substituted) string
+                    // into a symbolic Expression so a consumer can later
+                    // re-evaluate it with a live/perturbed parameter value
+                    // instead of only this one baked numeric snapshot.
+                    std::optional<ast::Expression> parsedExpr;
+                    try {
+                        parsedExpr = parser::parseExpression(funcBody);
+                    } catch (...) {
+                        // Leave unset -- sensitivity just won't be available
+                        // for this reaction; the numeric rateValue above is
+                        // unaffected.
+                    }
+
                     std::string paramName = baseParamName + std::to_string(seqNum);
                     if (hasLocalSuffix) {
                         info.perReactionRates[rxnIdx] = {paramName, rateValue};
+                        if (parsedExpr.has_value()) {
+                            info.perReactionExpr[rxnIdx] = *parsedExpr;
+                        }
                     }
                     info.perSpeciesRates[speciesIdx] = {paramName, rateValue};
+                    if (parsedExpr.has_value()) {
+                        info.perSpeciesExpr[speciesIdx] = *parsedExpr;
+                        contextToExpr[contextKey] = *parsedExpr;
+                    }
                     contextToRate[contextKey] = {paramName, rateValue};
                     ++seqNum;
                     ++rxnIdx;
@@ -1183,6 +1209,7 @@ std::unordered_map<std::string, DerivedRateInfo> NetWriter::buildDerivedRatePara
 
             // Compute per-reaction rates, caching by energy delta fingerprint
             std::unordered_map<std::string, std::pair<std::string, double>> fingerprintToParam;
+            std::unordered_map<std::string, ast::Expression> fingerprintToExpr;
             std::size_t nextParamIndex = 1;
 
             DerivedRateInfo info;
@@ -1199,9 +1226,17 @@ std::unordered_map<std::string, DerivedRateInfo> NetWriter::buildDerivedRatePara
                 const auto arrhenius = parseArrhenius(reaction.getRateLaw());
                 if (!arrhenius.has_value()) continue;
 
-                // Compute energy delta fingerprint for this specific reaction
+                // Compute energy delta fingerprint for this specific reaction,
+                // and in parallel build the symbolic sum
+                // deltaGExpr = sum_k delta_k * energyPattern_k.getExpression()
+                // -- delta_k is a structural bond-count difference (fixed by
+                // species topology, independent of any parameter value), so
+                // it becomes a plain number() node; the only free variables
+                // left are whatever each energy pattern's own expression uses.
                 std::string deltaFingerprint;
                 double deltaG = 0.0;
+                ast::Expression deltaGExpr = ast::Expression::number(0.0);
+                bool deltaGExprStarted = false;
                 for (const auto& energyPattern : model.getEnergyPatterns()) {
                     long long delta = 0;
                     for (const auto reactantIndex : reaction.getReactants()) {
@@ -1217,6 +1252,14 @@ std::unordered_map<std::string, DerivedRateInfo> NetWriter::buildDerivedRatePara
                             gf = evaluateExpressionString(energyPattern.getExpression().toString(), paramResolver);
                         } catch (...) {}
                         deltaG += delta * gf;
+
+                        ast::Expression term = ast::Expression::binary(
+                            "*", ast::Expression::number(static_cast<double>(delta)),
+                            energyPattern.getExpression());
+                        deltaGExpr = deltaGExprStarted
+                            ? ast::Expression::binary("+", std::move(deltaGExpr), std::move(term))
+                            : std::move(term);
+                        deltaGExprStarted = true;
                     }
                 }
 
@@ -1225,6 +1268,10 @@ std::unordered_map<std::string, DerivedRateInfo> NetWriter::buildDerivedRatePara
                 if (fpIt != fingerprintToParam.end()) {
                     // Reuse existing parameter for same energy fingerprint
                     info.perReactionRates[rxnIdx] = fpIt->second;
+                    auto exprIt = fingerprintToExpr.find(deltaFingerprint);
+                    if (exprIt != fingerprintToExpr.end()) {
+                        info.perReactionExpr[rxnIdx] = exprIt->second;
+                    }
                 } else {
                     // Compute the numeric rate value
                     double phi = 0.0;
@@ -1242,6 +1289,27 @@ std::unordered_map<std::string, DerivedRateInfo> NetWriter::buildDerivedRatePara
                     auto paramPair = std::make_pair(paramName, rate);
                     fingerprintToParam[deltaFingerprint] = paramPair;
                     info.perReactionRates[rxnIdx] = paramPair;
+
+                    // Symbolic counterpart: exp(-(eaExpr + phiExpr*deltaGExpr)).
+                    // Only attach if every piece parsed; otherwise leave this
+                    // reaction's entry absent so sensitivity is simply
+                    // unavailable for it rather than silently wrong.
+                    try {
+                        ast::Expression eaExprTree = parser::parseExpression(arrhenius->eaArg);
+                        ast::Expression phiExprTree = reverseDirection
+                            ? ast::Expression::binary("-", ast::Expression::number(1.0),
+                                                       parser::parseExpression(arrhenius->phiArg))
+                            : parser::parseExpression(arrhenius->phiArg);
+                        ast::Expression innerSum = ast::Expression::binary(
+                            "+", eaExprTree,
+                            ast::Expression::binary("*", phiExprTree, deltaGExpr));
+                        ast::Expression rateExpr = ast::Expression::function(
+                            "exp", {ast::Expression::unary("-", innerSum)});
+                        fingerprintToExpr[deltaFingerprint] = rateExpr;
+                        info.perReactionExpr[rxnIdx] = std::move(rateExpr);
+                    } catch (...) {
+                        // Leave unset -- numeric rate above is unaffected.
+                    }
                 }
             }
 

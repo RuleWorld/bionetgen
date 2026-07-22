@@ -1,6 +1,11 @@
 #include <catch2/catch_test_macros.hpp>
 #include <filesystem>
 #include <cstdlib>
+// Portable setenv/unsetenv: use _putenv on Windows, setenv/unsetenv on POSIX
+#if defined(_WIN32) || defined(__WIN32__) || defined(__CYGWIN__)
+#define setenv(name, val, overwrite) _putenv(name "=" val)
+#define unsetenv(name) _putenv(name "=")
+#endif
 #include "../src/engine/NetworkGenerator.hpp"
 #include "../src/ast/Model.hpp"
 #include "../src/parser/PatternGraphBuilder.hpp"

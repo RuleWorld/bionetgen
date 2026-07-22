@@ -1441,7 +1441,7 @@ void ActionDispatch::execute(ast::Model& model, const std::filesystem::path& sou
             }
 
             // Optional parameters (Perl BNG2 defaults)
-            const double bump = parseScalarValue(readArgument(action, "bump", "5"), model);
+            const double bump = parseScalarValue(readArgument(action, "bump", "0.1"), model);
             const double atol = parseScalarValue(readArgument(action, "atol", "1e-8"), model);
             const double rtol = parseScalarValue(readArgument(action, "rtol", "1e-8"), model);
             const auto nSteps = static_cast<std::size_t>(parseScalarValue(readArgument(action, "n_steps", "50"), model));
@@ -1454,6 +1454,82 @@ void ActionDispatch::execute(ast::Model& model, const std::filesystem::path& sou
 
             const auto prefix = stripQuotes(readArgument(action, "prefix", sourcePath.stem().string()));
             const auto outputDir = sourcePath.parent_path();
+
+            // New: method="cvodes" runs ONE forward-sensitivity CVODES
+            // integration instead of Np+1 finite-difference re-simulations.
+            // Default stays "fd" so existing scripts are unaffected.
+            const auto senMethod = lowercase(stripQuotes(readArgument(action, "method", "fd")));
+
+            if (senMethod == "cvodes") {
+                // Optional sens_param="k1 k2 k3" (whitespace/comma separated)
+                // to fit a subset instead of every non-zero parameter.
+                const auto sensParamText = stripQuotes(readArgument(action, "sens_param", ""));
+                std::vector<std::string> sensParams;
+                if (!sensParamText.empty()) {
+                    std::string cleaned = sensParamText;
+                    std::replace(cleaned.begin(), cleaned.end(), ',', ' ');
+                    std::istringstream iss(cleaned);
+                    std::string tok;
+                    while (iss >> tok) sensParams.push_back(tok);
+                } else {
+                    for (const auto& param : model.getParameters().all()) {
+                        if (param.getValue() != 0.0) sensParams.push_back(param.getName());
+                    }
+                }
+
+                if (sensParams.empty()) {
+                    throw std::runtime_error("LinearParameterSensitivity (method=cvodes): no non-zero parameters to compute sensitivities for");
+                }
+
+                // Single shared equilibration (if requested), reused as the
+                // common starting point for every sensitivity direction --
+                // unlike the FD path's re_equil, which separately re-equilibrates
+                // a perturbed model per parameter and so starts each finite
+                // difference from a slightly different baseline.
+                if (initEquil) {
+                    engine::OdeOptions eqOpts;
+                    eqOpts.method = "cvode";
+                    eqOpts.tEnd = tEquil;
+                    eqOpts.nSteps = nSteps;
+                    eqOpts.atol = atol;
+                    eqOpts.rtol = rtol;
+                    eqOpts.steadyState = true;
+                    eqOpts.steadyStateTol = atol;
+                    engine::OdeIntegrator eqIntegrator(model, *network);
+                    auto eqResult = eqIntegrator.integrate(eqOpts);
+                    if (!eqResult.concentrations.empty()) {
+                        const auto& finalConc = eqResult.concentrations.back();
+                        for (std::size_t i = 0; i < network->species.size() && i < finalConc.size(); ++i) {
+                            network->species.get(i).setAmount(finalConc[i]);
+                        }
+                    }
+                    if (verbose) {
+                        std::cerr << "[bng_cpp] LinearParameterSensitivity(cvodes): equilibration complete\n";
+                    }
+                }
+
+                engine::OdeOptions opts;
+                opts.method = "cvode";
+                opts.tEnd = parseScalarValue(tEndText, model);
+                opts.nSteps = nSteps;
+                opts.atol = atol;
+                opts.rtol = rtol;
+                opts.sensParams = sensParams;
+
+                engine::OdeIntegrator integrator(model, *network);
+                auto result = integrator.integrate(opts);
+
+                const auto outputPrefix = (outputDir / prefix).string();
+                integrator.writeSensitivityFiles(outputPrefix, result, suffix);
+
+                if (verbose) {
+                    std::cerr << "[bng_cpp] LinearParameterSensitivity(cvodes): wrote "
+                              << sensParams.size() << " parameter(s) worth of .csc/.gsc to "
+                              << outputPrefix << "_<param>.{csc,gsc}\n";
+                }
+
+                continue;  // skip the finite-difference path below entirely
+            }
 
             // Save original parameter values
             std::vector<std::pair<std::string, double>> originalParamValues;
