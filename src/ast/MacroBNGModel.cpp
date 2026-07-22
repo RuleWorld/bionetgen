@@ -472,18 +472,27 @@ std::string MacroBNGModel::pre_macr(const std::string& param_prefix) {
                     std::string str1ing = entry;
                     std::string nam1e;
                     // Check for user-named rule "name: ..."
-                    std::smatch rm;
-                    // BOLT OPTIMIZATION: Cache std::regex to avoid O(N) regex compilation overhead in loop
-                    static const std::regex re_name("^\\s*([^:].*)[:]\\s*");
-                    if (std::regex_search(str1ing, rm, re_name)) {
-                        nam1e = rm[1].str();
-                        std::cerr << "ERROR 1002   rules  (user) name=" << nam1e << "\n";
-                        return "ERROR 1002: named rules not supported";
-                    } else {
-                        static const std::regex re_digit_rule("^\\s*(\\d+)\\s+");
-                        if (std::regex_search(str1ing, rm, re_digit_rule)) {
-                            nam1e = rm[1].str();
-                            str1ing = rm.suffix().str();
+                    // BOLT OPTIMIZATION: Avoid O(N) regex overhead in loop
+                    size_t start = 0;
+                    while (start < str1ing.length() && std::isspace(str1ing[start])) start++;
+
+                    bool named = false;
+                    if (start < str1ing.length() && str1ing[start] != ':') {
+                        size_t colon_pos = str1ing.find_last_of(':');
+                        if (colon_pos != std::string::npos && colon_pos >= start) {
+                            nam1e = str1ing.substr(start, colon_pos - start);
+                            std::cerr << "ERROR 1002   rules  (user) name=" << nam1e << "\n";
+                            return "ERROR 1002: named rules not supported";
+                        }
+                    }
+                    if (!named && start < str1ing.length() && std::isdigit(str1ing[start])) {
+                        size_t end = start;
+                        while (end < str1ing.length() && std::isdigit(str1ing[end])) end++;
+                        if (end < str1ing.length() && std::isspace(str1ing[end])) {
+                            nam1e = str1ing.substr(start, end - start);
+                            size_t suffix_start = end;
+                            while (suffix_start < str1ing.length() && std::isspace(str1ing[suffix_start])) suffix_start++;
+                            str1ing = str1ing.substr(suffix_start);
                         }
                     }
 
@@ -501,11 +510,17 @@ std::string MacroBNGModel::pre_macr(const std::string& param_prefix) {
                 for (auto& [entry, lno] : block_dat) {
                     std::string str1ing = entry;
                     // Strip leading numeric index
-                    std::smatch rm;
-                    static const std::regex re_obs_digit("^\\s*\\d+\\s+");
-                    if (std::regex_search(str1ing, rm, re_obs_digit)) {
-
-                        str1ing = rm.suffix().str();
+                    // BOLT OPTIMIZATION: Avoid regex compilation overhead
+                    size_t start = 0;
+                    while (start < str1ing.length() && std::isspace(str1ing[start])) start++;
+                    if (start < str1ing.length() && std::isdigit(str1ing[start])) {
+                        size_t end = start;
+                        while (end < str1ing.length() && std::isdigit(str1ing[end])) end++;
+                        if (end < str1ing.length() && std::isspace(str1ing[end])) {
+                            size_t suffix_start = end;
+                            while (suffix_start < str1ing.length() && std::isspace(str1ing[suffix_start])) suffix_start++;
+                            str1ing = str1ing.substr(suffix_start);
+                        }
                     }
                     obser1vable_.push_back(str1ing);
                 }
@@ -522,8 +537,8 @@ std::string MacroBNGModel::pre_macr(const std::string& param_prefix) {
         }
         // Check for action lines like "generate_network" / "simulate"
         else {
-            static const std::regex re_action("^([A-Za-z][^(]*)");
-            if (std::regex_search(trimmed, m, re_action)) {
+            // BOLT OPTIMIZATION: Avoid regex compilation overhead
+            if (!trimmed.empty() && std::isalpha(trimmed[0])) {
                 gene1rate_.push_back(line);
             }
         }
@@ -622,14 +637,19 @@ void MacroBNGModel::pre_species1(std::map<std::string, int>& nm_site,
 
         // Strip leading label "name: ..."
         {
-            std::smatch m;
-            // BOLT OPTIMIZATION: Cache std::regex to avoid O(N) regex compilation overhead in loop
-            static const std::regex re_name("^\\s*([^:].*)[:]\\s*");
-            if (std::regex_search(entry, m, re_name)) {
-                name = m[1].str();
-                std::cerr << "ERROR 1001 block species      (user) name=" << name << "\n";
-                return;
-            } else {
+            // BOLT OPTIMIZATION: Avoid O(N) regex overhead in loop
+            size_t start = 0;
+            while (start < entry.length() && std::isspace(entry[start])) start++;
+            bool matched = false;
+            if (start < entry.length() && entry[start] != ':') {
+                size_t colon_pos = entry.find_last_of(':');
+                if (colon_pos != std::string::npos && colon_pos >= start) {
+                    name = entry.substr(start, colon_pos - start);
+                    std::cerr << "ERROR 1001 block species      (user) name=" << name << "\n";
+                    return;
+                }
+            }
+            if (!matched) {
                 // Strip leading numeric index
                 size_t i = 0;
                 while (i < entry.size() && std::isspace(entry[i])) i++;

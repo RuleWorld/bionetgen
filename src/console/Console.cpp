@@ -24,8 +24,9 @@ std::string trim(const std::string& s) {
 }
 
 std::string lowercase(std::string s) {
-    std::transform(s.begin(), s.end(), s.begin(),
-                   [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+    for (char& c : s) {
+        if (c >= 'A' && c <= 'Z') c += ('a' - 'A');
+    }
     return s;
 }
 
