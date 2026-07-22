@@ -16,7 +16,14 @@ int SYMPOS_LINSOLVE(double **a, double **b, int nrhs, int dim){
 #endif
     int Nrhs, Dim;
     int info;
-    extern void DPOSV(char *, int *, int *, double *, int *, double *, int *, int *);
+#ifdef __cplusplus
+extern "C" {
+#endif
+    /* Fortran dposv: SUBROUTINE DPOSV( UPLO, N, NRHS, A, LDA, B, LDB, INFO ) */
+    void DPOSV(char *uplo, int *n, int *nrhs, double *a, int *lda, double *b, int *ldb, int *info);
+#ifdef __cplusplus
+}
+#endif
     
     Dim= dim;
     Nrhs= nrhs;

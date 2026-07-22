@@ -21,7 +21,14 @@ int ZSYM_LINSOLVE(dcomplex **a, dcomplex **b, int nrhs, int dim){
     static int lwork;
     static int olddim;
     static int initflag=1;
-    extern void ZSYSV(char *, int *, int *, dcomplex *, int *, int *, dcomplex *, int *, dcomplex *, int *, int *);
+#ifdef __cplusplus
+extern "C" {
+#endif
+    /* Fortran zsysv: SUBROUTINE ZSYSV( UPLO, N, NRHS, A, LDA, IPIV, B, LDB, WORK, LWORK, INFO ) */
+    void ZSYSV(char *uplo, int *n, int *nrhs, dcomplex *a, int *lda, int *ipiv, dcomplex *b, int *ldb, dcomplex *work, int *lwork, int *info);
+#ifdef __cplusplus
+}
+#endif
     
     if (initflag){
 	initflag = 0;
@@ -46,4 +53,3 @@ int ZSYM_LINSOLVE(dcomplex **a, dcomplex **b, int nrhs, int dim){
     free(ipiv);
     return(info);
 }
-

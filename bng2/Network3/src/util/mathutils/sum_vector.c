@@ -8,7 +8,7 @@ double SUM_VECTOR( double *a, int dim)
 {
     int n=dim;
     int inca=1;
-    extern double DSUM(int *, double *, int *);
+    extern double DSUM(int *n, double *a, int *inca);
     
     return(DSUM(&n, a, &inca));
 }

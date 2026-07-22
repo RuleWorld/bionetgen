@@ -14,7 +14,8 @@ void SYM_MATRIX_VECTOR_MULT(double **a, double *x, double *y, int dim){
     int incy=1;
     double alpha=1.0;
     double beta=0.0;
-    extern void DSYMV(char *, int *, double *, double *, int *, double *, int *, double *, double *, int *);
+    extern void DSYMV(char*, int*, double*, double*, int*, double*, int*, double*, double*, int*);
     
     DSYMV("l", &n, &alpha, a[0], &n, x, &incx, &beta, y, &incy);
 }
+

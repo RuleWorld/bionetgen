@@ -12,7 +12,7 @@ double DOTP (double *a, double *b, int dim){
     int n;
     int inca=1;
     int incb=1;
-    extern double DDOT(int *, double *, int *, double *, int *);
+    extern double DDOT(int *n, double *a, int *inca, double *b, int *incb);
     
     n=dim;
     return(DDOT(&n, a, &inca, b, &incb));

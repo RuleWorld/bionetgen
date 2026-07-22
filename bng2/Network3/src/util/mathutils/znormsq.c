@@ -9,7 +9,7 @@ double ZNORMSQ( dcomplex *a, int dim)
 {
     int n;
     int inca=1;
-    extern double DZNRSQ(int *, dcomplex *, int *);
+    extern double DZNRSQ(int *n, dcomplex *a, int *inca);
     
     n=dim;
     return (DZNRSQ(&n, a, &inca));
