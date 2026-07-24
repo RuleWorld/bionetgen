@@ -1,6 +1,11 @@
 #include <catch2/catch_test_macros.hpp>
 #include <filesystem>
 #include <cstdlib>
+// Portable setenv/unsetenv: use _putenv on Windows, setenv/unsetenv on POSIX
+#if defined(_WIN32) || defined(__WIN32__) || defined(__CYGWIN__)
+#define setenv(name, val, overwrite) _putenv(name "=" val)
+#define unsetenv(name) _putenv(name "=")
+#endif
 #include "../src/engine/NetworkGenerator.hpp"
 #include "../src/ast/Model.hpp"
 #include "../src/parser/PatternGraphBuilder.hpp"
@@ -64,6 +69,59 @@ TEST_CASE("parsePrintIter behaves correctly", "[NetworkGenerator]") {
     unsetenv("BNG_CPP_PROGRESS");
 }
 
+
+TEST_CASE("parsePrintRules behaves correctly", "[NetworkGenerator]") {
+    // default case: empty model
+    bng::ast::Model model;
+
+    // ensure env var is unset
+    unsetenv("BNG_CPP_PROGRESS_RULES");
+    REQUIRE(parsePrintRules(model) == false);
+
+    // action without print_rule_progress
+    bng::ast::Action generateNetAction;
+    generateNetAction.name = "generate_network";
+    model.addAction(generateNetAction);
+    REQUIRE(parsePrintRules(model) == false);
+
+    // non-matching action with print_rule_progress
+    bng::ast::Model modelDiffAction;
+    bng::ast::Action otherAction;
+    otherAction.name = "simulate";
+    otherAction.arguments["print_rule_progress"] = "1";
+    modelDiffAction.addAction(otherAction);
+    REQUIRE(parsePrintRules(modelDiffAction) == false);
+
+    // matching action with print_rule_progress=1
+    bng::ast::Model modelWithPrintRules;
+    bng::ast::Action generateNetPrintAction;
+    generateNetPrintAction.name = "generate_network";
+    generateNetPrintAction.arguments["print_rule_progress"] = "1";
+    modelWithPrintRules.addAction(generateNetPrintAction);
+    REQUIRE(parsePrintRules(modelWithPrintRules) == true);
+
+    // matching action with print_rule_progress=0
+    bng::ast::Model modelWithPrintRulesFalse;
+    bng::ast::Action generateNetPrintActionFalse;
+    generateNetPrintActionFalse.name = "generate_network";
+    generateNetPrintActionFalse.arguments["print_rule_progress"] = "0";
+    modelWithPrintRulesFalse.addAction(generateNetPrintActionFalse);
+    REQUIRE(parsePrintRules(modelWithPrintRulesFalse) == false);
+
+    // env var overrides model false -> true
+    setenv("BNG_CPP_PROGRESS_RULES", "1", 1);
+    REQUIRE(parsePrintRules(model) == true);
+    REQUIRE(parsePrintRules(modelDiffAction) == true);
+    REQUIRE(parsePrintRules(modelWithPrintRulesFalse) == true);
+
+    // env var overrides model true -> false
+    setenv("BNG_CPP_PROGRESS_RULES", "0", 1);
+    REQUIRE(parsePrintRules(modelWithPrintRules) == false);
+
+    // clean up
+    unsetenv("BNG_CPP_PROGRESS_RULES");
+}
+
 TEST_CASE("parseBooleanLike behaves correctly", "[NetworkGenerator]") {
     // positive cases
     REQUIRE(parseBooleanLike("1") == true);
@@ -96,6 +154,36 @@ static SpeciesGraph makeSpeciesGraph(const std::string& patternText, Model& mode
     auto* species = parser.species_def();
     auto graph = bng::parser::buildPatternGraph(species, model, false);
     return SpeciesGraph(std::move(graph));
+}
+
+TEST_CASE("isMoleculeNode correctly identifies molecule nodes", "[NetworkGenerator]") {
+    Model model;
+    model.addMoleculeType(MoleculeType("A", {ComponentType{"b", {}}}));
+
+    // Create a graph A(b!1).A(b!1) which has two molecule nodes (A), two component nodes (b), and one bond node.
+    SpeciesGraph graph = makeSpeciesGraph("A(b!1).A(b!1)", model);
+
+    int moleculeNodes = 0;
+    int componentNodes = 0;
+    int bondNodes = 0;
+
+    for (auto nodeIter = graph.getGraph().begin(); nodeIter != graph.getGraph().end(); ++nodeIter) {
+        const BNGcore::Node& node = **nodeIter;
+        if (isMoleculeNode(node)) {
+            moleculeNodes++;
+        } else if (isComponentNode(node)) {
+            componentNodes++;
+        } else if (isBondNode(node)) {
+            bondNodes++;
+        }
+    }
+
+    // We expect 2 molecule nodes (A and A)
+    REQUIRE(moleculeNodes == 2);
+    // We expect 2 component nodes (b and b)
+    REQUIRE(componentNodes == 2);
+    // We expect 1 bond node
+    REQUIRE(bondNodes == 1);
 }
 
 TEST_CASE("withinStoichLimits handles empty limits", "[NetworkGenerator]") {
@@ -137,6 +225,82 @@ TEST_CASE("withinStoichLimits enforces molecule counts", "[NetworkGenerator]") {
     SECTION("Limits have unrelated entries") {
         std::map<std::string, std::size_t> limits = {{"A", 2}, {"C", 0}};
         REQUIRE(withinStoichLimits(graph, limits) == true);
+    }
+
+    SECTION("Molecule in graph is not in limits") {
+        std::map<std::string, std::size_t> limits = {{"A", 2}};
+        REQUIRE(withinStoichLimits(graph, limits) == true);
+    }
+}
+
+
+TEST_CASE("parseCheckIso behaves correctly", "[NetworkGenerator]") {
+    bng::ast::Model model;
+
+    SECTION("returns true by default (no actions)") {
+        REQUIRE(parseCheckIso(model) == true);
+    }
+
+    SECTION("returns true if no generate_network action exists") {
+        bng::ast::Action action;
+        action.name = "simulate";
+        action.arguments["method"] = "ode";
+        model.addAction(action);
+        REQUIRE(parseCheckIso(model) == true);
+    }
+
+    SECTION("returns true if generate_network exists but no check_iso argument") {
+        bng::ast::Action action;
+        action.name = "generate_network";
+        action.arguments["print_iter"] = "1";
+        model.addAction(action);
+        REQUIRE(parseCheckIso(model) == true);
+    }
+
+    SECTION("returns true if check_iso is set to true") {
+        bng::ast::Action action;
+        action.name = "generate_network";
+        action.arguments["check_iso"] = "1";
+        model.addAction(action);
+        REQUIRE(parseCheckIso(model) == true);
+    }
+
+    SECTION("returns false if check_iso is set to false") {
+        bng::ast::Action action;
+        action.name = "generate_network";
+        action.arguments["check_iso"] = "0";
+        model.addAction(action);
+        REQUIRE(parseCheckIso(model) == false);
+    }
+
+    SECTION("ignores generate_network without check_iso and finds the one with check_iso") {
+        bng::ast::Action action1;
+        action1.name = "generate_network";
+        action1.arguments["print_iter"] = "1";
+        model.addAction(action1);
+
+        bng::ast::Action action2;
+        action2.name = "generate_network";
+        action2.arguments["check_iso"] = "0";
+        model.addAction(action2);
+
+        REQUIRE(parseCheckIso(model) == false);
+    }
+
+    SECTION("handles other boolean-like value 'yes' for check_iso") {
+        bng::ast::Action action;
+        action.name = "generate_network";
+        action.arguments["check_iso"] = "yes";
+        model.addAction(action);
+        REQUIRE(parseCheckIso(model) == true);
+    }
+
+    SECTION("handles other boolean-like value 'no' for check_iso") {
+        bng::ast::Action action;
+        action.name = "generate_network";
+        action.arguments["check_iso"] = "no";
+        model.addAction(action);
+        REQUIRE(parseCheckIso(model) == false);
     }
 }
 
@@ -208,6 +372,108 @@ TEST_CASE("parseOverwrite behaves correctly", "[NetworkGenerator]") {
         model.addAction(action);
         REQUIRE(parseOverwrite(model) == false);
     }
+
+    SECTION("returns false for invalid boolean-like value 'asdf' for overwrite") {
+        bng::ast::Action action;
+        action.name = "generate_network";
+        action.arguments["overwrite"] = "asdf";
+        model.addAction(action);
+        REQUIRE(parseOverwrite(model) == false);
+    }
+}
+
+TEST_CASE("parseCheckIso behaves correctly duplicate", "[NetworkGenerator]") {
+    bng::ast::Model model;
+
+    SECTION("returns true by default (no actions)") {
+        REQUIRE(parseCheckIso(model) == true);
+    }
+
+    SECTION("returns true if no generate_network action exists") {
+        bng::ast::Action action;
+        action.name = "simulate";
+        action.arguments["method"] = "ode";
+        model.addAction(action);
+        REQUIRE(parseCheckIso(model) == true);
+    }
+
+    SECTION("returns true if generate_network exists but no check_iso argument") {
+        bng::ast::Action action;
+        action.name = "generate_network";
+        action.arguments["print_iter"] = "1";
+        model.addAction(action);
+        REQUIRE(parseCheckIso(model) == true);
+    }
+
+    SECTION("returns true if check_iso is set to true") {
+        bng::ast::Action action;
+        action.name = "generate_network";
+        action.arguments["check_iso"] = "1";
+        model.addAction(action);
+        REQUIRE(parseCheckIso(model) == true);
+    }
+
+    SECTION("returns false if check_iso is set to false") {
+        bng::ast::Action action;
+        action.name = "generate_network";
+        action.arguments["check_iso"] = "0";
+        model.addAction(action);
+        REQUIRE(parseCheckIso(model) == false);
+    }
+}
+
+TEST_CASE("parseMaxStoich behaves correctly", "[NetworkGenerator]") {
+    bng::ast::Model model;
+
+    std::map<std::string, std::size_t> emptyMap;
+
+    SECTION("returns empty map by default") {
+        REQUIRE(parseMaxStoich(model) == emptyMap);
+    }
+
+    SECTION("returns max_stoich map if generate_network exists") {
+        bng::ast::Action action;
+        action.name = "generate_network";
+        // BNG format is {A=>2,B=>1} or similar
+        action.arguments["max_stoich"] = "{A=>2, 'B'=>1}";
+        model.addAction(action);
+
+        std::map<std::string, std::size_t> expectedMap = {{"A", 2}, {"B", 1}};
+        REQUIRE(parseMaxStoich(model) == expectedMap);
+    }
+}
+
+TEST_CASE("parseMaxAgg behaves correctly", "[NetworkGenerator]") {
+    bng::ast::Model model;
+
+    SECTION("returns std::nullopt by default") {
+        REQUIRE(parseMaxAgg(model) == std::nullopt);
+    }
+
+    SECTION("returns value if max_agg argument exists") {
+        bng::ast::Action action;
+        action.name = "generate_network";
+        action.arguments["max_agg"] = "10";
+        model.addAction(action);
+
+        REQUIRE(parseMaxAgg(model) == 10);
+    }
+}
+
+TEST_CASE("parsePrintRules behaves correctly duplicate", "[NetworkGenerator]") {
+    bng::ast::Model model;
+
+    SECTION("returns false by default") {
+        REQUIRE(parsePrintRules(model) == false);
+    }
+
+    SECTION("returns true if print_rule_progress is 1") {
+        bng::ast::Action action;
+        action.name = "generate_network";
+        action.arguments["print_rule_progress"] = "1";
+        model.addAction(action);
+        REQUIRE(parsePrintRules(model) == true);
+    }
 }
 
 TEST_CASE("NetworkGenerator::generate behaves correctly", "[NetworkGenerator]") {
@@ -262,4 +528,47 @@ TEST_CASE("generateNative drives network generation", "[NetworkGenerator]") {
         REQUIRE(network.species.size() == 2);
         REQUIRE(network.reactions.size() == 1);
     }
+}
+
+
+TEST_CASE("isComponentNode behaves correctly", "[NetworkGenerator]") {
+    Model model;
+
+    // Molecule with one component and a bond
+    // Pattern A(b!1).A(b!1) has molecules, components, and bonds.
+    ComponentType b_comp;
+    b_comp.name = "b";
+
+    std::vector<ComponentType> comps;
+    comps.push_back(b_comp);
+
+    model.addMoleculeType(MoleculeType("A", comps, false));
+    SpeciesGraph graph = makeSpeciesGraph("A(b!1).A(b!1)", model);
+
+    int moleculeCount = 0;
+    int componentCount = 0;
+    int bondCount = 0;
+
+    for (auto nodeIter = graph.getGraph().begin(); nodeIter != graph.getGraph().end(); ++nodeIter) {
+        if (isBondNode(**nodeIter)) {
+            bondCount++;
+            REQUIRE_FALSE(isComponentNode(**nodeIter));
+        } else if (isComponentNode(**nodeIter)) {
+            componentCount++;
+            REQUIRE_FALSE(isBondNode(**nodeIter));
+            REQUIRE_FALSE(isMoleculeNode(**nodeIter));
+        } else if (isMoleculeNode(**nodeIter)) {
+            moleculeCount++;
+            REQUIRE_FALSE(isBondNode(**nodeIter));
+            REQUIRE_FALSE(isComponentNode(**nodeIter));
+        }
+    }
+
+    // For A(b!1).A(b!1) we expect:
+    // 2 Molecule nodes ("A")
+    // 2 Component nodes ("b")
+    // 1 Bond node ("!1")
+    REQUIRE(moleculeCount == 2);
+    REQUIRE(componentCount == 2);
+    REQUIRE(bondCount == 1);
 }

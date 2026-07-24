@@ -80,7 +80,7 @@ class Rule:
     def __str__(self):
         label = f"{self.label}: " if self.label != '' else ""
         arrow = ' <-> ' if self.bidirectional else ' -> '
-        return f"{label}{' + '.join(str(x) for x in self.reactants)}{arrow}{' + '.join(str(x) for x in self.products)} {','.join(self.rates)}"
+        return f"{label}{' + '.join([str(x) for x in self.reactants])}{arrow}{' + '.join([str(x) for x in self.products])} {','.join(self.rates)}"
 class Species:
     def __init__(self):
         self.molecules = []
@@ -270,7 +270,7 @@ class Species:
         
     def __str__(self):
         self.molecules.sort(key= lambda molecule: molecule.name)
-        name= '.'.join(x.toString() for x in self.molecules)
+        name= '.'.join([x.toString() for x in self.molecules])
         '''
         name = name.replace('~','')
         
@@ -285,7 +285,7 @@ class Species:
         return name
         
     def str2(self):
-        return '.'.join(x.str2() for x in self.molecules)
+        return '.'.join([x.str2() for x in self.molecules])
         
     def reset(self):
         for element in self.molecules:
@@ -370,11 +370,14 @@ class Species:
             speciesDictionary.update(compDictionary)
             
         for bond in self.bonds:
-            if bond[0] in speciesDictionary and bond[1] in speciesDictionary:
-                if layout == 'RL':
-                    graph.add_edge(speciesDictionary[bond[1]],speciesDictionary[bond[0]],dir='none',len=0.1,weight=100)
-                else:
-                    graph.add_edge(speciesDictionary[bond[0]],speciesDictionary[bond[1]],dir='none',len=0.1,weight=100)
+            b0 = speciesDictionary.get(bond[0])
+            if b0 is not None:
+                b1 = speciesDictionary.get(bond[1])
+                if b1 is not None:
+                    if layout == 'RL':
+                        graph.add_edge(b1, b0, dir='none', len=0.1, weight=100)
+                    else:
+                        graph.add_edge(b0, b1, dir='none', len=0.1, weight=100)
         return speciesDictionary
         
     
@@ -488,7 +491,7 @@ class Molecule:
         
     def __str__(self):
         self.components = sorted(self.components,key = lambda st:st.name)
-        components_str = '(' + ','.join(str(x) for x in self.components) + ')' if self.components else ''
+        components_str = '(' + ','.join([str(x) for x in self.components]) + ')' if self.components else ''
         compartment_str = '@' + self.compartment if self.compartment else ''
         # ⚡ Bolt: Use single f-string to prevent intermediate string allocations
         return f"{self.name}{components_str}{compartment_str}"
@@ -498,7 +501,7 @@ class Molecule:
         
     def str2(self):
         self.components.sort()
-        return self.name + '(' + ','.join(x.str2() for x in self.components) + ')'
+        return self.name + '(' + ','.join([x.str2() for x in self.components]) + ')'
         
     def str3(self):
         return self.name + '(' + self.components[0].name + ')'
@@ -636,7 +639,7 @@ class Component:
         return True
         
     def getRuleStr(self):
-        bonds_str = '!' + '!'.join(str(x) for x in self.bonds) if self.bonds else ''
+        bonds_str = '!' + '!'.join([str(x) for x in self.bonds]) if self.bonds else ''
         state_str = '~' + self.activeState if self.activeState else ''
         # ⚡ Bolt: Use single f-string to prevent intermediate string allocations
         return f"{self.name}{bonds_str}{state_str}"
@@ -651,8 +654,8 @@ class Component:
         return self.getRuleStr()
         
     def str2(self):
-        bonds_str = '!' + '!'.join(str(x) for x in self.bonds) if self.bonds else ''
-        states_str = '~' + '~'.join(str(x) for x in self.states) if self.states else ''
+        bonds_str = '!' + '!'.join([str(x) for x in self.bonds]) if self.bonds else ''
+        states_str = '~' + '~'.join([str(x) for x in self.states]) if self.states else ''
         # ⚡ Bolt: Use single f-string to prevent intermediate string allocations
         return f"{self.name}{bonds_str}{states_str}"
         

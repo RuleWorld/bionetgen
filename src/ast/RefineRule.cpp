@@ -958,9 +958,10 @@ std::unique_ptr<ReactionRule> restrictRule(
     // Generate child rule name (Perl lines 632-634)
     std::string childName = rule.getRuleName() + "_v1";
     // Remove "(reverse)" -> "_rev"
-    std::string::size_type revPos;
-    while ((revPos = childName.find("(reverse)")) != std::string::npos) {
+    std::string::size_type revPos = 0;
+    while ((revPos = childName.find("(reverse)", revPos)) != std::string::npos) {
         childName.replace(revPos, 9, "_rev");
+        revPos += 4; // "_rev".length()
     }
 
     // Build string representations

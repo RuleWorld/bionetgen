@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 for $file (@ARGV){
-  open(FILE,$file) || die "Couldn't open $file: $!\n";
+  open(FILE, '<', $file) || die "Couldn't open $file: $!\n";
   print "$file:\n";
   while(<FILE>){
     if (/^s*begin\s+(\S.*)$/){

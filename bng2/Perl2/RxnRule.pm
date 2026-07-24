@@ -2508,15 +2508,6 @@ sub findMap
             #  => can't change a species' location if the molecule composition has changed.
 			elsif ( $mapPattR[$i_pattR] == -2 )
 			{
-                # Removed by Justin -- we're being permissive about species syntax.
-                # # species compartment declaration is invalid without map to product pattern
-                # if ( defined $rr->Reactants->[$i_pattR]->Compartment )
-                # {
-                #   exit_error(
-                #     "Reaction Rule specifies a species compartment for reactant in which"
-                #     ." molecules are removed or added.", $rr->toString()
-                #   );
-                # }
 				next;
 			}
 
@@ -2537,16 +2528,6 @@ sub findMap
             # NOTE: this could potentially define a generic transport.
 			next if ( !defined($compR) and defined($compP) );
 
-            # Removed by Justin -- we're being permissive about species syntax.
-            # # error if compartment is defined for one, but not both.
-            # if (  defined($compR)  xor  defined($compP)  )
-            # {
-            #   exit_error(
-            #     "Reaction Rule specifies a species compartment for a pattern on one"
-            #     ." side of the reaction but not for the corresponding species on the"
-            #     ." other side of the reaction.", $rr->toString()
-            #   );
-            # }
 
 			# case 3A: compartments are the same.  no transport
 			next if ( $compR == $compP );
@@ -2583,25 +2564,6 @@ sub findMap
 			}
 		}
 
-        # Removed by Justin -- we're being permissive about species syntax.
-        # # One last thing:  check for invalid compartment specification on Product side
-        # for ( my $i_pattP = 0; $i_pattP < @{$rr->Products}; $i_pattP++ )
-        # {
-        #   # does product pattern not have a valid map to a reactant pattern?
-        #   if ( $mapPattP[$i_pattP] == -2 )
-        #   {
-        #     # species compartment declaration is invalid without map to product pattern
-        #     if ( defined $rr->Products->[$i_pattP]->Compartment )
-        #     {
-        #       exit_error(
-        #         "Reaction Rule specifies a species compartment for product from which"
-        #         ." molecules have been removed or added.", $rr->toString()
-        #       );
-        #     }
-        #     # otherwise okay.  nothing to do.
-        #     next;
-        #   }
-        # }
 
 	}    # done handling species transport
 
@@ -2857,7 +2819,7 @@ sub findMap
 		my $modelname = $BNGModel::GLOBAL_MODEL->Name;
 		my $rulename = $rr->Name;
 		my $filename = join("_",($modelname,$rulename,"StatFactorCalculation")).".txt";
-		open($autfile,">".$filename) or die;
+		open($autfile, '>', $filename) or die;
 		print $autfile $rr->toString()."\n";
 		print $autfile "Reactants: ".$rg->toString()."\n";
 		print $autfile "Products:  ".$pg->toString()."\n";

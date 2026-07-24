@@ -269,13 +269,9 @@ sub getCVodeRate
     if ($convert_units)
     {  ($conv_expr, $comp_name, $err) = $rxn->get_intensive_to_extensive_units_conversion($BNGModel::GLOBAL_MODEL);  }
 
-    # get reference to RxnRule RRef hash (TODO: may be obsolete)
-    my $rrefs = undef;
-    if ( $rxn->RxnRule )
-    {   $rrefs = $rxn->RxnRule->RRefs;   }
     # get ratelaw string   
     my $sf = ($rxn->RxnRule && $rxn->RxnRule->TotalRate) ? 1 : $rxn->StatFactor;
-    return $rxn->RateLaw->toCVodeString( $sf, $rxn->Reactants, $rrefs, $plist, $conv_expr );
+    return $rxn->RateLaw->toCVodeString( $sf, $rxn->Reactants, $plist, $conv_expr );
 }
 
 
@@ -296,13 +292,9 @@ sub getMatlabRate
     if ($convert_units)
     {  ($conv_expr, $comp_name, $err) = $rxn->get_intensive_to_extensive_units_conversion($BNGModel::GLOBAL_MODEL);  }
 
-    # get reference to RxnRule RRef hash
-    my $rrefs = undef;
-    if ( $rxn->RxnRule )
-    {   $rrefs = $rxn->RxnRule->RRefs;   }
     # get ratelaw string  
     my $sf = ($rxn->RxnRule && $rxn->RxnRule->TotalRate) ? 1 : $rxn->StatFactor;
-    return $rxn->RateLaw->toMatlabString( $sf, $rxn->Reactants, $rrefs, $plist, $conv_expr );
+    return $rxn->RateLaw->toMatlabString( $sf, $rxn->Reactants, $plist, $conv_expr );
 }
 
 

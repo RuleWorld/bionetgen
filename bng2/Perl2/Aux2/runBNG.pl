@@ -46,7 +46,7 @@ my $prefix= shift(@ARGV);
 open my $oldout, ">&STDOUT"     or die "Can't dup STDOUT: $!";
 
 # Redirect STDOUT to logfile 
-open(STDOUT,">${prefix}_runBNG.log");
+open( STDOUT, '>', "${prefix}_runBNG.log" );
 
 # turn off output buffering on STDOUT
 (select(*STDOUT), $|=1)[0];
@@ -111,7 +111,7 @@ my $gdatfile= $prefix."_".$suff.".gdat";
 my @output=();
 if (-r "$gdatfile"){
   print "Updating observable concentrations from $gdatfile\n";
-  open(GDAT, "$gdatfile");
+  open( GDAT, '<', $gdatfile );
   my $last="";
   while(<GDAT>){
     $last=$_;

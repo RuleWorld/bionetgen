@@ -134,16 +134,33 @@ PopulationMappingRuleResult newPopulationMappingRule(
 
     // ---- Extract optional name/label (Perl lines 26-36) ----
     std::string name;
-    // Check for alphanumeric name followed by colon: name: ...
-    std::regex nameColonRe("^([\\w\\s*]+):\\s*");
-    std::regex indexRe("^(\\d+)\\s+");
-    std::smatch match;
-    if (std::regex_search(str, match, nameColonRe)) {
-        name = match[1].str();
-        str = match.suffix().str();
-    } else if (std::regex_search(str, match, indexRe)) {
-        name = match[1].str();
-        str = match.suffix().str();
+    // BOLT OPTIMIZATION: Avoid regex overhead
+    size_t colon_pos = str.find(':');
+    auto is_valid_name_colon = [](const std::string& s) {
+        if (s.empty()) return false;
+        for (char c : s) {
+            if (!(std::isalnum(c) || c == '_' || std::isspace(c) || c == '*')) return false;
+        }
+        return true;
+    };
+    if (colon_pos != std::string::npos) {
+        std::string potential_name = str.substr(0, colon_pos);
+        if (is_valid_name_colon(potential_name)) {
+            name = potential_name;
+            size_t suffix_start = colon_pos + 1;
+            while (suffix_start < str.length() && std::isspace(str[suffix_start])) suffix_start++;
+            str = str.substr(suffix_start);
+        }
+    }
+    if (name.empty()) {
+        size_t start = 0;
+        while (start < str.length() && std::isdigit(str[start])) start++;
+        if (start > 0 && start < str.length() && std::isspace(str[start])) {
+            name = str.substr(0, start);
+            size_t suffix_start = start;
+            while (suffix_start < str.length() && std::isspace(str[suffix_start])) suffix_start++;
+            str = str.substr(suffix_start);
+        }
     }
 
     // ---- Data structures for reactants, products, and references ----
@@ -429,11 +446,17 @@ PopulationMappingRuleResult newPopulationMappingRule(
     // Check for TotalRate attribute (Perl lines 233-235)
     bool totalRate = false;
     {
-        std::regex totalRateRe("(^|\\s)TotalRate(\\s|$)");
-        if (std::regex_search(str, totalRateRe)) {
-            totalRate = true;
-            str = std::regex_replace(str, totalRateRe, " ");
-            trim(str);
+        size_t pos = str.find("TotalRate");
+        while (pos != std::string::npos) {
+            bool starts_ok = (pos == 0) || (std::isspace(str[pos - 1]));
+            bool ends_ok = (pos + 9 == str.size()) || (std::isspace(str[pos + 9]));
+            if (starts_ok && ends_ok) {
+                totalRate = true;
+                str.replace(pos, 9, " ");
+                trim(str);
+                break;
+            }
+            pos = str.find("TotalRate", pos + 1);
         }
     }
 

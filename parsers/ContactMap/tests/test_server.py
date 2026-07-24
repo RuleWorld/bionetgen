@@ -20,8 +20,8 @@ class TestServer(unittest.TestCase):
     @patch('server.glob.glob')
     @patch('builtins.open', new_callable=mock_open, read_data=b'dummy')
     @patch('server.createGraph')
-    @patch.object(server.BipartiteServer, 'bngl2xml')
-    def test_bipartite_oserror_path(self, mock_bngl2xml, mock_createGraph, mock_file, mock_glob, mock_remove):
+    @patch.object(server.BipartiteServer, '_bngl2xml')
+    def test_bipartite_oserror_path(self, mock__bngl2xml, mock_createGraph, mock_file, mock_glob, mock_remove):
         """
         Tests the error path in bipartite where os.remove throws an OSError,
         verifying that it is caught and ignored gracefully.

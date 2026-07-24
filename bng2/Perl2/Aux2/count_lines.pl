@@ -39,7 +39,7 @@ if (@ARGV){
 my $n_lines_tot=0;
 for my $file (@files){
   my $n_lines=0;
-  open(IN,$file) || die "Couldn't open $file:$?\n";
+  open(IN, '<', $file) || die "Couldn't open $file:$?\n";
   while(<IN>){
     if (/;\s*$/){
       ++$n_lines;

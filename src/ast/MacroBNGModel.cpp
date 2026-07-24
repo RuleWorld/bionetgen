@@ -91,12 +91,16 @@ std::string MacroBNGModel::replaceAll(const std::string& s,
                                        const std::string& from,
                                        const std::string& to) {
     if (from.empty()) return s;
-    std::string result = s;
+    std::string result;
+    result.reserve(s.length());
+    std::string::size_type last_pos = 0;
     std::string::size_type pos = 0;
-    while ((pos = result.find(from, pos)) != std::string::npos) {
-        result.replace(pos, from.size(), to);
-        pos += to.size();
+    while ((pos = s.find(from, last_pos)) != std::string::npos) {
+        result.append(s, last_pos, pos - last_pos);
+        result.append(to);
+        last_pos = pos + from.length();
     }
+    result.append(s, last_pos, s.length() - last_pos);
     return result;
 }
 
@@ -112,9 +116,29 @@ std::string MacroBNGModel::rtrim(const std::string& s) {
     return std::string(s.begin(), it.base());
 }
 
+
 std::string MacroBNGModel::trim(const std::string& s) {
     return ltrim(rtrim(s));
 }
+
+std::string MacroBNGModel::collapseWhitespace(const std::string& s) {
+    std::string result;
+    result.reserve(s.size());
+    bool in_space = false;
+    for (char c : s) {
+        if (std::isspace(static_cast<unsigned char>(c))) {
+            if (!in_space) {
+                result.push_back(' ');
+                in_space = true;
+            }
+        } else {
+            result.push_back(c);
+            in_space = false;
+        }
+    }
+    return result;
+}
+
 
 std::string MacroBNGModel::quotemeta(const std::string& s) {
     // Escape all non-alphanumeric, non-underscore characters for regex use
@@ -213,7 +237,7 @@ MacroBNGModel::read_block_array(const std::string& name) {
             std::string ename = trimmed.substr(4);
             // trim and normalize whitespace
             ename = trim(ename);
-            ename = std::regex_replace(ename, std::regex("\\s+"), " ");
+            ename = collapseWhitespace(ename);
             if (ename != name) {
                 return {{}, errgen("end " + ename + " does not match begin " + name)};
             }
@@ -377,12 +401,11 @@ std::string MacroBNGModel::pre_macr(const std::string& param_prefix) {
         // Check for "begin <block>"
         std::string trimmed = line;
         trimmed.erase(0, trimmed.find_first_not_of(" \t"));
-        std::smatch m;
-        std::regex re_begin("^begin\\s+(.*)");
-        if (std::regex_search(trimmed, m, re_begin)) {
-            std::string name = m[1].str();
+        if (trimmed.length() > 5 && trimmed.substr(0, 5) == "begin" && (trimmed[5] == ' ' || trimmed[5] == '\t')) {
+            std::string name = trimmed.substr(5);
+            name.erase(0, name.find_first_not_of(" \t"));
             name = trim(name);
-            name = std::regex_replace(name, std::regex("\\s+"), " ");
+            name = collapseWhitespace(name);
 
             auto [block_dat, block_err] = read_block_array(name);
             if (!block_err.empty()) {
@@ -425,12 +448,12 @@ std::string MacroBNGModel::pre_macr(const std::string& param_prefix) {
                 WFILEpar.close();
             }
             // --- molecule_types ---
-            else if (std::regex_match(name, std::regex("^molecule[_ ]types$"))) {
+            else if (name == "molecule types" || name == "molecule_types") {
                 // We store the type info via pre_species1 later; just count.
                 std::cout << "Read " << block_dat.size() << " molecule types.\n";
             }
             // --- seed_species ---
-            else if (std::regex_match(name, std::regex("^seed[_ ]species$"))) {
+            else if (name == "seed species" || name == "seed_species") {
                 // Perl stores into SeedSpeciesList; we just count.
                 std::cout << "Read " << block_dat.size() << " species.\n";
             }
@@ -442,21 +465,36 @@ std::string MacroBNGModel::pre_macr(const std::string& param_prefix) {
                 std::cout << "Read " << block_dat.size() << " species.\n";
             }
             // --- reaction_rules ---
-            else if (std::regex_match(name, std::regex("^reaction[_ ]rules$"))) {
+            else if (name == "reaction rules" || name == "reaction_rules") {
                 int nerr_count = 0;
                 for (auto& [entry, lno] : block_dat) {
                     std::string str1ing = entry;
                     std::string nam1e;
                     // Check for user-named rule "name: ..."
-                    std::smatch rm;
-                    if (std::regex_search(str1ing, rm, std::regex("^\\s*([^:].*)[:]\\s*"))) {
-                        nam1e = rm[1].str();
-                        std::cerr << "ERROR 1002   rules  (user) name=" << nam1e << "\n";
-                        return "ERROR 1002: named rules not supported";
-                    } else if (std::regex_search(str1ing, rm, std::regex("^\\s*(\\d+)\\s+"))) {
-                        nam1e = rm[1].str();
-                        str1ing = rm.suffix().str();
+                    // BOLT OPTIMIZATION: Avoid O(N) regex overhead in loop
+                    size_t start = 0;
+                    while (start < str1ing.length() && std::isspace(str1ing[start])) start++;
+
+                    bool named = false;
+                    if (start < str1ing.length() && str1ing[start] != ':') {
+                        size_t colon_pos = str1ing.find_last_of(':');
+                        if (colon_pos != std::string::npos && colon_pos >= start) {
+                            nam1e = str1ing.substr(start, colon_pos - start);
+                            std::cerr << "ERROR 1002   rules  (user) name=" << nam1e << "\n";
+                            return "ERROR 1002: named rules not supported";
+                        }
                     }
+                    if (!named && start < str1ing.length() && std::isdigit(str1ing[start])) {
+                        size_t end = start;
+                        while (end < str1ing.length() && std::isdigit(str1ing[end])) end++;
+                        if (end < str1ing.length() && std::isspace(str1ing[end])) {
+                            nam1e = str1ing.substr(start, end - start);
+                            size_t suffix_start = end;
+                            while (suffix_start < str1ing.length() && std::isspace(str1ing[suffix_start])) suffix_start++;
+                            str1ing = str1ing.substr(suffix_start);
+                        }
+                    }
+
                     str1ing = ltrim(str1ing);
                     reac1tion_.push_back(str1ing);
                 }
@@ -471,9 +509,17 @@ std::string MacroBNGModel::pre_macr(const std::string& param_prefix) {
                 for (auto& [entry, lno] : block_dat) {
                     std::string str1ing = entry;
                     // Strip leading numeric index
-                    std::smatch rm;
-                    if (std::regex_search(str1ing, rm, std::regex("^\\s*\\d+\\s+"))) {
-                        str1ing = rm.suffix().str();
+                    // BOLT OPTIMIZATION: Avoid regex compilation overhead
+                    size_t start = 0;
+                    while (start < str1ing.length() && std::isspace(str1ing[start])) start++;
+                    if (start < str1ing.length() && std::isdigit(str1ing[start])) {
+                        size_t end = start;
+                        while (end < str1ing.length() && std::isdigit(str1ing[end])) end++;
+                        if (end < str1ing.length() && std::isspace(str1ing[end])) {
+                            size_t suffix_start = end;
+                            while (suffix_start < str1ing.length() && std::isspace(str1ing[suffix_start])) suffix_start++;
+                            str1ing = str1ing.substr(suffix_start);
+                        }
                     }
                     obser1vable_.push_back(str1ing);
                 }
@@ -489,9 +535,13 @@ std::string MacroBNGModel::pre_macr(const std::string& param_prefix) {
             }
         }
         // Check for action lines like "generate_network" / "simulate"
-        else if (std::regex_search(trimmed, m, std::regex("^([A-Za-z][^(]*)"))) {
-            gene1rate_.push_back(line);
+        else {
+            // BOLT OPTIMIZATION: Avoid regex compilation overhead
+            if (!trimmed.empty() && std::isalpha(trimmed[0])) {
+                gene1rate_.push_back(line);
+            }
         }
+
     } // while get_line
 
     if (!err.empty()) return err;
@@ -586,17 +636,28 @@ void MacroBNGModel::pre_species1(std::map<std::string, int>& nm_site,
 
         // Strip leading label "name: ..."
         {
-            std::smatch m;
-            if (std::regex_search(entry, m, std::regex("^\\s*([^:].*)[:]\\s*"))) {
-                name = m[1].str();
-                std::cerr << "ERROR 1001 block species      (user) name=" << name << "\n";
-                return;
-            } else {
+            // BOLT OPTIMIZATION: Avoid O(N) regex overhead in loop
+            size_t start = 0;
+            while (start < entry.length() && std::isspace(entry[start])) start++;
+            bool matched = false;
+            if (start < entry.length() && entry[start] != ':') {
+                size_t colon_pos = entry.find_last_of(':');
+                if (colon_pos != std::string::npos && colon_pos >= start) {
+                    name = entry.substr(start, colon_pos - start);
+                    std::cerr << "ERROR 1001 block species      (user) name=" << name << "\n";
+                    return;
+                }
+            }
+            if (!matched) {
                 // Strip leading numeric index
-                std::regex_replace(entry, std::regex("^\\s*\\d+\\s+"), "");
-                std::smatch rm;
-                if (std::regex_search(entry, rm, std::regex("^\\s*\\d+\\s+"))) {
-                    entry = rm.suffix().str();
+                size_t i = 0;
+                while (i < entry.size() && std::isspace(entry[i])) i++;
+                if (i < entry.size() && std::isdigit(entry[i])) {
+                    while (i < entry.size() && std::isdigit(entry[i])) i++;
+                    if (i < entry.size() && std::isspace(entry[i])) {
+                        while (i < entry.size() && std::isspace(entry[i])) i++;
+                        entry = entry.substr(i);
+                    }
                 }
             }
         }
@@ -608,12 +669,16 @@ void MacroBNGModel::pre_species1(std::map<std::string, int>& nm_site,
 
         // Extract molecule(site,site,...) patterns
         // Repeatedly match (...) groups
-        std::regex re_paren("([\\(])(.*?)([\\)])");
-        std::smatch pm;
         std::string remaining = spec_entry;
-        while (std::regex_search(remaining, pm, re_paren)) {
+        size_t search_pos = 0;
+        while (true) {
+            size_t open_pos = remaining.find('(', search_pos);
+            if (open_pos == std::string::npos) break;
+            size_t close_pos = remaining.find(')', open_pos);
+            if (close_pos == std::string::npos) break;
+
             // name is everything before the '('
-            std::string prefix_str = pm.prefix().str();
+            std::string prefix_str = remaining.substr(0, open_pos);
             // Get the molecule name: last segment after '.'
             auto dot_pos = prefix_str.rfind('.');
             if (dot_pos != std::string::npos) {
@@ -623,7 +688,7 @@ void MacroBNGModel::pre_species1(std::map<std::string, int>& nm_site,
             }
 
             if (nm_site.find(name) == nm_site.end()) {
-                std::string inside = pm[2].str();  // contents inside parentheses
+                std::string inside = remaining.substr(open_pos + 1, close_pos - open_pos - 1);  // contents inside parentheses
                 auto sits = split(inside, ',');
                 // Strip modifiers from site names
                 for (auto& s : sits) {
@@ -646,7 +711,8 @@ void MacroBNGModel::pre_species1(std::map<std::string, int>& nm_site,
                 nm_site[name] = static_cast<int>(sits.size());
             }
 
-            remaining = pm.suffix().str();
+            remaining = remaining.substr(close_pos + 1);
+            search_pos = 0;
             // Also strip "name." prefix from remaining
             if (!remaining.empty() && remaining[0] == '.') {
                 remaining = remaining.substr(1);
@@ -676,14 +742,24 @@ void MacroBNGModel::del_blank(const std::vector<std::string>& str,
         // Strip trailing whitespace
         line = rtrim(line);
         // Collapse internal whitespace to single space
-        line = std::regex_replace(line, std::regex("\\s+"), " ");
+        line = collapseWhitespace(line);
         // Replace single spaces with semicolons
         line = replaceAll(line, " ", ";");
 
         // If starts with digit followed by ';', strip the leading number
-        std::smatch m;
-        if (std::regex_search(line, m, std::regex("^\\d+?;"))) {
-            line = ";" + m.suffix().str();
+        size_t semicolon_pos = line.find(';');
+        bool has_leading_num = false;
+        if (semicolon_pos != std::string::npos && semicolon_pos > 0) {
+            has_leading_num = true;
+            for (size_t i = 0; i < semicolon_pos; ++i) {
+                if (!std::isdigit(static_cast<unsigned char>(line[i]))) {
+                    has_leading_num = false;
+                    break;
+                }
+            }
+        }
+        if (has_leading_num) {
+            line = ";" + line.substr(semicolon_pos + 1);
         } else {
             line = ";" + line;
         }
@@ -819,15 +895,14 @@ void MacroBNGModel::skf0(const std::string& rp1,
         }
 
         // Remove the first occurrence of lnk1 from p1
-        p1 = replaceFirst(p1, lnk1, "");
+        p1.erase(bang_pos, lnk1.length());
 
         // Find the second occurrence of lnk1 in p1
-        if (p1.find(lnk1) == std::string::npos) {
+        auto bang_pos2 = p1.find(lnk1);
+        if (bang_pos2 == std::string::npos) {
             // No matching second link — skip
             continue;
         }
-
-        auto bang_pos2 = p1.find(lnk1);
         std::string lef2 = p1.substr(0, bang_pos2);
 
         // Extract skf2, sit2 from lef2 the same way
@@ -870,7 +945,7 @@ void MacroBNGModel::skf0(const std::string& rp1,
         }
 
         // Remove the second occurrence of lnk1 from p1
-        p1 = replaceFirst(p1, lnk1, "");
+        p1.erase(bang_pos2, lnk1.length());
 
         // add_skf both directions
         add_skf(skf1, skf2, sit1, skf, nm2_site);
@@ -960,21 +1035,25 @@ void MacroBNGModel::del_set(const std::vector<std::string>& rem,
 void MacroBNGModel::activ_sit(int /*typrul*/, std::string& reac, std::string& prod,
                                std::vector<std::string>& mreac) {
     while (!reac.empty()) {
-        // Match first (...) group
-        std::regex re_paren("[\\(].*?[)]");
-        std::smatch m;
-        if (!std::regex_search(reac, m, re_paren)) break;
+        auto p1 = reac.find('(');
+        if (p1 == std::string::npos) break;
+        auto p2 = reac.find(')', p1);
+        if (p2 == std::string::npos) break;
 
-        std::string name = m.prefix().str();  // molecule name before '('
-        std::string r1 = name + m[0].str();   // e.g. "R(a!1)"
-
-        // Remove the matched portion from reac
-        reac = m.suffix().str();
-        // Strip leading separators ;+.
-        reac = std::regex_replace(reac, std::regex("^[;+.]+"), "");
-
-        // Perl pushes r1 to mreac in both branches of the prod check
+        std::string r1 = reac.substr(0, p2 + 1);
         mreac.push_back(r1);
+
+        if (p2 + 1 < reac.size()) {
+            reac = reac.substr(p2 + 1);
+            size_t non_sep = reac.find_first_not_of(";+.");
+            if (non_sep != std::string::npos) {
+                reac = reac.substr(non_sep);
+            } else {
+                reac = "";
+            }
+        } else {
+            reac = "";
+        }
     }
 }
 
@@ -1180,20 +1259,23 @@ std::string MacroBNGModel::num_site(const std::string& re, const std::string& pr
 
     // Extract contents inside parentheses from reactant
     std::string name;
-    std::smatch m;
-    std::regex re_paren("[\\(](.*)[\\)]");
-
     std::string ss_re;
-    if (std::regex_search(re, m, re_paren)) {
-        name = m.prefix().str();
-        ss_re = m[1].str();
+    auto re_p1 = re.find('(');
+    auto re_p2 = re.rfind(')');
+    if (re_p1 != std::string::npos && re_p2 != std::string::npos && re_p2 > re_p1) {
+        name = re.substr(0, re_p1);
+        ss_re = re.substr(re_p1 + 1, re_p2 - re_p1 - 1);
+    } else {
+        name = re;
     }
     auto rem = split(ss_re, ',');
 
     // Extract contents from product
     std::string ss_pr;
-    if (std::regex_search(pr, m, re_paren)) {
-        ss_pr = m[1].str();
+    auto pr_p1 = pr.find('(');
+    auto pr_p2 = pr.rfind(')');
+    if (pr_p1 != std::string::npos && pr_p2 != std::string::npos && pr_p2 > pr_p1) {
+        ss_pr = pr.substr(pr_p1 + 1, pr_p2 - pr_p1 - 1);
     }
     auto prm = split(ss_pr, ',');
 
@@ -1349,13 +1431,15 @@ void MacroBNGModel::hash_sor(
             // Find matching molecule in product
             std::string p1;
             {
-                std::string qname = quotemeta(name);
-                std::regex re_prod(qname + "[\\(].*?[)]");
-                std::smatch pm;
-                if (std::regex_search(prod, pm, re_prod)) {
-                    p1 = pm[0].str();
-                    // Remove the match from prod
-                    prod = pm.prefix().str() + pm.suffix().str();
+                // Replaced dynamic regex with string search: qname + "("
+                std::string target = name + "(";
+                size_t pos = prod.find(target);
+                if (pos != std::string::npos) {
+                    size_t end_pos = prod.find(')', pos);
+                    if (end_pos != std::string::npos) {
+                        p1 = prod.substr(pos, end_pos - pos + 1);
+                        prod.erase(pos, end_pos - pos + 1);
+                    }
                 }
             }
             mprod.push_back(p1);
@@ -2442,13 +2526,16 @@ void MacroBNGModel::cor_net(const std::string& param_prefix) {
             if (obs.find(";" + egf) != std::string::npos ||
                 endsWith(obs, ";" + egf)) {
                 // Extract group name: Molecules;name;...
-                std::regex mol_re("Molecules;(.*?);");
-                std::smatch m;
-                if (std::regex_search(obs, m, mol_re)) {
-                    // egf_tot_[group_name] — Perl assigns @rabm here
-                    // but the value is unused beyond group filtering
-                    egf_tot_[m[1].str()] = {};
-                    break;
+                auto p_mol = obs.find("Molecules;");
+                if (p_mol != std::string::npos) {
+                    auto p_start = p_mol + 10;
+                    auto p_end = obs.find(';', p_start);
+                    if (p_end != std::string::npos) {
+                        // egf_tot_[group_name] — Perl assigns @rabm here
+                        // but the value is unused beyond group filtering
+                        egf_tot_[obs.substr(p_start, p_end - p_start)] = {};
+                        break;
+                    }
                 }
             }
         }
@@ -2885,10 +2972,27 @@ void MacroBNGModel::delsites(
     for (size_t j = 0; j < rr1out.size(); ++j) {
         if (rr1out[j].empty()) continue;
         // Create sort key: replace bond labels with #,
-        std::string sortKey = rr1out[j];
-        // Replace !xxx, and !xxx) patterns with #,
-        std::regex bondPat("![^,)]+([,)])");
-        sortKey = std::regex_replace(sortKey, bondPat, "#,");
+        std::string sortKey;
+        sortKey.reserve(rr1out[j].size());
+        for (size_t i = 0; i < rr1out[j].size(); ) {
+            if (rr1out[j][i] == '!') {
+                // look ahead for ',' or ')'
+                size_t end = i + 1;
+                while (end < rr1out[j].size() && rr1out[j][end] != ',' && rr1out[j][end] != ')') {
+                    end++;
+                }
+                if (end < rr1out[j].size() && end > i + 1) {
+                    sortKey += "#,";
+                    i = end + 1;
+                } else {
+                    sortKey += rr1out[j][i];
+                    i++;
+                }
+            } else {
+                sortKey += rr1out[j][i];
+                i++;
+            }
+        }
         rr1s[sortKey] = j;
     }
 
@@ -2923,14 +3027,15 @@ void MacroBNGModel::delsites(
 
     // Renumber bond labels sequentially
     int bondNum = 0;
-    while (ou1.find('!') != std::string::npos) {
+    size_t pos = 0;
+    while ((pos = ou1.find('!')) != std::string::npos) {
         bondNum++;
-        // Find first bond label: !<label> terminated by , or ) or !
-        std::regex firstBond("![^,)!]+");
-        std::smatch m;
-        if (std::regex_search(ou1, m, firstBond)) {
-            std::string oldLabel = m[0].str();
-            // Replace all occurrences of this label
+        size_t end = pos + 1;
+        while (end < ou1.size() && ou1[end] != ',' && ou1[end] != ')' && ou1[end] != '!') {
+            end++;
+        }
+        if (end > pos + 1) {
+            std::string oldLabel = ou1.substr(pos, end - pos);
             std::string replacement = "#" + std::to_string(bondNum);
             ou1 = replaceAll(ou1, oldLabel, replacement);
         } else {

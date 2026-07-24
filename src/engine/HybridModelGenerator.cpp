@@ -20,28 +20,35 @@ HybridModelGenerator::HybridModelGenerator(ast::Model& model, const GeneratedNet
     : model_(model), network_(network) {
 }
 
+const BNGcore::PatternGraph& HybridModelGenerator::getPatternGraph(const std::string& pattern) const {
+    {
+        std::lock_guard<std::mutex> lock(cacheMutex_);
+        auto it = patternGraphCache_.find(pattern);
+        if (it != patternGraphCache_.end()) {
+            return it->second;
+        }
+    }
+
+    auto& mutableModel = const_cast<ast::Model&>(model_);
+    antlr4::ANTLRInputStream input(pattern);
+    BNGLexer lexer(&input);
+    antlr4::CommonTokenStream tokens(&lexer);
+    BNGParser parser(&tokens);
+    auto* species = parser.species_def();
+    if (parser.getNumberOfSyntaxErrors() != 0) {
+        throw std::runtime_error("Syntax error in pattern: " + pattern);
+    }
+    auto graph = bng::parser::buildPatternGraph(species, mutableModel, true);
+
+    std::lock_guard<std::mutex> lock(cacheMutex_);
+    return patternGraphCache_.emplace(pattern, std::move(graph)).first->second;
+}
+
 bool HybridModelGenerator::isIsomorphic(const std::string& pattern1,
                                           const std::string& pattern2) const {
-    // Use Ullmann subgraph isomorphism to check if two patterns are isomorphic.
-    // Parse both patterns and check for bidirectional matching.
     try {
-        auto& mutableModel = const_cast<ast::Model&>(model_);
-
-        antlr4::ANTLRInputStream input1(pattern1);
-        BNGLexer lexer1(&input1);
-        antlr4::CommonTokenStream tokens1(&lexer1);
-        BNGParser parser1(&tokens1);
-        auto* species1 = parser1.species_def();
-        if (parser1.getNumberOfSyntaxErrors() != 0) return false;
-        const auto graph1 = bng::parser::buildPatternGraph(species1, mutableModel, true);
-
-        antlr4::ANTLRInputStream input2(pattern2);
-        BNGLexer lexer2(&input2);
-        antlr4::CommonTokenStream tokens2(&lexer2);
-        BNGParser parser2(&tokens2);
-        auto* species2 = parser2.species_def();
-        if (parser2.getNumberOfSyntaxErrors() != 0) return false;
-        const auto graph2 = bng::parser::buildPatternGraph(species2, mutableModel, true);
+        const auto& graph1 = getPatternGraph(pattern1);
+        const auto& graph2 = getPatternGraph(pattern2);
 
         // Check both directions for isomorphism
         BNGcore::UllmannSGIso matcher1(graph1, graph2);
@@ -61,23 +68,8 @@ bool HybridModelGenerator::isIsomorphic(const std::string& pattern1,
 std::size_t HybridModelGenerator::countMatches(const std::string& obsPattern,
                                                  const std::string& speciesPattern) const {
     try {
-        auto& mutableModel = const_cast<ast::Model&>(model_);
-
-        antlr4::ANTLRInputStream input1(obsPattern);
-        BNGLexer lexer1(&input1);
-        antlr4::CommonTokenStream tokens1(&lexer1);
-        BNGParser parser1(&tokens1);
-        auto* species1 = parser1.species_def();
-        if (parser1.getNumberOfSyntaxErrors() != 0) return 0;
-        const auto pattern = bng::parser::buildPatternGraph(species1, mutableModel, true);
-
-        antlr4::ANTLRInputStream input2(speciesPattern);
-        BNGLexer lexer2(&input2);
-        antlr4::CommonTokenStream tokens2(&lexer2);
-        BNGParser parser2(&tokens2);
-        auto* species2 = parser2.species_def();
-        if (parser2.getNumberOfSyntaxErrors() != 0) return 0;
-        const auto target = bng::parser::buildPatternGraph(species2, mutableModel, true);
+        const auto& pattern = getPatternGraph(obsPattern);
+        const auto& target = getPatternGraph(speciesPattern);
 
         BNGcore::UllmannSGIso matcher(pattern, target);
         BNGcore::List<BNGcore::Map> maps;

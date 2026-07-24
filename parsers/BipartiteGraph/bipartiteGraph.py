@@ -451,8 +451,8 @@ def writeDot(patternDict,transformationDict,atomicPatternAnnotations,transformat
 		#n_nodes_to_leave = int(ceil((n_reactants - n_transforms)/2))
 		#print n_reactants, n_transforms, n_nodes_to_leave
 		
-		patt_id_list = [x for patt,x in sorted(patternDict.items())]
-		tr_id_list = [x for tr,x in sorted(transformationDict.items())]
+		patt_id_list = [patternDict[patt] for patt in sorted(patternDict.keys())]
+		tr_id_list = [transformationDict[tr] for tr in sorted(transformationDict.keys())]
 		#for idx, item in enumerate(tr_id_list):
 		#	f.write('{ rank = same; \"r'+ str(patt_id_list[n_nodes_to_leave+idx]) + '\"; \"t' + str(tr_id_list[idx]) + '\"; }\n')
 			#print idx

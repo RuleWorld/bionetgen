@@ -156,7 +156,7 @@ extern "C" {
 extern void gtools_check(int,int,int,int);
 extern FILE *opengraphfile(char*,int*,boolean,long);
 extern void writeline(FILE*,char*);
-extern char *getline(FILE*);
+extern char *nauty_getline(FILE*);
 extern int graphsize(char*);
 extern void stringcounts(char*,int*,size_t*);
 extern void stringtograph(char*,graph*,int);

@@ -516,7 +516,7 @@ sub average_runs{
   my $ng;
   my @y;
   for my $file (@_){
-    open(IN, $file);
+    open(IN, '<', $file);
     my $i_t=0;
     while(<IN>){
       next if (/^\#/);
@@ -535,7 +535,7 @@ sub average_runs{
   }
 
   # Write results to outfile
-  open(OUT,">$outfile");
+  open(OUT, ">", $outfile);
     for my $j (0..$ng){
       for my $i (0..$#t){
 	print OUT $t[$i];

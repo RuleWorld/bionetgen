@@ -1300,7 +1300,7 @@ sub writeSSC
 		$prefix .= "_${suffix}";
 	}
 	my $file = "${prefix}.rxn";
-	open( SSCfile, ">$file" ) || die "Couldn't open $file: $!\n";
+	open( SSCfile, '>', $file ) || die "Couldn't open $file: $!\n";
 	my $version = BNGversion();
 	print SSCfile
 	  "--# SSC-file for model $model_name created by BioNetGen $version\n";
@@ -1389,7 +1389,7 @@ sub writeSSCcfg
 	my $file    = "${prefix}.cfg";
 	my $version = BNGversion();
 
-	open( SSCcfgfile, ">$file" ) || die "Couldn't open $file: $!\n";
+	open( SSCcfgfile, '>', $file ) || die "Couldn't open $file: $!\n";
 	print STDOUT "\n Writting SSC cfg file \n";
 	print SSCcfgfile "# SSC cfg file for model $model_name created by BioNetGen $version\n";
 	print SSCcfgfile $model->ParamList->writeSSCcfg();
@@ -1642,7 +1642,7 @@ sub writeMfile
 
 
     # open Mexfile and begin printing...
-    open( Mscript, ">$mscript_path" ) || die "Couldn't open $mscript_path: $!\n";
+    open( Mscript, '>', $mscript_path ) || die "Couldn't open $mscript_path: $!\n";
     print Mscript <<"EOF";
 function [err, timepoints, species_out, observables_out] = ${mscript_filebase}( timepoints, species_init, parameters, suppress_plot )
 %${mscript_filebase_caps} Integrate reaction network and plot observables.
@@ -2157,7 +2157,7 @@ sub writeMexfile
 
 
     # open Mexfile and begin printing...
-	open( Mexfile, ">$mex_path" ) or die "Couldn't open $mex_path: $!\n";
+	open( Mexfile, '>', $mex_path ) or die "Couldn't open $mex_path: $!\n";
     print Mexfile <<"EOF";
 /*   
 **   ${mex_filename}
@@ -2556,7 +2556,7 @@ EOF
 
 
     # open Mexfile and begin printing...
-	open( Mscript, ">$mscript_path" ) or die "Couldn't open $mscript_path: $!\n";
+	open( Mscript, '>', $mscript_path ) or die "Couldn't open $mscript_path: $!\n";
     print Mscript <<"EOF";
 function [err, timepoints, species_out, observables_out ] = ${mscript_filebase}( timepoints, species_init, parameters, suppress_plot )
 %${mscript_filebase_caps} Integrate reaction network and plot observables.
@@ -2905,7 +2905,7 @@ sub writeCPPfile
     if ($err) { return $err };   	
 
     # open Mexfile and begin printing...
-	open( Cppfile, ">$cpp_path" ) or die "Couldn't open $cpp_path: $!\n";
+	open( Cppfile, '>', $cpp_path ) or die "Couldn't open $cpp_path: $!\n";
     print Cppfile <<"EOF";
 /*   
 **   ${cpp_filename}
@@ -3499,7 +3499,7 @@ sub writeCPYfile
     if ($err) { return $err };   	
 
     # open C and begin printing...
-	open( Cpyfile, ">$cpy_path" ) or die "Couldn't open $cpy_path: $!\n";
+	open( Cpyfile, '>', $cpy_path ) or die "Couldn't open $cpy_path: $!\n";
     print Cpyfile <<"EOF";
 /*   
 **   ${cpy_filename}
@@ -3530,7 +3530,29 @@ sub writeCPYfile
 **
 **   Usage in Python :
 **
-**   TODO
+**   import ctypes
+**
+**   class RESULT(ctypes.Structure):
+**       _fields_ = [
+**           ("status", ctypes.c_int),
+**           ("n_observables", ctypes.c_int),
+**           ("n_species", ctypes.c_int),
+**           ("n_tpts", ctypes.c_int),
+**           ("obs_name_len", ctypes.c_int),
+**           ("spcs_name_len", ctypes.c_int),
+**           ("observables", ctypes.POINTER(ctypes.c_double)),
+**           ("species", ctypes.POINTER(ctypes.c_double)),
+**           ("obs_names", ctypes.c_char_p),
+**           ("spcs_names", ctypes.c_char_p)
+**       ]
+**
+**   lib = ctypes.CDLL('./$model_name.so')
+**   lib.simulate.restype = ctypes.POINTER(RESULT)
+**
+**   # Define inputs
+**   # ... define num_tpts, timepts, num_species_init, species_init, num_parameters, parameters ...
+**
+**   res = lib.simulate(num_tpts, timepts, num_species_init, species_init, num_parameters, parameters)
 */
 
 /* Library headers */
@@ -3945,7 +3967,7 @@ sub writeMfile_QueryNames
     
     my $q_mscript = 'QueryNames.m';
     
-    open(Q_Mscript,">$q_mscript");
+    open( Q_Mscript, '>', $q_mscript );
     print Q_Mscript <<"EOF";
 function [ param_labels, param_defaults, obs_labels, species_labels] = QueryNames( inputlist )
 % % Loads all the parameter labels, parameter defaults, observable labels and species labels in the model
@@ -4002,7 +4024,7 @@ sub writeMfile_ParametersObservables
   
     
     #Writing parameter list script
-	open( Par_Mscript, ">$par_mscript" ) || die "Couldn't open $par_mscript: $!\n";
+	open( Par_Mscript, '>', $par_mscript ) || die "Couldn't open $par_mscript: $!\n";
     print Par_Mscript <<"EOF";
 function [outputlist,defaultvals ] = ParameterList( inputlist )
 % Used to manipulate and access parameter names
@@ -4053,7 +4075,7 @@ EOF
 	print "Wrote M-file script $par_mscript.\n";
 	
 	#Writing observable list script
-	open( Obs_Mscript, ">$obs_mscript" ) || die "Couldn't open $obs_mscript: $!\n";
+	open( Obs_Mscript, '>', $obs_mscript ) || die "Couldn't open $obs_mscript: $!\n";
     print Obs_Mscript <<"EOF";
 function [outputlist ] = ObservableList( inputlist )
 % Used to manipulate and access observable names
@@ -4134,7 +4156,7 @@ sub writeLatex
 
     # open file
     my $Lfile;
-	open( $Lfile, ">$file" ) or die "Couldn't open $file: $!\n";
+	open( $Lfile, '>', $file ) or die "Couldn't open $file: $!\n";
 
 	my $version = BNGversion();
 	print$Lfile "% Latex formatted differential equations for model $prefix created by BioNetGen $version\n";
@@ -4460,7 +4482,7 @@ sub writeMfile_all
 
 
     # open Mfile and begin printing...
-	open( Mscript, ">$mscript_path" ) || die "Couldn't open $mscript_path: $!\n";
+	open( Mscript, '>', $mscript_path ) || die "Couldn't open $mscript_path: $!\n";
     print Mscript <<"EOF";
 function [err, timepoints, species_out, observables_out ] = ${mscript_filebase}( timepoints, species_init, parameters, suppress_plot )
 %${mscript_filebase_caps} Integrate reaction network and plot observables.
@@ -4680,7 +4702,7 @@ EOF
 	 $mscript_path     = File::Spec->catpath($vol,$path,$mscript_filename);
      $mscript_filebase_caps = uc $mscript_filebase;
 	 
-	 open( Mscript, ">$mscript_path" ) || die "Couldn't open $mscript_path: $!\n";
+	 open( Mscript, '>', $mscript_path ) || die "Couldn't open $mscript_path: $!\n";
 	print Mscript <<"EOF";
 	function [species_init] = initialize_species( params )
 
@@ -4698,7 +4720,7 @@ EOF
 	 $mscript_path     = File::Spec->catpath($vol,$path,$mscript_filename);
      $mscript_filebase_caps = uc $mscript_filebase;
 	
-	 open( Mscript, ">$mscript_path" ) || die "Couldn't open $mscript_path: $!\n";
+	 open( Mscript, '>', $mscript_path ) || die "Couldn't open $mscript_path: $!\n";
 	print Mscript <<"EOF";
 classdef ${mscript_filebase} < bngModel
 

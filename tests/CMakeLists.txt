@@ -69,7 +69,7 @@ add_executable(test_network_generator test_network_generator.cpp)
 target_include_directories(test_network_generator PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../src
 )
-target_link_libraries(test_network_generator PRIVATE Catch2::Catch2WithMain Catch2::Catch2 bng_engine bng_ast)
+target_link_libraries(test_network_generator PRIVATE Catch2::Catch2WithMain Catch2::Catch2 bng_engine bng_ast bng_parser)
 add_test(NAME test_network_generator COMMAND test_network_generator)
 catch_discover_tests(test_network_generator)
 
@@ -88,6 +88,17 @@ target_include_directories(test_model PRIVATE
 )
 target_link_libraries(test_model PRIVATE Catch2::Catch2WithMain Catch2::Catch2 bng_ast bng_parser bng_core antlr4_static)
 catch_discover_tests(test_model)
+
+
+add_executable(test_cpp_export_writer test_cpp_export_writer.cpp)
+target_include_directories(test_cpp_export_writer PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/parser
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/parser/generated
+    ${antlr4_runtime_SOURCE_DIR}/runtime/Cpp/runtime/src
+)
+target_link_libraries(test_cpp_export_writer PRIVATE Catch2::Catch2WithMain Catch2::Catch2 bng_engine bng_ast bng_parser bng_core antlr4_static)
+catch_discover_tests(test_cpp_export_writer)
 
 add_executable(test_python_export_writer test_python_export_writer.cpp)
 
@@ -165,6 +176,17 @@ target_include_directories(test_GraphTypeRegistry PRIVATE
 )
 target_link_libraries(test_GraphTypeRegistry PRIVATE Catch2::Catch2WithMain Catch2::Catch2 bng_ast bng_core)
 add_executable(test_Species ast/test_Species.cpp)
+add_executable(test_SpeciesList ast/test_SpeciesList.cpp)
+
+target_include_directories(test_SpeciesList PRIVATE
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src
+
+)
+
+target_link_libraries(test_SpeciesList PRIVATE Catch2::Catch2WithMain Catch2::Catch2 bng_ast bng_core)
+
+catch_discover_tests(test_SpeciesList)
 target_include_directories(test_Species PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../src
 )
@@ -270,3 +292,21 @@ target_include_directories(benchmark PRIVATE
 )
 target_link_libraries(benchmark PRIVATE Catch2::Catch2WithMain Catch2::Catch2 bng_engine bng_ast bng_parser bng_core antlr4_static)
 catch_discover_tests(benchmark)
+
+add_executable(test_bngl_writer test_bngl_writer.cpp)
+target_include_directories(test_bngl_writer PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/parser
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/parser/generated
+    ${antlr4_runtime_SOURCE_DIR}/runtime/Cpp/runtime/src
+)
+target_link_libraries(test_bngl_writer PRIVATE Catch2::Catch2WithMain Catch2::Catch2 bng_engine bng_ast bng_core antlr4_static)
+catch_discover_tests(test_bngl_writer)
+
+add_executable(test_ssc_writer test_ssc_writer.cpp)
+target_include_directories(test_ssc_writer PRIVATE
+    ${PROJECT_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_BINARY_DIR}/../antlr4_generated/src
+)
+target_link_libraries(test_ssc_writer PRIVATE Catch2::Catch2WithMain Catch2::Catch2 bng_engine bng_ast bng_core antlr4_static)
+catch_discover_tests(test_ssc_writer)

@@ -107,6 +107,9 @@ public:
         sim.fireReactionsEuler(state, a, classes, tau, rng);
     }
     static void setFixedSpecies(PlaSimulator& sim, const std::vector<bool>& fixed) { sim.fixedSpecies_ = fixed; }
+    static bool checkNegativePopulations(const PlaSimulator& sim, const std::vector<double>& state) {
+        return sim.checkNegativePopulations(state);
+    }
     static void setupDummyReactions(PlaSimulator& sim) {
         sim.compiledRxns_.clear();
         PlaSimulator::CompiledReaction rxn0;
@@ -120,6 +123,23 @@ public:
         sim.compiledRxns_.push_back(rxn2);
         sim.fixedSpecies_ = {false, false};
         sim.nSpecies_ = 2;
+    }
+
+    static void setupDummyGroups(PlaSimulator& sim) {
+        sim.compiledGroups_.clear();
+        PlaSimulator::CompiledGroup g1;
+        g1.name = "Group1";
+        g1.entries = {{0, 2.0}, {1, 1.5}};
+        sim.compiledGroups_.push_back(g1);
+
+        PlaSimulator::CompiledGroup g2;
+        g2.name = "Group2";
+        g2.entries = {{1, 3.0}, {2, 0.5}};
+        sim.compiledGroups_.push_back(g2);
+    }
+
+    static void updateObservables(const PlaSimulator& sim, const std::vector<double>& state, std::vector<double>& obsValues) {
+        sim.updateObservables(state, obsValues);
     }
 };
 }
@@ -168,5 +188,67 @@ TEST_CASE("PlaSimulator::fireReactionsEuler", "[PlaSimulator]") {
         bng::engine::PlaSimulatorTestProxy::fireReactionsEuler(sim, state, a, classes, 1.0, rng);
         REQUIRE_THAT(state[0], Catch::Matchers::WithinAbs(100.0, 1e-6));
         REQUIRE_THAT(state[1], Catch::Matchers::WithinAbs(50.0, 1e-6));
+    }
+}
+
+TEST_CASE("PlaSimulator::checkNegativePopulations", "[PlaSimulator]") {
+    Model model;
+    GeneratedNetwork network;
+    PlaSimulator sim(model, network);
+
+    // Setup dummy reactions to initialize fixedSpecies_ and nSpecies_
+    bng::engine::PlaSimulatorTestProxy::setupDummyReactions(sim);
+
+    SECTION("All positive populations") {
+        std::vector<double> state = {100.0, 50.0};
+        REQUIRE_FALSE(bng::engine::PlaSimulatorTestProxy::checkNegativePopulations(sim, state));
+    }
+
+    SECTION("Negative but > -0.5") {
+        std::vector<double> state = {-0.3, 50.0};
+        REQUIRE_FALSE(bng::engine::PlaSimulatorTestProxy::checkNegativePopulations(sim, state));
+    }
+
+    SECTION("Negative < -0.5") {
+        std::vector<double> state = {-0.6, 50.0};
+        REQUIRE(bng::engine::PlaSimulatorTestProxy::checkNegativePopulations(sim, state));
+    }
+
+    SECTION("Fixed species < -0.5 are ignored") {
+        bng::engine::PlaSimulatorTestProxy::setFixedSpecies(sim, {true, false});
+        std::vector<double> state = {-0.6, 50.0};
+        REQUIRE_FALSE(bng::engine::PlaSimulatorTestProxy::checkNegativePopulations(sim, state));
+    }
+}
+
+TEST_CASE("PlaSimulator::updateObservables", "[PlaSimulator]") {
+    Model model;
+    GeneratedNetwork network;
+    PlaSimulator sim(model, network);
+
+    bng::engine::PlaSimulatorTestProxy::setupDummyGroups(sim);
+
+    SECTION("Calculates observables correctly") {
+        std::vector<double> state = {10.0, 5.0, 2.0};
+        std::vector<double> obsValues;
+
+        bng::engine::PlaSimulatorTestProxy::updateObservables(sim, state, obsValues);
+
+        REQUIRE(obsValues.size() == 2);
+        // Group 1: 10.0 * 2.0 + 5.0 * 1.5 = 20.0 + 7.5 = 27.5
+        REQUIRE_THAT(obsValues[0], Catch::Matchers::WithinAbs(27.5, 1e-6));
+        // Group 2: 5.0 * 3.0 + 2.0 * 0.5 = 15.0 + 1.0 = 16.0
+        REQUIRE_THAT(obsValues[1], Catch::Matchers::WithinAbs(16.0, 1e-6));
+    }
+
+    SECTION("Empty state handles gracefully") {
+        std::vector<double> state = {0.0, 0.0, 0.0};
+        std::vector<double> obsValues;
+
+        bng::engine::PlaSimulatorTestProxy::updateObservables(sim, state, obsValues);
+
+        REQUIRE(obsValues.size() == 2);
+        REQUIRE_THAT(obsValues[0], Catch::Matchers::WithinAbs(0.0, 1e-6));
+        REQUIRE_THAT(obsValues[1], Catch::Matchers::WithinAbs(0.0, 1e-6));
     }
 }

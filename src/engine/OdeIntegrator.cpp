@@ -1,12 +1,15 @@
 #include "OdeIntegrator.hpp"
 
 #include <algorithm>
+
 #include <cmath>
 #include <fstream>
 #include <iomanip>
+#include <limits>
 #include <random>
 #include <sstream>
 #include <stdexcept>
+#include <unordered_set>
 
 #include "antlr4-runtime.h"
 #include "BNGLexer.h"
@@ -18,10 +21,14 @@
 #include "ast/ReactionRule.hpp"
 #include "ast/Function.hpp"
 
-// SUNDIALS/CVODE includes (v7.x API)
+// SUNDIALS/CVODES includes (v7.x API). CVODES is a superset of CVODE: same
+// CVodeCreate/CVodeInit/CVode/CVodeFree base API, plus CVodeSensInit/
+// CVodeGetSens/CVodeSetSensParams/CVodeSensFree for forward sensitivity, and
+// CVodeAdjInit/CVodeF/CVodeB for adjoint. Both integrateCvode() (plain) and
+// integrateCvodesForwardSens() (below) now link against sundials_cvodes_static.
 #include "sundials/sundials_context.h"
 #include "sundials/sundials_types.h"
-#include "cvode/cvode.h"
+#include "cvodes/cvodes.h"
 #include "nvector/nvector_serial.h"
 #include "sunlinsol/sunlinsol_dense.h"
 #include "sunlinsol/sunlinsol_spgmr.h"
@@ -130,6 +137,12 @@ OdeIntegrator::~OdeIntegrator() {
 }
 
 void OdeIntegrator::compile() {
+    compiledRxns_.clear();  // compile() may be re-run by ensureCompiledFor(); everything
+                             // else it touches (compiledGroups_, constantRxnIndices_,
+                             // functionalRxnIndices_, functionMap_, observableIndex_)
+                             // already clears itself below.
+    directSensRxnIndices_.clear();
+
     nSpecies_ = network_.species.size();
     fixedSpecies_.resize(nSpecies_, false);
 
@@ -146,12 +159,21 @@ void OdeIntegrator::compile() {
     // This handles local functions (%x:: scope prefix), energy patterns, and Arrhenius
     // rates where the NetWriter creates per-reaction derived parameters.
     std::unordered_map<std::size_t, std::pair<std::string, double>> perRxnDerivedRates;
+    // Parallel map: the not-yet-evaluated formula each numeric value above
+    // came from (see NetWriter::DerivedRateInfo::perReactionExpr/perSpeciesExpr).
+    // Only reactions whose sub-expressions all parsed successfully get an
+    // entry here; used below to let energy-pattern/local-function rates
+    // participate in sensitivity analysis instead of being permanently baked.
+    std::unordered_map<std::size_t, ast::Expression> perRxnDerivedExpr;
     {
         auto derived = bng::io::NetWriter::buildDerivedRateParams(model_, network_);
         for (const auto& [ruleName, info] : derived) {
             if (info.isPerReactionArrhenius || info.isLocalFunction) {
                 for (const auto& [rxnIdx, paramPair] : info.perReactionRates) {
                     perRxnDerivedRates[rxnIdx] = paramPair;
+                }
+                for (const auto& [rxnIdx, expr] : info.perReactionExpr) {
+                    perRxnDerivedExpr[rxnIdx] = expr;
                 }
                 // Also build from perSpeciesRates by walking the reaction list
                 if (!info.perReactionRates.empty()) continue;
@@ -163,6 +185,10 @@ void OdeIntegrator::compile() {
                             auto it = info.perSpeciesRates.find(specIdx);
                             if (it != info.perSpeciesRates.end()) {
                                 perRxnDerivedRates[rxnIdx] = it->second;
+                            }
+                            auto exprIt = info.perSpeciesExpr.find(specIdx);
+                            if (exprIt != info.perSpeciesExpr.end()) {
+                                perRxnDerivedExpr[rxnIdx] = exprIt->second;
                             }
                         }
                     }
@@ -196,18 +222,51 @@ void OdeIntegrator::compile() {
         {
             auto drIt = perRxnDerivedRates.find(rxnIndex);
             if (drIt != perRxnDerivedRates.end()) {
-                double rate = drIt->second.second;  // numeric value
-                const auto unitFactor = bng::io::NetWriter::computeUnitConversionFactor(rxn, model_, network_);
-                if (unitFactor.has_value()) {
-                    rate *= *unitFactor;
+                bool wentFunctional = false;
+                if (!sensParamNames_.empty()) {
+                    auto exprIt = perRxnDerivedExpr.find(rxnIndex);
+                    if (exprIt != perRxnDerivedExpr.end()) {
+                        bool dependsOnSensParam = false;
+                        for (const auto& dep : exprIt->second.getDependencies()) {
+                            if (sensParamIndex_.count(dep)) {
+                                dependsOnSensParam = true;
+                                break;
+                            }
+                        }
+                        if (dependsOnSensParam) {
+                            ast::Expression funcExpr = exprIt->second;
+                            double combinedFactor = 1.0;
+                            const auto unitFactor = bng::io::NetWriter::computeUnitConversionFactor(rxn, model_, network_);
+                            if (unitFactor.has_value()) combinedFactor *= *unitFactor;
+                            if (std::abs(rxn.getFactor() - 1.0) >= 1e-9) combinedFactor *= rxn.getFactor();
+                            if (std::abs(combinedFactor - 1.0) >= 1e-9) {
+                                funcExpr = ast::Expression::binary(
+                                    "*", ast::Expression::number(combinedFactor), std::move(funcExpr));
+                            }
+                            crxn.isFunctional = true;
+                            crxn.functionalRateExpr = std::move(funcExpr);
+                            crxn.rateConstant = 0.0;
+                            hasFunctionalRates_ = true;
+                            compiledRxns_.push_back(crxn);
+                            ++rxnIndex;
+                            wentFunctional = true;
+                        }
+                    }
                 }
-                if (std::abs(rxn.getFactor() - 1.0) >= 1e-9) {
-                    rate *= rxn.getFactor();
+                if (!wentFunctional) {
+                    double rate = drIt->second.second;  // numeric value
+                    const auto unitFactor = bng::io::NetWriter::computeUnitConversionFactor(rxn, model_, network_);
+                    if (unitFactor.has_value()) {
+                        rate *= *unitFactor;
+                    }
+                    if (std::abs(rxn.getFactor() - 1.0) >= 1e-9) {
+                        rate *= rxn.getFactor();
+                    }
+                    crxn.rateConstant = rate;
+                    crxn.isFunctional = false;
+                    compiledRxns_.push_back(crxn);
+                    ++rxnIndex;
                 }
-                crxn.rateConstant = rate;
-                crxn.isFunctional = false;
-                compiledRxns_.push_back(crxn);
-                ++rxnIndex;
                 continue;
             }
         }
@@ -418,7 +477,7 @@ void OdeIntegrator::compile() {
 
                 ast::Expression baseExpr = ast::Expression::number(0.0); // placeholder
 
-                if (paramNames.size() >= 3) {
+                if (kwLen == 4) {
                     // Hill(Vmax, Kh, n): substrate is first reactant
                     baseExpr = ast::Expression::function("Hill",
                         {ast::Expression::identifier(kcat), ast::Expression::identifier(Km),
@@ -560,6 +619,26 @@ void OdeIntegrator::compile() {
             }
         }
 
+        if (!crxn.isFunctional && !sensParamNames_.empty()) {
+            std::string trimmed = rawRateLaw;
+            auto tStart = trimmed.find_first_not_of(" \t\r\n");
+            auto tEnd = trimmed.find_last_not_of(" \t\r\n");
+            trimmed = (tStart == std::string::npos) ? std::string()
+                                                     : trimmed.substr(tStart, tEnd - tStart + 1);
+            auto spIt = sensParamIndex_.find(trimmed);
+            if (spIt != sensParamIndex_.end()) {
+                const auto unitFactor = bng::io::NetWriter::computeUnitConversionFactor(rxn, model_, network_);
+                double scale = unitFactor.has_value() ? *unitFactor : 1.0;
+                scale *= rxn.getFactor();
+                crxn.sensParamDirectIdx = spIt->second;
+                crxn.sensParamDirectScale = scale;
+                compiledRxns_.push_back(crxn);
+                directSensRxnIndices_.push_back(rxnIndex);
+                ++rxnIndex;
+                continue;
+            }
+        }
+
         // Evaluate the rate string (only for non-functional, non-Sat/MM rates).
         // Use the full ANTLR parser so that complex expressions like
         // "k1*kPlus()" or "v_translat()/vol" are handled correctly.
@@ -585,6 +664,13 @@ void OdeIntegrator::compile() {
                             break;
                         }
                         if (!model_.getParameters().contains(dep)) {
+                            needsRuntime = true;
+                            break;
+                        }
+                        // Requested sensitivity parameter: keep this reaction
+                        // symbolic even though the name resolves fine right now,
+                        // since its value must track a live CVODES-owned buffer.
+                        if (!sensParamNames_.empty() && sensParamIndex_.count(dep)) {
                             needsRuntime = true;
                             break;
                         }
@@ -658,6 +744,11 @@ void OdeIntegrator::compile() {
     constantRxnIndices_.clear();
     functionalRxnIndices_.clear();
     for (std::size_t i = 0; i < compiledRxns_.size(); ++i) {
+        if (compiledRxns_[i].sensParamDirectIdx.has_value()) {
+            continue;  // tracked via directSensRxnIndices_ instead; would otherwise
+                       // also land in constantRxnIndices_ (isFunctional is false)
+                       // and get double-counted in derivs().
+        }
         if (compiledRxns_[i].isFunctional) {
             functionalRxnIndices_.push_back(i);
         } else {
@@ -700,6 +791,12 @@ void OdeIntegrator::compileGroups() {
 
     // Note: const_cast needed because buildPatternGraph may infer molecule types
     auto& mutableModel = const_cast<ast::Model&>(model_);
+
+    struct CachedPattern {
+        BNGcore::PatternGraph graph;
+        std::string compartment;
+    };
+    std::unordered_map<std::string, CachedPattern> parsedObservableCache;
 
     for (const auto& observable : model_.getObservables()) {
         CompiledGroup group;
@@ -749,24 +846,32 @@ void OdeIntegrator::compileGroups() {
                         }
                     }
 
-                    antlr4::ANTLRInputStream input(cleanPattern);
-                    BNGLexer lexer(&input);
-                    antlr4::CommonTokenStream tokens(&lexer);
-                    BNGParser parser(&tokens);
-                    auto* species = parser.species_def();
+                    auto cacheIt = parsedObservableCache.find(cleanPattern);
+                    if (cacheIt == parsedObservableCache.end()) {
+                        antlr4::ANTLRInputStream input(cleanPattern);
+                        BNGLexer lexer(&input);
+                        antlr4::CommonTokenStream tokens(&lexer);
+                        BNGParser parser(&tokens);
+                        auto* species = parser.species_def();
 
-                    if (parser.getNumberOfSyntaxErrors() != 0) {
-                        throw std::runtime_error("Could not parse observable pattern: " + patternText);
+                        if (parser.getNumberOfSyntaxErrors() != 0) {
+                            throw std::runtime_error("Could not parse observable pattern: " + patternText);
+                        }
+
+                        CachedPattern cp;
+                        cp.graph = bng::parser::buildPatternGraph(species, mutableModel, false);
+                        cp.compartment = bng::parser::extractSpeciesCompartment(species);
+                        cacheIt = parsedObservableCache.emplace(cleanPattern, std::move(cp)).first;
                     }
 
-                    const auto pattern = bng::parser::buildPatternGraph(species, mutableModel, false);
+                    const auto& pattern = cacheIt->second.graph;
 
                     // Compartment matching strategy:
                     // 1. Molecule-level compartment (e.g., SARM()@Cyt) -- handled
                     //    by Ullmann matcher's Node::operator== compartment check.
                     // 2. Species-level prefix compartment (e.g., @PM:L) -- no
                     //    compartment on pattern nodes; filter at species level.
-                    const auto patternCompartment = bng::parser::extractSpeciesCompartment(species);
+                    const auto& patternCompartment = cacheIt->second.compartment;
                     if (!patternCompartment.empty()) {
                         bool patternHasMoleculeCompartment = false;
                         for (auto it = pattern.begin(); it != pattern.end(); ++it) {
@@ -873,6 +978,22 @@ void OdeIntegrator::derivs(double t, const double* y, double* dydt) const {
         for (const auto pi : rxn.productIndices) { dydt[pi] += rate; }
     }
 
+    // Fast path: reactions whose rate law is exactly a bare sensitivity
+    // parameter (e.g. "A+B->C k1" with k1 selected for sensitivity). Reads
+    // straight from the live CVODES-owned buffer, skipping the general
+    // Expression/resolver machinery used by functionalRxnIndices_.
+    for (const auto idx : directSensRxnIndices_) {
+        const auto& rxn = compiledRxns_[idx];
+        double rate = activeSensP_ ? (rxn.sensParamDirectScale * activeSensP_[*rxn.sensParamDirectIdx]) : 0.0;
+
+        for (const auto ri : rxn.reactantIndices) {
+            rate *= y[ri];
+        }
+
+        for (const auto ri : rxn.reactantIndices) { dydt[ri] -= rate; }
+        for (const auto pi : rxn.productIndices) { dydt[pi] += rate; }
+    }
+
     // Process functional-rate reactions (require expression evaluation)
     if (hasFunctionalRates_) {
         // Build resolver with O(1) observable lookup
@@ -897,6 +1018,15 @@ void OdeIntegrator::derivs(double t, const double* y, double* dydt) const {
             auto funcIt = functionMap_.find(name);
             if (funcIt != functionMap_.end()) {
                 return funcIt->second->evaluate(resolver, t);
+            }
+
+            // Sensitivity parameter: read the live, possibly-perturbed value
+            // CVODES is currently using, instead of the static model value.
+            if (activeSensP_ != nullptr) {
+                auto spIt = sensParamIndex_.find(name);
+                if (spIt != sensParamIndex_.end()) {
+                    return activeSensP_[spIt->second];
+                }
             }
 
             // Otherwise try as parameter
@@ -947,12 +1077,57 @@ void OdeIntegrator::updateGroups(const double* y, std::vector<double>& groupValu
     }
 }
 
+void OdeIntegrator::ensureCompiledFor(const std::vector<std::string>& sensParams) {
+    if (sensParams == lastCompiledSensParams_) {
+        return;  // already compiled for this exact parameter set (incl. the common empty case)
+    }
+
+    sensParamNames_ = sensParams;
+    sensParamIndex_.clear();
+    for (std::size_t i = 0; i < sensParamNames_.size(); ++i) {
+        sensParamIndex_[sensParamNames_[i]] = i;
+    }
+
+    compile();
+
+    if (!sensParamNames_.empty()) {
+        std::unordered_set<std::string> seen;
+        for (const auto& rxn : compiledRxns_) {
+            if (rxn.sensParamDirectIdx.has_value()) {
+                seen.insert(sensParamNames_[*rxn.sensParamDirectIdx]);
+            }
+            if (rxn.isFunctional && rxn.functionalRateExpr.has_value()) {
+                for (const auto& dep : rxn.functionalRateExpr->getDependencies()) {
+                    seen.insert(dep);
+                }
+            }
+        }
+        for (const auto& name : sensParamNames_) {
+            if (!seen.count(name)) {
+                throw std::runtime_error(
+                    "Sensitivity parameter '" + name + "' does not appear in any "
+                    "reaction's runtime rate expression. It may only reach the "
+                    "solver as a pre-baked NetWriter-derived rate (energy patterns "
+                    "or %x:: local functions), which forward sensitivity does not "
+                    "support yet.");
+            }
+        }
+    }
+
+    lastCompiledSensParams_ = sensParams;
+}
+
 OdeResult OdeIntegrator::integrate(const OdeOptions& options) {
+    ensureCompiledFor(options.sensParams);
+
     if (options.method == "euler") {
         return integrateEuler(options);
     } else if (options.method == "rk4") {
         return integrateRK4(options);
     } else if (options.method == "cvode") {
+        if (!options.sensParams.empty()) {
+            return integrateCvodesForwardSens(options);
+        }
         return integrateCvode(options);
     } else if (options.method == "ssa") {
         return integrateSSA(options);
@@ -1272,6 +1447,60 @@ void OdeIntegrator::writeOutputFiles(const std::string& prefix, const OdeResult&
     }
 }
 
+void OdeIntegrator::writeSensitivityFiles(const std::string& prefix, const OdeResult& result, const std::string& suffix) const {
+    if (result.sensParamNames.empty()) {
+        return;
+    }
+
+    const std::string suffixPart = suffix.empty() ? "" : ("_" + suffix);
+
+    auto writeOne = [&](const std::string& ext,
+                         const std::vector<std::string>& rowLabels,
+                         const std::vector<std::vector<std::vector<double>>>& data) {
+        if (data.empty()) return;  // e.g. speciesSensitivities intentionally skipped
+                                    // (OdeOptions::sensSpeciesOutput = false)
+        for (std::size_t p = 0; p < result.sensParamNames.size(); ++p) {
+            const std::string path = prefix + "_" + result.sensParamNames[p] + suffixPart + "." + ext;
+            std::ofstream ofs(path);
+            if (!ofs) {
+                throw std::runtime_error("Failed to open " + path + " for writing");
+            }
+
+            ofs << std::setw(16) << "# time";
+            for (double t : result.timePoints) {
+                ofs << " " << std::setw(16) << std::scientific << std::setprecision(8) << t;
+            }
+            ofs << "\n";
+
+            for (std::size_t r = 0; r < rowLabels.size(); ++r) {
+                ofs << std::setw(16) << rowLabels[r];
+                for (std::size_t step = 0; step < result.timePoints.size(); ++step) {
+                    ofs << " " << std::setw(16) << std::scientific << std::setprecision(8)
+                        << data[p][step][r];
+                }
+                ofs << "\n";
+            }
+        }
+    };
+
+    // .csc rows: species numbered "1".."N", matching .cdat's headerless
+    // convention (no species-name header exists to draw labels from).
+    std::vector<std::string> speciesLabels(nSpecies_);
+    for (std::size_t i = 0; i < nSpecies_; ++i) {
+        speciesLabels[i] = std::to_string(i + 1);
+    }
+
+    // .gsc rows: observable/group names, matching .gdat's "# time <names...>" header.
+    std::vector<std::string> groupLabels;
+    groupLabels.reserve(compiledGroups_.size());
+    for (const auto& g : compiledGroups_) {
+        groupLabels.push_back(g.name);
+    }
+
+    writeOne("csc", speciesLabels, result.speciesSensitivities);
+    writeOne("gsc", groupLabels, result.observableSensitivities);
+}
+
 // Static C-style callback for CVODE (v7: sunrealtype instead of realtype)
 static int cvodeCallbackWrapper(sunrealtype t, N_Vector y, N_Vector ydot, void* user_data) {
     auto* self = static_cast<OdeIntegrator*>(user_data);
@@ -1480,6 +1709,701 @@ OdeResult OdeIntegrator::integrateCvode(const OdeOptions& opts) {
     N_VDestroy(y);
     SUNContext_Free(&sunctx);
 
+    return result;
+}
+
+namespace {
+// Guarantees OdeIntegrator::activeSensP_ is reset to nullptr when this function
+// returns or throws, so a failed sensitivity run can't leave stale state that
+// would corrupt a later plain simulation on the same instance.
+struct SensPGuard {
+    const double** slot;
+    explicit SensPGuard(const double** s) : slot(s) {}
+    ~SensPGuard() { *slot = nullptr; }
+};
+} // namespace
+
+// Forward sensitivity analysis via CVODES, following the approach AMICI uses
+// (Froehlich et al. 2017, PLOS Comput Biol 13(1):e1005331): integrate the Ns
+// extra sensitivity ODEs s_i' = J*s_i + df/dp_i alongside the state ODE so
+// that d(species)/d(param) falls out of a single integration instead of
+// Ns+1 separate re-simulations (what the existing LinearParameterSensitivity
+// action does via finite differences). This is "forward" sensitivity, which
+// is the right tool for the handful-to-dozens-of-parameters case typical of
+// a BNGL model's kinetic rate constants -- cost scales ~linearly with Ns.
+// For genome-scale parameter counts (hundreds+), AMICI switches to adjoint
+// sensitivity instead (cost ~independent of Ns, but only yields the gradient
+// of a scalar objective, not the full per-parameter trajectories); that is
+// not implemented here.
+//
+// df/dp_i is NOT supplied analytically -- CVODES's internal difference-quotient
+// (DQ) approximation is used instead (fS = nullptr below). This only works
+// because derivs()'s resolver reads sensitivity-parameter values from
+// activeSensP_ (see compile()'s needsRuntime gate and the resolver lambda),
+// so when CVODES perturbs pVec[i] in place to form the DQ estimate, the very
+// next derivs() call sees the perturbed value. Swapping in an analytic fS
+// routine later (exact derivatives, no DQ step-size tuning) would plug in
+// here without touching anything else.
+OdeResult OdeIntegrator::integrateCvodesForwardSens(const OdeOptions& opts) {
+    const std::size_t Ns = sensParamNames_.size();
+    if (Ns == 0) {
+        // Shouldn't happen (integrate() only calls this when sensParams is
+        // non-empty), but fall back to the plain integrator defensively.
+        return integrateCvode(opts);
+    }
+
+    // Parse stop_if expression at compile time
+    std::optional<ast::Expression> stopIfExpr;
+    if (!opts.stopIf.empty()) {
+        try {
+            stopIfExpr = parser::parseExpression(opts.stopIf);
+        } catch (const std::exception& e) {
+            std::cerr << "[bng_cpp] Warning: failed to parse stop_if expression: " << e.what() << "\n";
+        }
+    }
+
+    // Nominal parameter values CVODES will own and perturb in place for its
+    // internal DQ sensitivity RHS. pbar is a "typical magnitude" used to scale
+    // the perturbation step; fall back to 1.0 for a parameter nominally at 0
+    // (e.g. a rate being fit up from zero) since pbar itself can't be zero.
+    std::vector<double> pVec(Ns);
+    std::vector<double> pbar(Ns);
+    for (std::size_t i = 0; i < Ns; ++i) {
+        pVec[i] = model_.getParameters().evaluate(sensParamNames_[i]);
+        pbar[i] = (pVec[i] != 0.0) ? std::abs(pVec[i]) : 1.0;
+    }
+
+    SensPGuard sensGuard(&activeSensP_);
+    activeSensP_ = pVec.data();
+
+    SUNContext sunctx = nullptr;
+    int flag = SUNContext_Create(SUN_COMM_NULL, &sunctx);
+    if (flag != 0) {
+        throw std::runtime_error("SUNContext_Create failed");
+    }
+
+    N_Vector y = N_VNew_Serial(static_cast<sunindextype>(nSpecies_), sunctx);
+    if (y == nullptr) {
+        SUNContext_Free(&sunctx);
+        throw std::runtime_error("Failed to allocate CVODES state vector");
+    }
+    for (std::size_t i = 0; i < nSpecies_; ++i) {
+        NV_Ith_S(y, i) = network_.species.get(i).getAmount();
+    }
+
+    void* cvode_mem = CVodeCreate(CV_BDF, sunctx);
+    if (cvode_mem == nullptr) {
+        N_VDestroy(y);
+        SUNContext_Free(&sunctx);
+        throw std::runtime_error("Failed to create CVODES solver");
+    }
+
+    flag = CVodeInit(cvode_mem, cvodeCallbackWrapper, opts.tStart, y);
+    if (flag != CV_SUCCESS) {
+        CVodeFree(&cvode_mem);
+        N_VDestroy(y);
+        SUNContext_Free(&sunctx);
+        throw std::runtime_error("CVodeInit failed with flag " + std::to_string(flag));
+    }
+
+    flag = CVodeSStolerances(cvode_mem, opts.rtol, opts.atol);
+    if (flag != CV_SUCCESS) {
+        CVodeFree(&cvode_mem);
+        N_VDestroy(y);
+        SUNContext_Free(&sunctx);
+        throw std::runtime_error("CVodeSStolerances failed");
+    }
+
+    CVodeSetUserData(cvode_mem, this);
+    CVodeSetMaxNumSteps(cvode_mem, 2000);
+
+    SUNMatrix A = nullptr;
+    SUNLinearSolver LS = nullptr;
+    if (nSpecies_ < 200) {
+        A = SUNDenseMatrix(static_cast<sunindextype>(nSpecies_),
+                           static_cast<sunindextype>(nSpecies_), sunctx);
+        if (A == nullptr) {
+            CVodeFree(&cvode_mem);
+            N_VDestroy(y);
+            SUNContext_Free(&sunctx);
+            throw std::runtime_error("SUNDenseMatrix failed");
+        }
+        LS = SUNLinSol_Dense(y, A, sunctx);
+        if (LS == nullptr) {
+            SUNMatDestroy(A);
+            CVodeFree(&cvode_mem);
+            N_VDestroy(y);
+            SUNContext_Free(&sunctx);
+            throw std::runtime_error("SUNLinSol_Dense failed");
+        }
+        flag = CVodeSetLinearSolver(cvode_mem, LS, A);
+        if (flag != CV_SUCCESS) {
+            SUNLinSolFree(LS);
+            SUNMatDestroy(A);
+            CVodeFree(&cvode_mem);
+            N_VDestroy(y);
+            SUNContext_Free(&sunctx);
+            throw std::runtime_error("CVodeSetLinearSolver (dense) failed");
+        }
+    } else {
+        LS = SUNLinSol_SPGMR(y, SUN_PREC_NONE, 0, sunctx);
+        if (LS == nullptr) {
+            CVodeFree(&cvode_mem);
+            N_VDestroy(y);
+            SUNContext_Free(&sunctx);
+            throw std::runtime_error("SUNLinSol_SPGMR failed");
+        }
+        flag = CVodeSetLinearSolver(cvode_mem, LS, nullptr);
+        if (flag != CV_SUCCESS) {
+            SUNLinSolFree(LS);
+            CVodeFree(&cvode_mem);
+            N_VDestroy(y);
+            SUNContext_Free(&sunctx);
+            throw std::runtime_error("CVodeSetLinearSolver (GMRES) failed");
+        }
+    }
+
+    // --- Sensitivity setup ---
+    std::vector<N_Vector> yS(Ns);
+    for (std::size_t i = 0; i < Ns; ++i) {
+        yS[i] = N_VClone(y);
+        N_VConst(0.0, yS[i]);  // d(species)/d(param) = 0 at t=tStart (initial
+                                // conditions here don't depend on kinetic rates)
+    }
+
+    auto cleanupSens = [&]() {
+        for (auto* v : yS) { if (v) N_VDestroy(v); }
+    };
+
+    // STAGGERED: solve the state ODE with ordinary Newton first (same cost as
+    // integrateCvode()), then each sensitivity direction is one linear solve
+    // reusing that step's already-factorized Jacobian -- no extra Newton
+    // iterations. SIMULTANEOUS instead folds state+sensitivity into one bigger
+    // nonlinear solve every step, which is never cheaper and gets worse as Ns
+    // grows. fS = nullptr => CVODES approximates df/dp via difference quotients
+    // on the same RHS callback used for the state ODE.
+    flag = CVodeSensInit(cvode_mem, static_cast<int>(Ns), CV_STAGGERED, nullptr, yS.data());
+    if (flag != CV_SUCCESS) {
+        cleanupSens();
+        SUNLinSolFree(LS);
+        if (A) SUNMatDestroy(A);
+        CVodeFree(&cvode_mem);
+        N_VDestroy(y);
+        SUNContext_Free(&sunctx);
+        throw std::runtime_error("CVodeSensInit failed with flag " + std::to_string(flag));
+    }
+
+    flag = CVodeSetSensParams(cvode_mem, pVec.data(), pbar.data(), nullptr);
+    if (flag != CV_SUCCESS) {
+        CVodeSensFree(cvode_mem);
+        cleanupSens();
+        SUNLinSolFree(LS);
+        if (A) SUNMatDestroy(A);
+        CVodeFree(&cvode_mem);
+        N_VDestroy(y);
+        SUNContext_Free(&sunctx);
+        throw std::runtime_error("CVodeSetSensParams failed with flag " + std::to_string(flag));
+    }
+
+    // Centered DQ (2 RHS evals/param/step, O(h^2)) over forward DQ (1 eval,
+    // O(h)) -- worth the extra cost for gradient-based fitting, where DQ noise
+    // in df/dp directly becomes noise in the optimizer's search direction.
+    CVodeSetSensDQMethod(cvode_mem, CV_CENTERED, 0.0);
+    // Estimate sensitivity integration tolerances from the state tolerances
+    // rather than requiring the caller to pick separate ones.
+    CVodeSensEEtolerances(cvode_mem);
+
+    OdeResult result;
+    result.timePoints.reserve(opts.nSteps + 1);
+    result.concentrations.reserve(opts.nSteps + 1);
+    result.sensParamNames = sensParamNames_;
+    result.observableSensitivities.assign(Ns, {});
+    if (opts.sensSpeciesOutput) {
+        result.speciesSensitivities.assign(Ns, {});
+    }
+    for (std::size_t i = 0; i < Ns; ++i) {
+        if (opts.sensSpeciesOutput) {
+            result.speciesSensitivities[i].reserve(opts.nSteps + 1);
+        }
+        result.observableSensitivities[i].reserve(opts.nSteps + 1);
+    }
+
+    auto recordSensitivities = [&]() {
+        for (std::size_t i = 0; i < Ns; ++i) {
+            const double* sData = NV_DATA_S(yS[i]);
+            if (opts.sensSpeciesOutput) {
+                result.speciesSensitivities[i].emplace_back(sData, sData + nSpecies_);
+            }
+            std::vector<double> obsSens;
+            updateGroups(sData, obsSens);
+            result.observableSensitivities[i].push_back(std::move(obsSens));
+        }
+    };
+
+    const double dt = (opts.tEnd - opts.tStart) / static_cast<double>(opts.nSteps);
+    double t = opts.tStart;
+
+    for (std::size_t step = 0; step <= opts.nSteps; ++step) {
+        double tOut = opts.tStart + step * dt;
+
+        result.timePoints.push_back(tOut);
+        std::vector<double> conc(nSpecies_);
+        for (std::size_t i = 0; i < nSpecies_; ++i) {
+            conc[i] = NV_Ith_S(y, i);
+        }
+        result.concentrations.push_back(conc);
+        recordSensitivities();
+
+        if (stopIfExpr.has_value() && step > 0 && step < opts.nSteps) {
+            std::vector<double> groupValues;
+            updateGroups(conc.data(), groupValues);
+            auto resolver = [&](const std::string& name) -> double {
+                if (name == "time") return tOut;
+                for (std::size_t g = 0; g < compiledGroups_.size(); ++g) {
+                    if (compiledGroups_[g].name == name) return groupValues[g];
+                }
+                return model_.getParameters().evaluate(name);
+            };
+            try {
+                double stopVal = stopIfExpr->evaluate(resolver, tOut);
+                if (stopVal != 0.0) {
+                    std::cerr << "[bng_cpp] stop_if condition met at step " << step
+                              << ", t=" << tOut << ": " << opts.stopIf << "\n";
+                    break;
+                }
+            } catch (const std::exception&) {
+                // Ignore evaluation errors
+            }
+        }
+
+        if (step < opts.nSteps) {
+            long int maxSteps = 2000;
+            while (true) {
+                flag = CVode(cvode_mem, tOut + dt, y, &t, CV_NORMAL);
+                if (flag == CV_SUCCESS || flag == CV_TSTOP_RETURN) {
+                    break;
+                } else if (flag == CV_TOO_MUCH_WORK) {
+                    maxSteps *= 2;
+                    CVodeSetMaxNumSteps(cvode_mem, maxSteps);
+                    continue;
+                } else {
+                    CVodeSensFree(cvode_mem);
+                    cleanupSens();
+                    SUNLinSolFree(LS);
+                    if (A) SUNMatDestroy(A);
+                    CVodeFree(&cvode_mem);
+                    N_VDestroy(y);
+                    SUNContext_Free(&sunctx);
+                    throw std::runtime_error("CVODES failed with flag " + std::to_string(flag));
+                }
+            }
+
+            flag = CVodeGetSens(cvode_mem, &t, yS.data());
+            if (flag != CV_SUCCESS) {
+                CVodeSensFree(cvode_mem);
+                cleanupSens();
+                SUNLinSolFree(LS);
+                if (A) SUNMatDestroy(A);
+                CVodeFree(&cvode_mem);
+                N_VDestroy(y);
+                SUNContext_Free(&sunctx);
+                throw std::runtime_error("CVodeGetSens failed with flag " + std::to_string(flag));
+            }
+        }
+    }
+
+    result.observables.resize(result.timePoints.size());
+    for (std::size_t step = 0; step < result.timePoints.size(); ++step) {
+        updateGroups(result.concentrations[step].data(), result.observables[step]);
+    }
+
+    CVodeSensFree(cvode_mem);
+    cleanupSens();
+    SUNLinSolFree(LS);
+    if (A) SUNMatDestroy(A);
+    CVodeFree(&cvode_mem);
+    N_VDestroy(y);
+    SUNContext_Free(&sunctx);
+
+    return result;
+}
+
+namespace {
+
+// Shared context for the adjoint backward-problem callbacks (state RHS,
+// Jacobian, quadrature RHS). Lives on the stack inside
+// computeAdjointGradient() for the duration of one backward integration;
+// passed through to CVODES as user_dataB.
+//
+// No analytic model Jacobian exists anywhere in this codebase, so the dense
+// state Jacobian df_i/dy_j is built here via finite differences on derivs(),
+// and cached per distinct t: CVODES's own Newton iteration re-evaluates the
+// backward RHS/Jacobian repeatedly at the *same* t while it works (both when
+// it's solving the implicit BDF step, and -- via our analytic JacFnB below --
+// when it wants the Jacobian directly rather than differencing for it), and
+// since the forward state y(t) is deterministically reconstructed from
+// checkpoints purely as a function of t, "same t" implies "same y" here.
+struct AdjointCallbackContext {
+    OdeIntegrator* self;
+    std::vector<double>* pVec;  // live parameter values; perturbed in place by adjointQuadRhsB's DQ
+    std::size_t nSpecies;
+    std::size_t nParams;
+
+    mutable double cachedT = std::numeric_limits<double>::quiet_NaN();
+    mutable std::vector<double> cachedJ;  // row-major nSpecies x nSpecies: cachedJ[i*nSpecies+j] = df_i/dy_j
+    mutable std::vector<double> f0Buf;
+    mutable std::vector<double> fPerturbedBuf;
+    mutable std::vector<double> yPerturbedBuf;
+
+    void ensureJacobian(double t, const double* y) const {
+        if (cachedT == t) return;
+        f0Buf.resize(nSpecies);
+        fPerturbedBuf.resize(nSpecies);
+        yPerturbedBuf.assign(y, y + nSpecies);
+        cachedJ.assign(nSpecies * nSpecies, 0.0);
+        self->derivs(t, y, f0Buf.data());
+        for (std::size_t j = 0; j < nSpecies; ++j) {
+            const double orig = yPerturbedBuf[j];
+            const double step = std::max(std::abs(orig), 1.0) * 1e-6;
+            yPerturbedBuf[j] = orig + step;
+            self->derivs(t, yPerturbedBuf.data(), fPerturbedBuf.data());
+            yPerturbedBuf[j] = orig;
+            for (std::size_t i = 0; i < nSpecies; ++i) {
+                cachedJ[i * nSpecies + j] = (fPerturbedBuf[i] - f0Buf[i]) / step;
+            }
+        }
+        cachedT = t;
+    }
+};
+
+// Backward-problem state RHS: dλ/dt = -(∂f/∂y)^T λ, integrated backward from
+// t_end to t_start. y here is the forward state at the current t, supplied by
+// CVODES via its own checkpoint reconstruction -- not something we manage.
+int adjointRhsB(sunrealtype t, N_Vector y, N_Vector yB, N_Vector yBdot, void* user_dataB) {
+    auto* ctx = static_cast<AdjointCallbackContext*>(user_dataB);
+    ctx->ensureJacobian(static_cast<double>(t), NV_DATA_S(y));
+    const double* yBData = NV_DATA_S(yB);
+    double* yBdotData = NV_DATA_S(yBdot);
+    const std::size_t n = ctx->nSpecies;
+    for (std::size_t j = 0; j < n; ++j) {
+        double sum = 0.0;
+        for (std::size_t i = 0; i < n; ++i) {
+            sum += ctx->cachedJ[i * n + j] * yBData[i];
+        }
+        yBdotData[j] = -sum;
+    }
+    return 0;
+}
+
+// Analytic Jacobian of adjointRhsB w.r.t. yB. fB(yB) = -J^T yB is linear in
+// yB at fixed t, so its Jacobian is simply the constant matrix -J^T -- exactly
+// the cached dense Jacobian above, transposed and negated. Supplying this
+// directly (dense solver branch only) means CVODES's own Newton iteration on
+// the backward problem doesn't have to rediscover -J^T via ITS OWN internal
+// finite differencing on top of the differencing ensureJacobian() already
+// did -- avoiding an extra O(nSpecies) factor of cost per Jacobian rebuild.
+int adjointJacB(sunrealtype t, N_Vector y, N_Vector yB, N_Vector /*fyB*/, SUNMatrix JB,
+                void* user_dataB, N_Vector /*tmp1B*/, N_Vector /*tmp2B*/, N_Vector /*tmp3B*/) {
+    auto* ctx = static_cast<AdjointCallbackContext*>(user_dataB);
+    ctx->ensureJacobian(static_cast<double>(t), NV_DATA_S(y));
+    const std::size_t n = ctx->nSpecies;
+    for (std::size_t i = 0; i < n; ++i) {
+        for (std::size_t j = 0; j < n; ++j) {
+            SM_ELEMENT_D(JB, static_cast<sunindextype>(i), static_cast<sunindextype>(j)) =
+                -ctx->cachedJ[j * n + i];
+        }
+    }
+    return 0;
+}
+
+// Backward quadrature RHS: dμ/dt = -(∂f/∂p)^T λ, integrated alongside the
+// adjoint state from t_end to t_start; μ(t_start) is the gradient. ∂f/∂p_k is
+// approximated via forward-difference DQ (perturb pVec[k] in place -- the
+// same live-parameter-substitution mechanism integrateCvodesForwardSens uses
+// -- then difference against the nominal RHS). No caching here: unlike the
+// state Jacobian, this genuinely depends on the current yB (via the dot
+// product), not just on t, so there's nothing to reuse across CVODES's own
+// internal evaluations the way ensureJacobian's cache helps adjointRhsB/adjointJacB.
+int adjointQuadRhsB(sunrealtype t, N_Vector y, N_Vector yB, N_Vector qBdot, void* user_dataB) {
+    auto* ctx = static_cast<AdjointCallbackContext*>(user_dataB);
+    const double tt = static_cast<double>(t);
+    const std::size_t n = ctx->nSpecies;
+    const double* yBData = NV_DATA_S(yB);
+    double* qBdotData = NV_DATA_S(qBdot);
+
+    std::vector<double> f0(n);
+    ctx->self->derivs(tt, NV_DATA_S(y), f0.data());
+
+    std::vector<double> fPerturbed(n);
+    for (std::size_t k = 0; k < ctx->nParams; ++k) {
+        const double orig = (*ctx->pVec)[k];
+        const double step = std::max(std::abs(orig), 1.0) * 1e-6;
+        (*ctx->pVec)[k] = orig + step;
+        ctx->self->derivs(tt, NV_DATA_S(y), fPerturbed.data());
+        (*ctx->pVec)[k] = orig;
+
+        double dot = 0.0;
+        for (std::size_t i = 0; i < n; ++i) {
+            dot += yBData[i] * (fPerturbed[i] - f0[i]) / step;
+        }
+        qBdotData[k] = -dot;
+    }
+    return 0;
+}
+
+} // namespace
+
+AdjointGradientResult OdeIntegrator::computeAdjointGradient(
+    const OdeOptions& opts,
+    const std::vector<double>& paramValues,
+    const std::vector<AdjointDataPoint>& data) {
+
+    if (paramValues.size() != opts.sensParams.size()) {
+        throw std::runtime_error(
+            "computeAdjointGradient: paramValues.size() must match opts.sensParams.size()");
+    }
+    if (data.empty()) {
+        throw std::runtime_error("computeAdjointGradient: data is empty");
+    }
+
+    ensureCompiledFor(opts.sensParams);
+    const std::size_t Ns = sensParamNames_.size();
+
+    // Resolve each data point's observable to a group index up front, and
+    // sort by ascending time -- both the forward pass (recording snapshots)
+    // and the backward pass (walking jump conditions) need ascending/
+    // descending traversal respectively.
+    struct ResolvedPoint {
+        double time;
+        std::size_t groupIdx;
+        double value;
+        double weight;
+    };
+    std::vector<ResolvedPoint> points;
+    points.reserve(data.size());
+    for (const auto& dp : data) {
+        auto it = observableIndex_.find(dp.observable);
+        if (it == observableIndex_.end()) {
+            throw std::runtime_error(
+                "computeAdjointGradient: unknown observable '" + dp.observable + "'");
+        }
+        if (dp.time < opts.tStart - 1e-9 || dp.time > opts.tEnd + 1e-9) {
+            throw std::runtime_error(
+                "computeAdjointGradient: data point at t=" + std::to_string(dp.time) +
+                " is outside [tStart, tEnd]");
+        }
+        points.push_back({dp.time, it->second, dp.value, dp.weight});
+    }
+    std::sort(points.begin(), points.end(),
+              [](const ResolvedPoint& a, const ResolvedPoint& b) { return a.time < b.time; });
+
+    std::vector<double> pVec(paramValues);
+
+    SensPGuard sensGuard(&activeSensP_);
+    activeSensP_ = pVec.data();
+
+    SUNContext sunctx = nullptr;
+    int flag = SUNContext_Create(SUN_COMM_NULL, &sunctx);
+    if (flag != 0) {
+        throw std::runtime_error("SUNContext_Create failed");
+    }
+
+    N_Vector y = N_VNew_Serial(static_cast<sunindextype>(nSpecies_), sunctx);
+    if (y == nullptr) {
+        SUNContext_Free(&sunctx);
+        throw std::runtime_error("Failed to allocate CVODES state vector");
+    }
+    for (std::size_t i = 0; i < nSpecies_; ++i) {
+        NV_Ith_S(y, i) = network_.species.get(i).getAmount();
+    }
+
+    void* cvode_mem = CVodeCreate(CV_BDF, sunctx);
+    if (cvode_mem == nullptr) {
+        N_VDestroy(y);
+        SUNContext_Free(&sunctx);
+        throw std::runtime_error("Failed to create CVODES solver");
+    }
+
+    // Resources created below are freed via this single cleanup path instead
+    // of repeating teardown at every throw site (this function has many more
+    // moving parts than integrateCvodesForwardSens, so that pattern would be
+    // especially error-prone here).
+    N_Vector yB = nullptr, qB = nullptr;
+    SUNMatrix A = nullptr, AB = nullptr;
+    SUNLinearSolver LS = nullptr, LSB = nullptr;
+    auto cleanup = [&]() {
+        if (LSB) SUNLinSolFree(LSB);
+        if (AB) SUNMatDestroy(AB);
+        if (yB) N_VDestroy(yB);
+        if (qB) N_VDestroy(qB);
+        if (LS) SUNLinSolFree(LS);
+        if (A) SUNMatDestroy(A);
+        if (cvode_mem) CVodeFree(&cvode_mem);
+        if (y) N_VDestroy(y);
+        if (sunctx) SUNContext_Free(&sunctx);
+    };
+    auto fail = [&](const std::string& msg) -> AdjointGradientResult {
+        cleanup();
+        throw std::runtime_error(msg);
+    };
+
+    flag = CVodeInit(cvode_mem, cvodeCallbackWrapper, opts.tStart, y);
+    if (flag != CV_SUCCESS) return fail("CVodeInit failed with flag " + std::to_string(flag));
+
+    flag = CVodeSStolerances(cvode_mem, opts.rtol, opts.atol);
+    if (flag != CV_SUCCESS) return fail("CVodeSStolerances failed");
+
+    CVodeSetUserData(cvode_mem, this);
+    CVodeSetMaxNumSteps(cvode_mem, 2000);
+
+    if (nSpecies_ < 200) {
+        A = SUNDenseMatrix(static_cast<sunindextype>(nSpecies_),
+                           static_cast<sunindextype>(nSpecies_), sunctx);
+        if (!A) return fail("SUNDenseMatrix failed");
+        LS = SUNLinSol_Dense(y, A, sunctx);
+        if (!LS) return fail("SUNLinSol_Dense failed");
+        flag = CVodeSetLinearSolver(cvode_mem, LS, A);
+        if (flag != CV_SUCCESS) return fail("CVodeSetLinearSolver (dense) failed");
+    } else {
+        LS = SUNLinSol_SPGMR(y, SUN_PREC_NONE, 0, sunctx);
+        if (!LS) return fail("SUNLinSol_SPGMR failed");
+        flag = CVodeSetLinearSolver(cvode_mem, LS, nullptr);
+        if (flag != CV_SUCCESS) return fail("CVodeSetLinearSolver (GMRES) failed");
+    }
+
+    // Checkpoint interval of 150 steps is the value used in CVODES's own
+    // adjoint examples; not exposed as a tuning knob here.
+    flag = CVodeAdjInit(cvode_mem, 150, CV_HERMITE);
+    if (flag != CV_SUCCESS) return fail("CVodeAdjInit failed with flag " + std::to_string(flag));
+
+    // --- Forward pass: integrate through every data time (recording a
+    // snapshot + residual at each), then on to tEnd, all under checkpointing
+    // so the backward pass can reconstruct y(t) anywhere in [tStart, tEnd].
+    double loss = 0.0;
+    std::vector<std::vector<double>> jumps(points.size(), std::vector<double>(nSpecies_, 0.0));
+    int ncheck = 0;
+    double tret = opts.tStart;
+    for (std::size_t i = 0; i < points.size(); ++i) {
+        flag = CVodeF(cvode_mem, points[i].time, y, &tret, CV_NORMAL, &ncheck);
+        if (flag != CV_SUCCESS && flag != CV_TSTOP_RETURN) {
+            return fail("CVodeF failed with flag " + std::to_string(flag));
+        }
+        std::vector<double> conc(nSpecies_);
+        for (std::size_t s = 0; s < nSpecies_; ++s) conc[s] = NV_Ith_S(y, s);
+        std::vector<double> obsVals;
+        updateGroups(conc.data(), obsVals);
+        const double model = obsVals[points[i].groupIdx];
+        const double resid = model - points[i].value;
+        loss += points[i].weight * resid * resid;
+        const double dLdObs = 2.0 * points[i].weight * resid;
+        for (const auto& [speciesIdx, weight] : compiledGroups_[points[i].groupIdx].entries) {
+            jumps[i][speciesIdx] += dLdObs * weight;
+        }
+    }
+    if (points.back().time < opts.tEnd - 1e-12) {
+        flag = CVodeF(cvode_mem, opts.tEnd, y, &tret, CV_NORMAL, &ncheck);
+        if (flag != CV_SUCCESS && flag != CV_TSTOP_RETURN) {
+            return fail("CVodeF (final leg to tEnd) failed with flag " + std::to_string(flag));
+        }
+    }
+
+    // --- Backward pass setup. Initial λ(tEnd) is the jump for a data point
+    // exactly at tEnd (if any), else zero -- no terminal-only loss term exists
+    // here, every contribution is one of the discrete data points.
+    const bool lastAtEnd = std::abs(points.back().time - opts.tEnd) < 1e-9 * std::max(1.0, opts.tEnd);
+    yB = N_VNew_Serial(static_cast<sunindextype>(nSpecies_), sunctx);
+    if (!yB) return fail("Failed to allocate adjoint state vector");
+    for (std::size_t s = 0; s < nSpecies_; ++s) {
+        NV_Ith_S(yB, s) = lastAtEnd ? jumps.back()[s] : 0.0;
+    }
+
+    AdjointCallbackContext ctx;
+    ctx.self = this;
+    ctx.pVec = &pVec;
+    ctx.nSpecies = nSpecies_;
+    ctx.nParams = Ns;
+
+    int which = -1;
+    flag = CVodeCreateB(cvode_mem, CV_BDF, &which);
+    if (flag != CV_SUCCESS) return fail("CVodeCreateB failed with flag " + std::to_string(flag));
+
+    flag = CVodeInitB(cvode_mem, which, adjointRhsB, opts.tEnd, yB);
+    if (flag != CV_SUCCESS) return fail("CVodeInitB failed with flag " + std::to_string(flag));
+
+    flag = CVodeSStolerancesB(cvode_mem, which, opts.rtol, opts.atol);
+    if (flag != CV_SUCCESS) return fail("CVodeSStolerancesB failed");
+
+    CVodeSetUserDataB(cvode_mem, which, &ctx);
+
+    if (nSpecies_ < 200) {
+        AB = SUNDenseMatrix(static_cast<sunindextype>(nSpecies_),
+                            static_cast<sunindextype>(nSpecies_), sunctx);
+        if (!AB) return fail("SUNDenseMatrix (backward) failed");
+        LSB = SUNLinSol_Dense(yB, AB, sunctx);
+        if (!LSB) return fail("SUNLinSol_Dense (backward) failed");
+        flag = CVodeSetLinearSolverB(cvode_mem, which, LSB, AB);
+        if (flag != CV_SUCCESS) return fail("CVodeSetLinearSolverB (dense) failed");
+        flag = CVodeSetJacFnB(cvode_mem, which, adjointJacB);
+        if (flag != CV_SUCCESS) return fail("CVodeSetJacFnB failed");
+    } else {
+        LSB = SUNLinSol_SPGMR(yB, SUN_PREC_NONE, 0, sunctx);
+        if (!LSB) return fail("SUNLinSol_SPGMR (backward) failed");
+        flag = CVodeSetLinearSolverB(cvode_mem, which, LSB, nullptr);
+        if (flag != CV_SUCCESS) return fail("CVodeSetLinearSolverB (GMRES) failed");
+        // No analytic/Jv routine here: CVODES falls back to a directional
+        // finite difference on adjointRhsB itself for Jv, which (thanks to
+        // ensureJacobian's cache) costs about two cheap matvecs per Krylov
+        // iteration -- no extra Jacobian-rebuild cost the way the dense
+        // branch would have paid without adjointJacB above.
+    }
+
+    qB = N_VNew_Serial(static_cast<sunindextype>(Ns), sunctx);
+    if (!qB) return fail("Failed to allocate quadrature vector");
+    N_VConst(0.0, qB);
+
+    flag = CVodeQuadInitB(cvode_mem, which, adjointQuadRhsB, qB);
+    if (flag != CV_SUCCESS) return fail("CVodeQuadInitB failed with flag " + std::to_string(flag));
+    flag = CVodeQuadSStolerancesB(cvode_mem, which, opts.rtol, opts.atol);
+    if (flag != CV_SUCCESS) return fail("CVodeQuadSStolerancesB failed");
+
+    // Walk remaining data points in descending time order, injecting each
+    // one's jump into λ and restarting the backward state from there --
+    // the standard technique for discrete (Dirac-delta) observation terms
+    // in adjoint sensitivity, matching AMICI's own handling of multiple
+    // observation timepoints.
+    double tretB = opts.tEnd;
+    for (std::size_t ii = points.size(); ii-- > 0;) {
+        if (ii == points.size() - 1 && lastAtEnd) continue;  // already baked into yB0
+        flag = CVodeB(cvode_mem, points[ii].time, CV_NORMAL);
+        if (flag != CV_SUCCESS && flag != CV_TSTOP_RETURN) {
+            return fail("CVodeB failed with flag " + std::to_string(flag));
+        }
+        flag = CVodeGetB(cvode_mem, which, &tretB, yB);
+        if (flag != CV_SUCCESS) return fail("CVodeGetB failed");
+        for (std::size_t s = 0; s < nSpecies_; ++s) {
+            NV_Ith_S(yB, s) += jumps[ii][s];
+        }
+        flag = CVodeReInitB(cvode_mem, which, points[ii].time, yB);
+        if (flag != CV_SUCCESS) return fail("CVodeReInitB failed with flag " + std::to_string(flag));
+    }
+
+    flag = CVodeB(cvode_mem, opts.tStart, CV_NORMAL);
+    if (flag != CV_SUCCESS && flag != CV_TSTOP_RETURN) {
+        return fail("CVodeB (final leg to tStart) failed with flag " + std::to_string(flag));
+    }
+
+    flag = CVodeGetQuadB(cvode_mem, which, &tretB, qB);
+    if (flag != CV_SUCCESS) return fail("CVodeGetQuadB failed");
+
+    AdjointGradientResult result;
+    result.loss = loss;
+    result.paramNames = sensParamNames_;
+    result.gradient.resize(Ns);
+    for (std::size_t k = 0; k < Ns; ++k) {
+        result.gradient[k] = NV_Ith_S(qB, k);
+    }
+
+    cleanup();
     return result;
 }
 

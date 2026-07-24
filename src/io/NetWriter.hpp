@@ -24,6 +24,18 @@ struct DerivedRateInfo {
     // Per-reaction rate parameters for Arrhenius energy-pattern rules:
     // maps reaction index -> (parameter name, numeric value)
     std::unordered_map<std::size_t, std::pair<std::string, double>> perReactionRates;
+
+    // Parallel to the two maps above: the not-yet-evaluated formula each
+    // numeric value came from (e.g. exp(-(Ea0 + phi*DG_bond)) for an energy
+    // pattern, or the local function body with observable-count substitution
+    // applied but model parameters left free). Free variable names are
+    // ordinary model parameters, so a consumer can re-evaluate with a live
+    // parameter substitution for sensitivity analysis. Entries are only
+    // present when the corresponding sub-expression parsed successfully;
+    // absence means "sensitivity not supported for this reaction" rather
+    // than "depends on nothing."
+    std::unordered_map<std::size_t, ast::Expression> perSpeciesExpr;
+    std::unordered_map<std::size_t, ast::Expression> perReactionExpr;
 };
 
 class NetWriter {

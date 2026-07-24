@@ -139,50 +139,37 @@ class NameDictionary:
 		for idx,ir in enumerate(irrs):
 			self.irr[ir] = self.tp[ir]		
 
+		self._str_maps = {
+			'p': {str(k): v for k, v in self.p.items()},
+			't': {str(k): v for k, v in self.t.items()},
+			'tp': {str(k): v for k, v in self.tp.items()},
+			'r': {str(k): v for k, v in self.r.items()},
+			'irr': {str(k): v for k, v in self.irr.items()}
+		}
+
+		self._rev_maps = {
+			'p': {v: k for k, v in self.p.items()},
+			't': {v: k for k, v in self.t.items()},
+			'tp': {v: k for k, v in self.tp.items()},
+			'r': {v: k for k, v in self.r.items()},
+			'irr': {v: k for k, v in self.irr.items()}
+		}
+
+
 	
 	def getIdx(self,elemtype,string):
-		# ⚡ Bolt: Use simple for loop instead of generator expression to avoid generator initialization overhead, providing a much faster O(1) early exit
-		if elemtype == 'p':
-			for x,idx in list(self.p.items()):
-				if str(x)==string: return idx
-		if elemtype == 't':
-			for x,idx in list(self.t.items()):
-				if str(x)==string: return idx
-		if elemtype == 'tp':
-			for x,idx in list(self.tp.items()):
-				if str(x)==string: return idx
-		if elemtype == 'r':
-			for x,idx in list(self.r.items()):
-				if str(x)==string: return idx
-		if elemtype == 'irr':
-			for x,idx in list(self.irr.items()):
-				if str(x)==string: return idx
-		return None
+		# ⚡ Bolt: Use pre-computed O(1) hash map lookup instead of O(N) loops or generators
+		return self._str_maps.get(elemtype, {}).get(string)
 			
 	def getElement(self,elemtype,idx1):
-		# ⚡ Bolt: Use simple for loop instead of generator expression to avoid generator initialization overhead, providing a much faster O(1) early exit
-		if elemtype == 'p':
-			for x,idx in list(self.p.items()):
-				if idx==idx1: return x
-		if elemtype == 't':
-			for x,idx in list(self.t.items()):
-				if idx==idx1: return x
-		if elemtype == 'tp':
-			for x,idx in list(self.tp.items()):
-				if idx==idx1: return x
-		if elemtype == 'r':
-			for x,idx in list(self.r.items()):
-				if idx==idx1: return x
-		if elemtype == 'irr':
-			for x,idx in list(self.irr.items()):
-				if idx==idx1: return x
-		return None
+		# ⚡ Bolt: Use pre-computed O(1) hash map lookup instead of O(N) loops or generators
+		return self._rev_maps.get(elemtype, {}).get(idx1)
 			
 	def getString(self,elemtype,idx1):
 		return str(self.getElement(elemtype,idx1))
 			
 	def printDict(self,elemtype,someDict,sortbywhat):
-		tuples = [(self.getString(elemtype,x),y) for x,y in list(someDict.items())]
+		tuples = [(self.getString(elemtype,x),y) for x,y in someDict.items()]
 		if sortbywhat == 'value':
 			tuples = sorted(tuples,key=lambda x: x[1])
 		return "\n".join([":".join([str(x) for x in z]) for z in tuples])
@@ -342,7 +329,7 @@ class TransformationPairMap:
 		self.tp2p_forwardcontext = list(tp2p_forwardcontext_opt)
 		self.tp2p_reversecontext = list(tp2p_reversecontext_opt)
 
-		syndel_list = [(tp_id,t_id,dictNames.getElement('t',t_id).action) for tp_id,t_id in list(self.tp2t_forward.items())+list(self.tp2t_reverse.items()) ]
+		syndel_list = [(tp_id,t_id,dictNames.getElement('t',t_id).action) for tp_id,t_id in itertools.chain(self.tp2t_forward.items(), self.tp2t_reverse.items()) ]
 
 		t_to_syndel = {}
 		for t_id, p_id in tr_map.t2p_syndelcontext:
@@ -591,10 +578,10 @@ class Trace:
 		self._set = set(trace)
 		
 	def __str__(self):
-		return "->".join([str(x) for x in self.trace])
+		return "->".join(str(x) for x in self.trace)
 		
 	def toString(self,names):
-		return "->".join([str(names.getElement(self.type,x)) for x in self.trace])
+		return "->".join(str(names.getElement(self.type,x)) for x in self.trace)
 	
 	def getLast(self):
 		return self.trace[-1]
@@ -908,17 +895,17 @@ def writeJSON(names,all_maps,annot):
 	# Getting the node elements
 	# A node for each rule
 	nodes = []
-	for rule,idx in list(names.r.items()):
+	for rule,idx in names.r.items():
 		temp = rule.getJSON()
 		temp.update({"idx":idx,"annot":annot.r[idx]})
 		nodes.append(temp)
 	# A node for each pattern
-	for patt,idx in list(names.p.items()):
+	for patt,idx in names.p.items():
 		temp = patt.getJSON()
 		temp.update({"idx":idx,"annot":annot.p[idx]})
 		nodes.append(temp)
 	# A node for each transformation (how to deal with irreversibles)
-	for tr,idx in list(names.t.items()):
+	for tr,idx in names.t.items():
 		temp = tr.getJSON()
 		temp.update({"idx":idx,"annot":annot.p[idx]})
 		if idx in [str(x) for x in names.irr]:
@@ -928,7 +915,7 @@ def writeJSON(names,all_maps,annot):
 		nodes.append(temp)
 
 	# A node for each transformation pair
-	for tp,idx in list(names.tp.items()):
+	for tp,idx in names.tp.items():
 		temp = tp.getJSON()
 		temp.update({"idx":idx,"annot":annot.tp[idx]})
 		nodes.append(temp)
@@ -984,19 +971,19 @@ def writeJSON(names,all_maps,annot):
 def listify(set1):
 	return [list(x) for x in list(set1)]
 def listify2(dict1):
-	return [ [x,y] for x,y in list(dict1.items())]
+	return [ [x,y] for x,y in dict1.items()]
 
 def unq(list1):
 	return list(set(list1))
  
 def combineLists(listoflists):
-	return reduce(lambda x,y: x+y,listoflists)
+	return list(itertools.chain.from_iterable(listoflists))
 	
 def printDict(somedict):
 	return "\n".join(sorted([str(x)+":"+str(y) for x,y in sorted(somedict.items())]))
 	
 def defaultDict(somelist,defaultval):
-	return dict([x,defaultval] for x in somelist)
+	return {x: defaultval for x in somelist}
 
 def assignVal(somedict,somelistofkeys,val):
 	tempdict = somedict

@@ -60,7 +60,7 @@ print $INDENT . "$0 is comparing $rfilename and $rfilename2\n";
 
 
 # read first data file
-open (RFILE, $rfilename) or die $INDENT . "$0 ERROR: can't open $rfilename: $!\n";
+open (RFILE, '<', $rfilename) or die $INDENT . "$0 ERROR: can't open $rfilename: $!\n";
 my @data  = ();
 my @times = ();
 while ( my $line = <RFILE> )
@@ -82,7 +82,7 @@ close RFILE;
 
 
 # read second data file
-open (RFILE, $rfilename2) or die $INDENT . "$0 ERROR: can't open $rfilename2: $!!!\n";
+open (RFILE, '<', $rfilename2) or die $INDENT . "$0 ERROR: can't open $rfilename2: $!!!\n";
 my @data2=();
 my @times2=();
 while ( my $line = <RFILE> )

@@ -58,7 +58,7 @@ class BipartiteServer:
         bnglFile = bbnglFile.data
         with open('temp{0}.bngl'.format(counter),'w') as f:
             f.write(bnglFile)
-        xmlFile = self.bngl2xml('temp{0}.bngl'.format(counter))
+        xmlFile = self._bngl2xml('temp{0}.bngl'.format(counter))
         createGraph.processBNGL('temp{0}.xml'.format(counter),center,context,product)
         with open('temp{0}.xml.dot'.format(counter),'rb') as f:
             dot = f.read()
@@ -77,21 +77,21 @@ class BipartiteServer:
 
     def getTransformations(self,bbnglFile):
         pass
-    def bngl2xml(self,bnglFile):
-
-        bngconsole = pexpect.spawn('bngdev --console')
-        bngconsole.expect('BNG>')
-        bngconsole.sendline('load {0}'.format(bnglFile))
-        bngconsole.expect('BNG>')
-        bngconsole.sendline('action writeXML()')
-        bngconsole.expect('BNG>')
-        bngconsole.close()
+    def _bngl2xml(self,bnglFile):
+        subprocess.call(['bngdev', bnglFile, '--xml'], shell=False)
         
         
 
+
+import argparse
 
 if __name__ == '__main__':
-    server = SimpleXMLRPCServer(("10.253.98.102", 9100), requestHandler=RequestHandler)
+    parser = argparse.ArgumentParser(description="Start the Bipartite XML-RPC Server")
+    parser.add_argument('--host', type=str, default=os.environ.get('HOST', '127.0.0.1'), help='Host IP address to bind to')
+    parser.add_argument('--port', type=int, default=int(os.environ.get('PORT', 9100)), help='Port to bind to')
+    args = parser.parse_args()
+
+    server = SimpleXMLRPCServer((args.host, args.port), requestHandler=RequestHandler)
     server.register_introspection_functions()
     server.register_instance(BipartiteServer())
     server.serve_forever()

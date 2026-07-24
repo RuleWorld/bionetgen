@@ -57,9 +57,12 @@ FetchContent_Declare(
   GIT_SUBMODULES ""  # Skip submodules (not needed for CVODE build)
 )
 
-# Configure SUNDIALS v7 build options - only build CVODE, no tests/examples
+# Configure SUNDIALS v7 build options - only build CVODE(S), no tests/examples
 set(BUILD_CVODE ON CACHE INTERNAL "Build CVODE solver")
-set(BUILD_CVODES OFF CACHE INTERNAL "")
+# CVODES is a superset of CVODE (adds forward/adjoint sensitivity analysis,
+# CVodeSensInit/CVodeGetSens/CVodeAdjInit/etc.) needed for gradient-based
+# parameter estimation. Link against it instead of plain CVODE.
+set(BUILD_CVODES ON CACHE INTERNAL "Build CVODES solver (sensitivity analysis)")
 set(BUILD_IDA OFF CACHE INTERNAL "")
 set(BUILD_IDAS OFF CACHE INTERNAL "")
 set(BUILD_KINSOL OFF CACHE INTERNAL "")

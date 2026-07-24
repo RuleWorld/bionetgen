@@ -1106,7 +1106,7 @@ sub write_raw_xml {
     my $self = shift;
     my $file = shift;
     my $fh   = Symbol::gensym();
-    open( $fh, ">$file" ) or return $self->die( "$! - $file" );
+    open( $fh, '>', $file ) or return $self->die( "$! - $file" );
     print $fh @_;
     close($fh);
 }
@@ -1115,7 +1115,7 @@ sub read_raw_xml {
     my $self = shift;
     my $file = shift;
     my $fh   = Symbol::gensym();
-    open( $fh, $file ) or return $self->die( "$! - $file" );
+    open( $fh, '<', $file ) or return $self->die( "$! - $file" );
     local $/ = undef;
     my $text = <$fh>;
     close($fh);

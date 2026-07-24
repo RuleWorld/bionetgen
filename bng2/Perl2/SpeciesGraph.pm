@@ -3435,7 +3435,6 @@ sub findMaps
 #
 # should this be in Map module?
 # REVISED by justinshogg@gmail.com 19feb2009
-# TODO: findMaps respects molecule and component tags, but does not attempt to reconile Pattern tags.
 {
 	# get species graphs
 	my $sg1 = shift @_;
@@ -3541,17 +3540,6 @@ sub buildLabelMap
 		# occurence of identical components
 		for ( my $ic = 0 ; $ic < @clabels ; $ic++ )
 		{
-            # NEW CODE. TODO: Figure this out!
-            # the old code leaves out user tags, which seems sketchy.
-            # but adding the tags breaks the state inheritance mechanism.
-    		#my $clabel = $clabels[$ic];
-    		## prefix component label with molecule label to ensure that
-            ##  molecule and component maps are compatible
-            #$clabel = $mlabel . '|' . $clabel . '_';
-            #$clabel .= ++$labels{$clabel};
-            #$labelmap->{$clabel} = "$im.$ic";
-
-            # OLD CODE:
 			my $clabel = $clabels[$ic];
 			unless ( $clabel =~ /^\%/ )
 			{

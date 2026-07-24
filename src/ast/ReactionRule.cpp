@@ -578,15 +578,17 @@ bool patternHasAnyBoundSite(const PatternInfo& info) {
 }
 
 bool hasModifier(const std::vector<std::string>& modifiers, const std::string& name) {
-    std::string needle = name;
-    std::transform(needle.begin(), needle.end(), needle.begin(), [](unsigned char c) {
-        return static_cast<char>(std::tolower(c));
-    });
-    for (auto modifier : modifiers) {
-        std::transform(modifier.begin(), modifier.end(), modifier.begin(), [](unsigned char c) {
-            return static_cast<char>(std::tolower(c));
-        });
-        if (modifier == needle) {
+    auto iequals = [](const std::string& a, const std::string& b) {
+        if (a.size() != b.size()) return false;
+        for (size_t i = 0; i < a.size(); ++i) {
+            if (std::tolower(static_cast<unsigned char>(a[i])) != std::tolower(static_cast<unsigned char>(b[i]))) {
+                return false;
+            }
+        }
+        return true;
+    };
+    for (const auto& modifier : modifiers) {
+        if (iequals(modifier, name)) {
             return true;
         }
     }
