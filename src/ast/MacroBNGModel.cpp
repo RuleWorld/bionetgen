@@ -401,10 +401,9 @@ std::string MacroBNGModel::pre_macr(const std::string& param_prefix) {
         // Check for "begin <block>"
         std::string trimmed = line;
         trimmed.erase(0, trimmed.find_first_not_of(" \t"));
-        std::smatch m;
-        static const std::regex re_begin("^begin\\s+(.*)");
-        if (std::regex_search(trimmed, m, re_begin)) {
-            std::string name = m[1].str();
+        if (trimmed.length() > 5 && trimmed.substr(0, 5) == "begin" && (trimmed[5] == ' ' || trimmed[5] == '\t')) {
+            std::string name = trimmed.substr(5);
+            name.erase(0, name.find_first_not_of(" \t"));
             name = trim(name);
             name = collapseWhitespace(name);
 
@@ -1260,20 +1259,23 @@ std::string MacroBNGModel::num_site(const std::string& re, const std::string& pr
 
     // Extract contents inside parentheses from reactant
     std::string name;
-    std::smatch m;
-    static const std::regex re_paren("[\\(](.*)[\\)]");
-
     std::string ss_re;
-    if (std::regex_search(re, m, re_paren)) {
-        name = m.prefix().str();
-        ss_re = m[1].str();
+    auto re_p1 = re.find('(');
+    auto re_p2 = re.rfind(')');
+    if (re_p1 != std::string::npos && re_p2 != std::string::npos && re_p2 > re_p1) {
+        name = re.substr(0, re_p1);
+        ss_re = re.substr(re_p1 + 1, re_p2 - re_p1 - 1);
+    } else {
+        name = re;
     }
     auto rem = split(ss_re, ',');
 
     // Extract contents from product
     std::string ss_pr;
-    if (std::regex_search(pr, m, re_paren)) {
-        ss_pr = m[1].str();
+    auto pr_p1 = pr.find('(');
+    auto pr_p2 = pr.rfind(')');
+    if (pr_p1 != std::string::npos && pr_p2 != std::string::npos && pr_p2 > pr_p1) {
+        ss_pr = pr.substr(pr_p1 + 1, pr_p2 - pr_p1 - 1);
     }
     auto prm = split(ss_pr, ',');
 
@@ -2524,13 +2526,16 @@ void MacroBNGModel::cor_net(const std::string& param_prefix) {
             if (obs.find(";" + egf) != std::string::npos ||
                 endsWith(obs, ";" + egf)) {
                 // Extract group name: Molecules;name;...
-                static const std::regex mol_re("Molecules;(.*?);");
-                std::smatch m;
-                if (std::regex_search(obs, m, mol_re)) {
-                    // egf_tot_[group_name] — Perl assigns @rabm here
-                    // but the value is unused beyond group filtering
-                    egf_tot_[m[1].str()] = {};
-                    break;
+                auto p_mol = obs.find("Molecules;");
+                if (p_mol != std::string::npos) {
+                    auto p_start = p_mol + 10;
+                    auto p_end = obs.find(';', p_start);
+                    if (p_end != std::string::npos) {
+                        // egf_tot_[group_name] — Perl assigns @rabm here
+                        // but the value is unused beyond group filtering
+                        egf_tot_[obs.substr(p_start, p_end - p_start)] = {};
+                        break;
+                    }
                 }
             }
         }
