@@ -1,0 +1,1135 @@
+# Source of truth for the Applications table (applications.md) and
+# Recent Models page (recent-models.md). Maintained by scripts/citation_watch.py
+# (new entries) plus manual curation (system/rulehub fields).
+- year: 2026
+  authors: Callenbach A et al.
+  title: Quantitative modelling of P-TEFb mediated CTD phosphorylation identifies local cooperativity.
+  journal: PLOS Comput. Biol.
+  doi: 10.1371/journal.pcbi.1014531
+  system: RNA Pol II CTD phosphorylation
+  pmid: '42531208'
+- year: 2026
+  authors: Linhart B et al.
+  title: IgE Occupancy and Antigen Valency Cooperate to Control FcεRI Aggregation Geometry and Signaling
+    Efficiency.
+  journal: Int. J. Mol. Sci.
+  doi: 10.3390/ijms27156762
+  system: FcεRI signaling
+  pmid: '41279798'
+- year: 2026
+  authors: Mohanty V et al.
+  title: Biophysical fitness landscape design traps viral evolution.
+  journal: PNAS
+  doi: 10.1073/pnas.2611571123
+  system: Viral evolution
+  pmid: '40236159'
+- year: 2026
+  authors: Imoto H et al.
+  title: Dual RAF inhibition outperforms RAF-MEK combinations for suppressing ERK signaling in KRAS mutant
+    cells.
+  journal: NPJ Syst. Biol. Appl.
+  doi: 10.1038/s41540-026-00710-6
+  system: RAF/MEK/ERK signaling
+  pmid: '41986383'
+- year: 2026
+  authors: Kocieniewski P et al.
+  title: A computational rule-based model of MAPK/ERK system regulation.
+  journal: Sci. Rep.
+  doi: 10.1038/s41598-026-44353-3
+  system: MAPK/ERK signaling
+  pmid: '41865127'
+- year: 2025
+  authors: Sarabipour S et al.
+  title: Impact of ligand binding on VEGFR1, VEGFR2, and NRP1 localization in human endothelial cells.
+  journal: PLOS Comput. Biol.
+  doi: 10.1371/journal.pcbi.1013254
+  system: VEGFR signaling
+  pmid: '40668864'
+- year: 2025
+  authors: Larkin CI et al.
+  title: A detailed kinetic model of Eastern equine encephalitis virus replication in a susceptible host
+    cell.
+  journal: PLOS Comput. Biol.
+  doi: 10.1371/journal.pcbi.1013082
+  system: Viral replication
+  pmid: '40465541'
+- year: 2025
+  authors: Zhang Y et al.
+  title: 'Promoting vascular stability through Src inhibition and Tie2 activation: A model-based analysis.'
+  journal: iScience
+  doi: 10.1016/j.isci.2025.112625
+  system: Ang-Tie/Src signaling
+  pmid: '40491479'
+- year: 2025
+  authors: Bartol TM et al.
+  title: A spatial model of autophosphorylation of CaMKII predicts that the lifetime of phospho-CaMKII
+    after induction of synaptic plasticity is greatly prolonged by CaM-trapping.
+  journal: Front. Synaptic Neurosci.
+  doi: 10.3389/fnsyn.2025.1547948
+  system: CaMKII signaling
+  pmid: '40255983'
+- year: 2025
+  authors: Millan AJ et al.
+  title: SYK negatively regulates ITAM-mediated human NK cell signaling and CD19-CAR NK cell efficacy.
+  journal: J. Immunol.
+  doi: 10.1093/jimmun/vkaf012
+  system: NK cell/CAR signaling
+  pmid: '40073103'
+- year: 2024
+  authors: Sarabipour S et al.
+  title: Trafficking dynamics of VEGFR1, VEGFR2, and NRP1 in human endothelial cells.
+  journal: PLOS Comput. Biol.
+  doi: 10.1371/journal.pcbi.1011798
+  system: VEGFR signaling
+  pmid: '38324585'
+- year: 2024
+  authors: Sevrin T et al.
+  title: Cell-specific models reveal conformation-specific RAF inhibitor combinations that synergistically
+    inhibit ERK signaling in pancreatic cancer cells.
+  journal: Cell Reports
+  doi: 10.1016/j.celrep.2024.114710
+  system: RAF/ERK signaling
+  pmid: '39240715'
+- year: 2024
+  authors: Goetz A et al.
+  title: Computational Modeling of Drug Response Identifies Mutant-Specific Constraints for Dosing panRAF
+    and MEK Inhibitors in Melanoma.
+  journal: Cancers
+  doi: 10.3390/cancers16162914
+  system: RAF/MEK signaling
+  pmid: '39199684'
+- year: 2024
+  authors: Bouguéon M et al.
+  title: 'A rule-based multiscale model of hepatic stellate cell plasticity: Critical role of the inactivation
+    loop in fibrosis progression.'
+  journal: PLOS Comput. Biol.
+  doi: 10.1371/journal.pcbi.1011858
+  system: Hepatic stellate cell signaling
+  pmid: '39074160'
+- year: 2024
+  authors: Lang P et al.
+  title: Reusable rule-based cell cycle model explains compartment-resolved dynamics of 16 observables
+    in RPE-1 cells.
+  journal: PLOS Comput. Biol.
+  doi: 10.1371/journal.pcbi.1011151
+  system: Cell cycle
+  pmid: '38190398'
+  rulehub: Lang2024
+- year: 2024
+  authors: Cheemalavagu N et al.
+  title: Predicting gene-level sensitivity to JAK-STAT signaling perturbation using a mechanistic-to-machine
+    learning framework.
+  journal: Cell Systems
+  doi: 10.1016/j.cels.2023.12.006
+  system: JAK-STAT signaling
+  pmid: '38198893'
+  rulehub: CheemalavaguJAKSTAT
+- year: 2023
+  authors: Korwek Z et al.
+  title: 'Non-self RNA rewires IFNβ signaling: A mathematical model of the innate immune response.'
+  journal: Sci. Signaling
+  doi: 10.1126/scisignal.abq1173
+  system: Interferon signaling
+  pmid: '38085817'
+  rulehub: Korwek2023
+- year: 2023
+  authors: Zhang Y et al.
+  title: Combining Multikinase Tyrosine Kinase Inhibitors Targeting the Vascular Endothelial Growth Factor
+    and Cluster of Differentiation 47 Signaling Pathways Is Predicted to Increase theEfficacy of Antiangiogenic
+    Combination Therapies.
+  journal: ACS Pharmacol. Transl. Sci.
+  doi: 10.1021/acsptsci.3c00008
+  system: VEGF/CD47 signaling
+  pmid: '37200806'
+  rulehub: Zhang2023
+- year: 2023
+  authors: Sameni S et al.
+  title: Computer simulations predict the impact of neuronal atrophy on the calcium dynamics in Huntington's
+    disease.
+  journal: PNAS Nexus
+  doi: 10.1093/pnasnexus/pgad443
+  system: Calcium signaling (Huntington's)
+  pmid: '38222468'
+- year: 2023
+  authors: Krantz M et al.
+  title: A detailed molecular network map and model of the NLRP3 inflammasome.
+  journal: Front. Immunol.
+  doi: 10.3389/fimmu.2023.1233680
+  system: NLRP3 inflammasome
+  pmid: '38077364'
+- year: 2023
+  authors: Imoto H et al.
+  title: A Combination of Conformation-Specific RAF Inhibitors Overcome Drug Resistance Brought about
+    by RAF Overexpression.
+  journal: Biomolecules
+  doi: 10.3390/biom13081212
+  system: RAF signaling
+  pmid: '37627277'
+- year: 2023
+  authors: Fröhlich F et al.
+  title: Mechanistic model of MAPK signaling reveals how allostery and rewiring contribute to drug resistance.
+  journal: Mol. Syst. Biol.
+  doi: 10.15252/msb.202210988
+  system: MAPK signaling
+  pmid: '36700386'
+- year: 2023
+  authors: Chattaraj A et al.
+  title: The maximum solubility product marks the threshold for condensation of multivalent biomolecules.
+  journal: Biophys. J.
+  doi: 10.1016/j.bpj.2023.03.036
+  system: Biomolecular condensation
+  pmid: '36987392'
+- year: 2022
+  authors: Nosbisch JL et al.
+  title: A kinetic model of phospholipase C-γ1 linking structure-based insights to dynamics of enzyme
+    autoinhibition and activation.
+  journal: J. Biol. Chem.
+  doi: 10.1016/j.jbc.2022.101886
+  system: PLCγ1 signaling
+  pmid: '35367415'
+  rulehub: Nosbisch2022
+- year: 2022
+  authors: Rukhlenko OS et al.
+  title: Control of cell state transitions.
+  journal: Nature
+  doi: 10.1038/s41586-022-05194-y
+  system: Cell fate/MAPK signaling
+  pmid: '36104561'
+- year: 2022
+  authors: Erdem C et al.
+  title: A scalable, open-source implementation of a large-scale mechanistic model for single cell proliferation
+    and death signaling.
+  journal: Nat. Commun.
+  doi: 10.1038/s41467-022-31138-1
+  system: Proliferation/death signaling
+  pmid: '35729113'
+- year: 2022
+  authors: Abrams RE et al.
+  title: Quantitative systems pharmacology modeling sheds light into the dose response relationship of
+    a trispecific T cell engager in multiple myeloma.
+  journal: Sci. Rep.
+  doi: 10.1038/s41598-022-14726-5
+  system: T cell engager QSP
+  pmid: '35768621'
+- year: 2022
+  authors: Leberecht C et al.
+  title: A multiscale model of the regulation of aquaporin 2 recycling.
+  journal: NPJ Syst. Biol. Appl.
+  doi: 10.1038/s41540-022-00223-y
+  system: Aquaporin trafficking
+  pmid: '35534498'
+- year: 2022
+  authors: Bullock ME et al.
+  title: A transcriptional cycling model recapitulates chromatin-dependent features of noisy inducible
+    transcription.
+  journal: PLOS Comput. Biol.
+  doi: 10.1371/journal.pcbi.1010152
+  system: Transcriptional noise
+  pmid: '36084132'
+- year: 2022
+  authors: Tserunyan V et al.
+  title: Computational analysis of 4-1BB-induced NFκB signaling suggests improvements to CAR cell design.
+  journal: Cell Commun. Signal.
+  doi: 10.1186/s12964-022-00937-w
+  system: CAR/NF-κB signaling
+  pmid: '36028884'
+- year: 2022
+  authors: Wysocka E et al.
+  title: Comparison of rule- and ordinary differential equation-based dynamic model of DARPP-32 signalling
+    network.
+  journal: PeerJ
+  doi: 10.7717/peerj.14516
+  system: DARPP-32 signaling
+  pmid: '36540795'
+- year: 2022
+  authors: Bottorff T et al.
+  title: Translational buffering by ribosome stalling in upstream open reading frames.
+  journal: PLoS Genetics
+  doi: 10.1371/journal.pgen.1010460
+  system: Translational regulation
+  pmid: '36315596'
+- year: 2022
+  authors: Loell K et al.
+  title: Activation domains can decouple the mean and noise of gene expression.
+  journal: Cell Reports
+  doi: 10.1016/j.celrep.2022.111118
+  system: Gene expression noise
+  pmid: '35858548'
+- year: 2021
+  authors: McMillan D et al.
+  title: Structural insights into the disruption of TNF-TNFR1 signalling by small molecules stabilising
+    a distorted TNF.
+  journal: Nat. Commun.
+  doi: 10.1038/s41467-020-20828-3
+  system: TNF/TNFR signaling
+  pmid: '33495441'
+  rulehub: McMillan2021
+- year: 2021
+  authors: Zhang Y et al.
+  title: A systems biology model of junctional localization and downstream signaling of the Ang-Tie signaling
+    pathway.
+  journal: NPJ Syst. Biol. Appl.
+  doi: 10.1038/s41540-021-00194-6
+  system: Ang-Tie signaling
+  pmid: '34417472'
+  rulehub: Zhang2021
+- year: 2021
+  authors: Erdem C et al.
+  title: Inhibition of RPS6K reveals context-dependent Akt activity in luminal breast cancer cells.
+  journal: PLOS Comput. Biol.
+  doi: 10.1371/journal.pcbi.1009125
+  system: PI3K/Akt signaling
+  pmid: '34191793'
+  rulehub: Erdem2021
+- year: 2021
+  authors: Haack F et al.
+  title: Receptor/Raft Ratio Is a Determinant for LRP6 Phosphorylation and WNT/β-Catenin Signaling.
+  journal: Front. Cell Dev. Biol.
+  doi: 10.3389/fcell.2021.706731
+  system: WNT signaling
+  pmid: '34485292'
+- year: 2021
+  authors: Hayford CE et al.
+  title: An in vitro model of tumor heterogeneity resolves genetic, epigenetic, and stochastic sources
+    of cell state variability.
+  journal: PLOS Biology
+  doi: 10.1371/journal.pbio.3000797
+  system: Tumor cell-state heterogeneity
+  pmid: '34061819'
+- year: 2020
+  authors: Bolado-Carrancio A et al.
+  title: Periodic propagating waves coordinate RhoGTPase network dynamics at the leading and trailing
+    edges during cell migration.
+  journal: Elife
+  doi: 10.7554/elife.58165
+  system: Rho GTPase signaling
+  pmid: '32705984'
+- year: 2020
+  authors: Ordyan M et al.
+  title: Interactions between calmodulin and neurogranin govern the dynamics of CaMKII as a leaky integrator.
+  journal: PLOS Comput. Biol.
+  doi: 10.1371/journal.pcbi.1008015
+  system: CaMKII signaling
+  pmid: '32678848'
+  rulehub: Ordyan2020
+- year: 2020
+  authors: Kirsch K et al.
+  title: Co-regulation of the transcription controlling ATF2 phosphoswitch by JNK and p38.
+  journal: Nat. Commun.
+  doi: 10.1038/s41467-020-19582-3
+  system: JNK/p38 signaling
+  pmid: '33188182'
+- year: 2020
+  authors: Salzer B et al.
+  title: Engineering AvidCARs for combinatorial antigen recognition and reversible control of CAR function.
+  journal: Nat. Commun.
+  doi: 10.1038/s41467-020-17970-3
+  system: CAR signaling
+  pmid: '32820173'
+- year: 2020
+  authors: Wu Q, Finley SD.
+  title: Mathematical Model Predicts Effective Strategies to Inhibit VEGF-eNOS Signaling.
+  journal: J. Clin. Med.
+  doi: 10.3390/jcm9051255
+  system: VEGF/eNOS signaling
+  pmid: '32357492'
+- year: 2020
+  authors: Kapralov AA et al.
+  title: Redox lipid reprogramming commands susceptibility of macrophages and microglia to ferroptotic
+    death.
+  journal: Nat. Chem. Biol.
+  doi: 10.1038/s41589-019-0462-8
+  system: Ferroptosis/lipid signaling
+  pmid: '32080625'
+- year: 2020
+  authors: Paoletti F et al.
+  title: Molecular flexibility of DNA as a key determinant of RAD51 recruitment.
+  journal: EMBO J.
+  doi: 10.15252/embj.2019103002
+  system: DNA repair (RAD51)
+  pmid: '31943278'
+- year: 2020
+  authors: Salazar-Cavazos E et al.
+  title: Multisite EGFR phosphorylation is regulated by adaptor protein abundances and dimer lifetimes.
+  journal: Mol. Biol. Cell
+  doi: 10.1091/mbc.e19-09-0548
+  system: EGFR signaling
+  pmid: '31913761'
+- year: 2020
+  authors: Prada J et al.
+  title: A systems-biology model of the tumor necrosis factor (TNF) interactions with TNF receptor 1 and
+    2.
+  journal: Bioinformatics
+  doi: 10.1093/bioinformatics/btaa844
+  system: TNF/TNFR signaling
+  pmid: '32991680'
+- year: 2020
+  authors: Kochańczyk M et al.
+  title: Super-spreading events initiated the exponential growth phase of COVID-19 with R0 higher than
+    initially estimated.
+  journal: R. Soc. Open Sci.
+  doi: 10.1098/rsos.200786
+  system: Epidemiology (COVID-19)
+  pmid: '33047040'
+- year: 2020
+  authors: Hat B et al.
+  title: Model-based optimization of combination protocols for irradiation-insensitive cancers.
+  journal: Sci. Rep.
+  doi: 10.1038/s41598-020-69380-6
+  system: Cancer radiotherapy
+  pmid: '32724100'
+- year: 2020
+  authors: Makaryan SZ et al.
+  title: 'Enhancing network activation in natural killer cells: predictions from in silico modeling.'
+  journal: Integrative Biology
+  doi: 10.1093/intbio/zyaa008
+  system: NK cell signaling
+  pmid: '32409824'
+- year: 2019
+  authors: Erickson KE et al.
+  title: Modeling cell line-specific recruitment of signaling proteins to the insulin-like growth factor
+    1 receptor.
+  journal: PLOS Comput. Biol.
+  doi: 10.1371/journal.pcbi.1006706
+  system: IGF1R signaling
+  pmid: '30653502'
+- year: 2019
+  authors: Nikolaev Y et al.
+  title: 'Systems NMR: single-sample quantification of RNA, proteins and metabolites for biomolecular
+    network analysis.'
+  journal: Nat. Methods
+  doi: 10.1038/s41592-019-0495-7
+  system: Metabolomics/NMR
+  pmid: '31363225'
+- year: 2019
+  authors: Lin YT, Feng S, Hlavacek WS.
+  title: Scaling methods for accelerating kinetic Monte Carlo simulations of chemical reaction networks.
+  journal: J. Chem. Phys.
+  doi: 10.1063/1.5096774
+  system: Simulation methods
+  pmid: '31255063'
+- year: 2019
+  authors: Pharris MC et al.
+  title: A multi-state model of the CaMKII dodecamer suggests a role for calmodulin in maintenance of
+    autophosphorylation.
+  journal: PLOS Comput. Biol.
+  doi: 10.1371/journal.pcbi.1006941
+  system: CaMKII signaling
+  pmid: '31869343'
+- year: 2019
+  authors: Cess CG et al.
+  title: Data-driven analysis of a mechanistic model of CAR T cell signaling predicts effects of cell-to-cell
+    heterogeneity.
+  journal: J. Theor. Biol.
+  doi: 10.1016/j.jtbi.2019.110125
+  system: CAR T cell signaling
+  pmid: '31866395'
+- year: 2019
+  authors: Khetan J et al.
+  title: Analysis of Fn14–NF-κB signaling response dynamics using a mechanistic model.
+  journal: J. Theor. Biol.
+  doi: 10.1016/j.jtbi.2019.07.016
+  system: Fn14/NF-κB signaling
+  pmid: '31374284'
+- year: 2019
+  authors: Li D et al.
+  title: Exploring the Extracellular Regulation of the Tumor Angiogenic Interaction Network Using a Systems
+    Biology Model.
+  journal: Front. Physiol.
+  doi: 10.3389/fphys.2019.00823
+  system: Angiogenesis
+  pmid: '31379588'
+- year: 2019
+  authors: Münzner U et al.
+  title: A comprehensive, mechanistically detailed, and executable model of the cell division cycle in
+    Saccharomyces cerevisiae.
+  journal: Nat. Commun.
+  doi: 10.1038/s41467-019-08903-w
+  system: Cell cycle (yeast)
+  pmid: '30899000'
+- year: 2018
+  authors: Wong VC et al.
+  title: NF-κB-Chromatin Interactions Drive Diverse Phenotypes by Modulating Transcriptional Noise.
+  journal: Cell Reports
+  doi: 10.1016/j.celrep.2017.12.080
+  system: NF-κB signaling
+  pmid: '29346759'
+- year: 2018
+  authors: Bazzazi J et al.
+  title: 'Computational modeling of synergistic interaction between αVβ3 integrin and VEGFR2 in endothelial
+    cells: Implications for the mechanism of action of angiogenesis-modulating integrin-binding peptides.'
+  journal: J. Theor. Biol.
+  doi: 10.1016/j.jtbi.2018.06.029
+  system: Integrin/VEGFR2 signaling
+  pmid: '30036530'
+- year: 2018
+  authors: Tse MJ et al.
+  title: Rare-event sampling of epigenetic landscapes and phenotype transitions.
+  journal: PLOS Comput. Biol.
+  doi: 10.1371/journal.pcbi.1006336
+  system: Epigenetic switching
+  pmid: '30074987'
+- year: 2018
+  authors: Singh M et al.
+  title: Shift from stochastic to spatially-ordered expression of serine-glycine synthesis enzymes in
+    3D microtumors.
+  journal: Sci. Rep.
+  doi: 10.1038/s41598-018-27266-8
+  system: Metabolic gene expression
+  pmid: '29925909'
+- year: 2018
+  authors: Rohrs JA et al.
+  title: Computational Model of Chimeric Antigen Receptors Explains Site-Specific Phosphorylation Kinetics.
+  journal: Biophys. J.
+  doi: 10.1016/j.bpj.2018.08.018
+  system: CAR signaling
+  pmid: '30197180'
+- year: 2018
+  authors: James JR.
+  title: Tuning ITAM multiplicity on T cell receptors can control potency and selectivity to ligand density.
+  journal: Sci. Signal
+  doi: 10.1126/scisignal.aan1088
+  system: TCR/ITAM signaling
+  pmid: '29789296'
+- year: 2018
+  authors: Czerkies M et al.
+  title: Cell fate in antiviral response arises in the crosstalk of IRF, NF-κB and JAK/STAT pathways.
+  journal: Nat. Commun.
+  doi: 10.1038/s41467-017-02640-8
+  system: Antiviral signaling
+  pmid: '29402958'
+- year: 2018
+  authors: Rukhlenko OS et al.
+  title: Dissecting RAF Inhibitor Resistance by Structure-based Modeling Reveals Ways to Overcome Oncogenic
+    RAS Signaling
+  journal: Cell Syst.
+  doi: 10.1016/j.cels.2018.06.002
+  system: RAF/RAS signaling
+  pmid: '30007540'
+- year: 2018
+  authors: Bazzazi H et al.
+  title: 'Computer Simulation of TSP1 Inhibition of VEGF–Akt–eNOS: An Angiogenesis Triple Threat.'
+  journal: Front. Physiol.
+  doi: 10.3389/fphys.2018.00644
+  system: VEGF/eNOS signaling
+  pmid: '29899706'
+- year: 2018
+  authors: Bouhaddou M et al.
+  title: A mechanistic pan-cancer pathway model informed by multi-omics data interprets stochastic cell
+    fate responses to drugs and mitogens.
+  journal: PLOS Comput. Biol.
+  doi: 10.1371/journal.pcbi.1005985
+  system: Pan-cancer signaling
+  pmid: '29579036'
+- year: 2018
+  authors: Lin YT et al.
+  title: A stochastic and dynamical view of pluripotency in mouse embryonic stem cells.
+  journal: PLOS Comput. Biol.
+  doi: 10.1371/journal.pcbi.1006000
+  system: Stem cell pluripotency
+  pmid: '29451874'
+- year: 2018
+  authors: Antunes G et al.
+  title: Molecular mechanisms of detection and discrimination of dynamic signals.
+  journal: Sci. Rep.
+  doi: 10.1038/s41598-018-20842-y
+  system: Signal detection/decoding
+  pmid: '29410522'
+- year: 2018
+  authors: Shahinuzzaman M et al.
+  title: A spatio-temporal model reveals self-limiting FcεRI cross-linking by multivalent antigens.
+  journal: R. Soc. Open Sci.
+  doi: 10.1098/rsos.180190
+  system: FcεRI signaling
+  pmid: '30839725'
+- year: 2018
+  authors: Li D et al.
+  title: The impact of tumor receptor heterogeneity on the response to anti-angiogenic cancer treatment.
+  journal: Integrative Biology
+  doi: 10.1039/c8ib00019k
+  system: Angiogenesis
+  pmid: '29623971'
+- year: 2017
+  authors: Harmon B et al.
+  title: Timescale Separation of Positive and Negative Signaling Creates History-Dependent Responses to
+    IgE Receptor Stimulation.
+  journal: Sci. Rep.
+  doi: 10.1038/s41598-017-15568-2
+  system: FcεRI/IgE signaling
+  pmid: '29138425'
+  rulehub: Harmon2017
+- year: 2017
+  authors: Meng X et al.
+  title: Minimum-noise production of translation factor eIF4G maps to a mechanistically determined optimal
+    rate control window for protein synthesis.
+  journal: Nucleic Acids Res.
+  doi: 10.1093/nar/gkw1194
+  system: Translational regulation
+  pmid: '27928055'
+- year: 2017
+  authors: Bazzazi J, Isenberg JS, Popel AS.
+  title: 'Inhibition of VEGFR2 Activation and Its Downstream Signaling to ERK1/2 and Calcium by Thrombospondin-1
+    (TSP1): *In silico* Investigation.'
+  journal: Front Physiol.
+  doi: 10.3389/fphys.2017.00048
+  system: VEGFR2 signaling
+  pmid: '28220078'
+- year: 2017
+  authors: Bazzazi J, Popel AS.
+  title: Computational investigation of sphingosine kinase 1 (SphK1) and calcium dependent ERK1/2 activation
+    downstream of VEGFR2 in endothelial cells.
+  journal: PLoS Comput. Biol.
+  doi: 10.1371/journal.pcbi.1005332
+  system: VEGFR2 signaling
+  pmid: '28178265'
+- year: 2017
+  authors: Varga A et al.
+  title: RAF1/BRAF dimerization integrates the signal from RAS to ERK and ROKα.
+  journal: Sci. Signaling
+  doi: 10.1126/scisignal.aai8482
+  system: RAF/ERK signaling
+  pmid: '28270557'
+- year: 2017
+  authors: Goyette J et al.
+  title: Biophysical assay for tethered signaling reactions reveals tether-controlled activity for the
+    phosphatase SHP-1.
+  journal: Sci. Adv.
+  doi: 10.1126/sciadv.1601692
+  system: SHP-1 phosphatase signaling
+  pmid: '28378014'
+- year: 2017
+  authors: Falkenberg CV et al.
+  title: Multivalent Molecules as Modulators of RNA Granule Size and Composition.
+  journal: Biophys. J.
+  doi: 10.1016/j.bpj.2017.01.031
+  system: RNA granule biophysics
+  pmid: '28242011'
+- year: 2017
+  authors: Kochańczyk M et al.
+  title: Relaxation oscillations and hierarchy of feedbacks in MAPK signaling.
+  journal: Sci. Rep.
+  doi: 10.1038/srep38244
+  system: MAPK signaling
+  pmid: '28045041'
+- year: 2017
+  authors: Tudelska K et al.
+  title: Information processing in the NF-κB pathway.
+  journal: Sci. Rep.
+  doi: 10.1038/s41598-017-16166-y
+  system: NF-κB signaling
+  pmid: '29162874'
+- year: 2016
+  authors: Antunes G, Roque AC, Simoes de Souza FM.
+  title: 'Modelling intracellular competition for calcium: kinetic and thermodynamic control of different
+    molecular modes of signal decoding.'
+  journal: Sci. Rep.
+  doi: 10.1038/srep23730
+  system: Calcium signaling
+  pmid: '27033299'
+- year: 2016
+  authors: Antunes G, Roque AC, Simoes de Souza FM.
+  title: Stochastic Induction of Long-Term Potentiation and Long-Term Depression
+  journal: Sci. Rep.
+  doi: 10.1038/srep30899
+  system: Synaptic plasticity (LTP/LTD)
+  pmid: '27485552'
+- year: 2016
+  authors: Hat B et al.
+  title: Feedbacks, Bifurcations, and Cell Fate Decision-Making in the p53 System.
+  journal: PLOS Comput. Biol.
+  doi: 10.1371/journal.pcbi.1004787
+  system: p53 signaling
+  pmid: '26928575'
+  rulehub: Hat2016
+- year: 2016
+  authors: Rohrs JA, Sulistio CD, Finley SD.
+  title: Predictive model of thrombospondin-1 and vascular endothelial growth factor in breast tumor tissue.
+  journal: NPJ Syst. Biol. Appl.
+  doi: 10.1038/npjsba.2016.30
+  system: VEGF/TSP1 signaling
+  pmid: '28713587'
+- year: 2016
+  authors: Korwek Z et al.
+  title: Importins promote high-frequency NF-κB oscillations increasing information channel capacity.
+  journal: Biol. Direct
+  doi: 10.1186/s13062-016-0164-z
+  system: NF-κB signaling
+  pmid: '27835978'
+- year: 2016
+  authors: Camillo BD et al.
+  title: A rule-based model of insulin signalling pathway.
+  journal: BMC Syst. Biol.
+  doi: 10.1186/s12918-016-0281-4
+  system: Insulin signaling
+  pmid: '27245161'
+- year: 2016
+  authors: Dalle Pezze P et al.
+  title: A systems study reveals concurrent activation of AMPK and mTOR by amino acids.
+  journal: Nat. Commun.
+  doi: 10.1038/ncomms13254
+  system: AMPK/mTOR signaling
+  pmid: '27869123'
+- year: 2016
+  authors: Das AA et al.
+  title: 'Agent-based re-engineering of ErbB signaling: a modeling pipeline for integrative systems biology.'
+  journal: Bioinformatics
+  doi: 10.1093/bioinformatics/btw709
+  system: ErbB signaling
+  pmid: '27998938'
+- year: 2015
+  authors: Dolan DWP et al.
+  title: Integrated Stochastic Model of DNA Damage Repair by Non-homologous End Joining and p53/p21- Mediated
+    Early Senescence Signalling.
+  journal: PLOS Comput. Biol.
+  doi: 10.1371/journal.pcbi.1004246
+  system: DNA damage repair
+  pmid: '26020242'
+  rulehub: Dolan2015
+- year: 2015
+  authors: Stites EC et al.
+  title: Use of mechanistic models to integrate and analyze multiple proteomic datasets.
+  journal: Biophys. J.
+  doi: 10.1016/j.bpj.2015.02.030
+  system: Proteomics integration
+  pmid: '25863072'
+- year: 2015
+  authors: Hawse WF et al.
+  title: 'Cutting Edge: Differential Regulation of PTEN by TCR, Akt, and FoxO1 Controls CD4+ T Cell Fate
+    Decisions.'
+  journal: J. Immunol.
+  doi: 10.4049/jimmunol.1402554
+  system: TCR/PTEN/Akt signaling
+  pmid: '25855357'
+- year: 2015
+  authors: Szymańska P et al.
+  title: Computational analysis of an autophagy/translation switch based on mutual inhibition of MTORC1
+    and ULK1.
+  journal: PLOS One
+  doi: 10.1371/journal.pone.0116550
+  system: Autophagy/mTORC1 signaling
+  pmid: '25761126'
+- year: 2015
+  authors: Birtwistle MR.
+  title: Analytical reduction of combinatorial complexity arising from multiple protein modification sites.
+  journal: J. R. Soc. Interface
+  doi: 10.1098/rsif.2014.1215
+  system: Model reduction theory
+  pmid: '25519995'
+- year: 2015
+  authors: Fey D et al.
+  title: 'Signaling pathway models as biomarkers: Patient-specific simulations of JNK activity predict
+    the survival of neuroblastoma patients.'
+  journal: Sci. Signaling
+  doi: 10.1126/scisignal.aab0990
+  system: JNK signaling
+  pmid: '26696630'
+- year: 2015
+  authors: Tse MJ et al.
+  title: DNA-Binding Kinetics Determines the Mechanism of Noise-Induced Switching in Gene Networks.
+  journal: Biophys. J.
+  doi: 10.1016/j.bpj.2015.08.035
+  system: Gene network switching
+  pmid: '26488666'
+- year: 2015
+  authors: Haack F et al.
+  title: Spatio-temporal Model of Endogenous ROS and Raft-Dependent WNT/Beta-Catenin Signaling Driving
+    Cell Fate Commitment in Human Neural Progenitor Cells.
+  journal: PLOS Comput. Biol.
+  doi: 10.1371/journal.pcbi.1004106
+  system: WNT/ROS signaling
+  pmid: '25793621'
+- year: 2015
+  authors: Mueller S et al.
+  title: T160-phosphorylated CDK2 defines threshold for HGF-dependent proliferation in primary hepatocytes.
+  journal: Mol. Syst. Biol.
+  doi: 10.15252/msb.20156032
+  system: CDK2/HGF signaling
+  pmid: '26148348'
+- year: 2014
+  authors: Ligon TS, Leonhardt C, Rädler JO.
+  title: Multi-level kinetic model of mRNA delivery via transfection of lipoplexes.
+  journal: PLOS One
+  doi: 10.1371/journal.pone.0107148
+  system: mRNA delivery
+  pmid: '25237886'
+  rulehub: Ligon2014
+- year: 2014
+  authors: Chylek LA et al.
+  title: Phosphorylation site dynamics of early T-cell receptor signaling.
+  journal: PLOS One
+  doi: 10.1371/journal.pone.0104240
+  system: TCR signaling
+  pmid: '25147952'
+- year: 2014
+  authors: Dushek O et al.
+  title: Biosensor architectures for high-fidelity reporting of cellular signaling.
+  journal: Biophys. J.
+  doi: 10.1016/j.bpj.2014.06.021
+  system: Biosensor design
+  pmid: '25099816'
+  rulehub: Dushek2014
+- year: 2014
+  authors: Chylek LA et al.
+  title: An Interaction Library for the FcεRI Signaling Network.
+  journal: Frontiers Immunol.
+  doi: 10.3389/fimmu.2014.00172
+  system: FcεRI signaling
+  pmid: '24782869'
+- year: 2014
+  authors: Kozer N et al.
+  title: Recruitment of the adaptor protein Grb2 to EGFR tetramers.
+  journal: Biochemistry
+  doi: 10.1021/bi500182x
+  system: EGFR/Grb2 signaling
+  pmid: '24697349'
+  rulehub: Kozer2014
+- year: 2013
+  authors: Ibrahim B et al.
+  title: 'Spatial rule-based modeling: a method and its application to the human mitotic kinetochore.'
+  journal: Cells
+  doi: 10.3390/cells2030506
+  system: Mitotic kinetochore
+  pmid: '24709796'
+- year: 2013
+  authors: Pękalski J et al.
+  title: 'Spontaneous NF-κB activation by autocrine TNFα signaling: a computational analysis.'
+  journal: PLOS One
+  doi: 10.1371/journal.pone.0078887
+  system: NF-κB signaling
+  pmid: '24324544'
+- year: 2013
+  authors: Falkenberg CV, Blinov MJ, Loew LM.
+  title: 'Pleomorphic ensembles: formation of large clusters composed of weakly interacting multivalent
+    molecules.'
+  journal: Biophys. J.
+  doi: 10.1016/j.bpj.2013.10.016
+  system: Multivalent clustering biophysics
+  pmid: '24314076'
+- year: 2013
+  authors: Barua D, Hlavacek WS.
+  title: Modeling the effect of APC truncation on destruction complex function in colorectal cancer cells.
+  journal: PLOS Comput. Biol.
+  doi: 10.1371/journal.pcbi.1003217
+  system: Wnt/APC signaling
+  pmid: '24086117'
+  rulehub: Barua2013
+- year: 2013
+  authors: Fengos G, Iber D.
+  title: Prediction stability in a data-based, mechanistic model of σF regulation during sporulation in
+    Bacillus subtilis.
+  journal: Sci. Rep.
+  doi: 10.1038/srep02755
+  system: Sporulation (B. subtilis)
+  pmid: '24067622'
+- year: 2013
+  authors: Kozer N et al.
+  title: Exploring higher-order EGFR oligomerisation and phosphorylation--a combined experimental and
+    theoretical approach.
+  journal: Mol. Biosyst.
+  doi: 10.1039/c3mb70073a
+  system: EGFR signaling
+  pmid: '23629589'
+  rulehub: Kozer2013
+- year: 2013
+  authors: Chow SK et al.
+  title: Disease-enhancing antibodies improve the efficacy of bacterial toxin-neutralizing antibodies.
+  journal: Cell Host Microbe
+  doi: 10.1016/j.chom.2013.03.001
+  system: Antibody/toxin neutralization
+  pmid: '23601104'
+- year: 2013
+  authors: Mukhopadhyay H et al.
+  title: Systems model of T cell receptor proximal signaling reveals emergent ultrasensitivity.
+  journal: PLOS Comput. Biol.
+  doi: 10.1371/journal.pcbi.1003004
+  system: TCR signaling
+  pmid: '23555234'
+  rulehub: Mukhopadhyay2013
+- year: 2013
+  authors: Liu Y et al.
+  title: Single-cell measurements of IgE-mediated FcεRI signaling using an integrated microfluidic platform.
+  journal: PLOS One
+  doi: 10.1371/journal.pone.0060159
+  system: FcεRI signaling
+  pmid: '23544131'
+- year: 2013
+  authors: Falkenberg CV, Loew LM.
+  title: Computational analysis of Rho GTPase cycling.
+  journal: PLOS Comput. Biol.
+  doi: 10.1371/journal.pcbi.1002831
+  system: Rho GTPase signaling
+  pmid: '23326220'
+- year: 2013
+  authors: Kesseler KJ et al.
+  title: A predictive mathematical model of the DNA damage G2 checkpoint.
+  journal: J. Theor. Biol.
+  doi: 10.1016/j.jtbi.2012.12.011
+  system: DNA damage checkpoint
+  pmid: '23266715'
+  rulehub: Kesseler2013
+- year: 2013
+  authors: Kiel C et al.
+  title: Integration of Protein Abundance and Structure Data Reveals Competition in the ErbB Signaling
+    Network.
+  journal: Sci. Signaling
+  doi: 10.1126/scisignal.2004560
+  system: ErbB signaling
+  pmid: '24345680'
+- year: 2013
+  authors: Pontius W et al.
+  title: Adaptation Dynamics in Densely Clustered Chemoreceptors.
+  journal: PLOS Comput. Biol.
+  doi: 10.1371/journal.pcbi.1003230
+  system: Bacterial chemotaxis
+  pmid: '24068908'
+- year: 2013
+  authors: Kocieniewski P et al.
+  title: MEK1 and MEK2 differentially control the duration and amplitude of the ERK cascade response.
+  journal: Phys. Biol.
+  doi: 10.1088/1478-3975/10/3/035006
+  system: MAPK/ERK signaling
+  pmid: '23735655'
+- year: 2013
+  authors: Aitken S et al.
+  title: A rule-based kinetic model of RNA polymerase II C-terminal domain phosphorylation.
+  journal: J. R. Soc. Interface
+  doi: 10.1098/rsif.2013.0438
+  system: RNA Pol II CTD phosphorylation
+  pmid: '23804443'
+- year: 2013
+  authors: Smith GR et al.
+  title: Computational modelling of the regulation of Insulin signalling by oxidative stress.
+  journal: BMC Syst. Biol.
+  doi: 10.1186/1752-0509-7-41
+  system: Insulin signaling
+  pmid: '23705851'
+- year: 2012
+  authors: Barua D, Goldstein B.
+  title: 'A mechanistic model of early FcεRI signaling: lipid rafts and the question of protection from
+    dephosphorylation.'
+  journal: PLOS One
+  doi: 10.1371/journal.pone.0051669
+  system: FcεRI signaling
+  pmid: '23284735'
+- year: 2012
+  authors: Creamer MS et al.
+  title: Specification, annotation, visualization and simulation of a large rule-based model for ERBB
+    receptor signaling.
+  journal: BMC Syst. Biol.
+  doi: 10.1186/1752-0509-6-107
+  system: ErbB signaling
+  pmid: '22913808'
+- year: 2012
+  authors: Barua D, Hlavacek WS, Lipniacki T.
+  title: 'A computational model for early events in B cell antigen receptor signaling: analysis of the
+    roles of Lyn and Fyn.'
+  journal: J. Immunol.
+  doi: 10.4049/jimmunol.1102003
+  system: B cell receptor signaling
+  pmid: '22711887'
+- year: 2012
+  authors: Michalski PJ, Loew LM.
+  title: 'CaMKII activation and dynamics are independent of the holoenzyme structure: an infinite subunit
+    holoenzyme approximation.'
+  journal: Phys. Biol.
+  doi: 10.1088/1478-3975/9/3/036010
+  system: CaMKII signaling
+  pmid: '22683827'
+- year: 2012
+  authors: Kocieniewski P, Faeder JR, Lipniacki T.
+  title: The interplay of double phosphorylation and scaffolding in MAPK pathways.
+  journal: J. Theor. Biol.
+  doi: 10.1016/j.jtbi.2011.11.014
+  system: MAPK signaling
+  pmid: '22123371'
+  rulehub: Kocieniewski2012
+- year: 2012
+  authors: Martin KR et al.
+  title: Computational model for autophagic vesicle dynamics in single cells.
+  journal: Autophagy
+  doi: 10.4161/auto.22532
+  system: Autophagy
+  pmid: '23196898'
+- year: 2012
+  authors: Radhakrishnan K et al.
+  title: Mathematical Simulation of Membrane Protein Clustering for Efficient Signal Transduction.
+  journal: Ann. Biomed. Eng.
+  doi: 10.1007/s10439-012-0599-z
+  system: Membrane receptor clustering
+  pmid: '22669501'
+- year: 2012
+  authors: Abel SM et al.
+  title: The Membrane Environment Can Promote or Suppress Bistability in Cell Signaling Networks.
+  journal: J. Phys. Chem. B
+  doi: 10.1021/jp2102385
+  system: Membrane signaling bistability
+  pmid: '22332778'
+- year: 2011
+  authors: Geier F, Fengos G, Iber D.
+  title: A computational analysis of the dynamic roles of talin, Dok1, and PIPKI for integrin activation.
+  journal: PLOS One
+  doi: 10.1371/journal.pone.0024808
+  system: Integrin signaling
+  pmid: '22110576'
+- year: 2011
+  authors: Dushek O, van der Merwe PA, Shahrezaei V.
+  title: Ultrasensitivity in multisite phosphorylation of membrane-anchored proteins.
+  journal: Biophys. J.
+  doi: 10.1016/j.bpj.2011.01.060
+  system: Multisite phosphorylation
+  pmid: '21354391'
+  rulehub: Dushek2011
+- year: 2011
+  authors: Thomson TM et al.
+  title: Scaffold number in yeast signaling system sets tradeoff between system output and dynamic range.
+  journal: PNAS
+  doi: 10.1073/pnas.1004042108
+  system: Yeast signaling scaffolds
+  pmid: '22114196'
+- year: 2011
+  authors: Bauer AL et al.
+  title: Investigating the Role of Cross-Talk Between Chemical and Stromal Factors in Endothelial Cell
+    Phenotype Determination.
+  journal: Modeling Tumor Vasculature
+  doi: 10.1007/978-1-4614-0052-3_4
+  system: Endothelial cell signaling
+- year: 2011
+  authors: Feinerman O et al.
+  title: Single-cell quantification of IL-2 response by effector and regulatory T cells reveals critical
+    plasticity in immune response.
+  journal: Mol. Syst. Biol.
+  doi: 10.1038/msb.2010.90
+  system: IL-2/T cell signaling
+  pmid: '21119631'
+- year: 2010
+  authors: Nag A, Faeder JR, Goldstein B.
+  title: 'Shaping the response: the role of FcεRI and Syk expression levels in mast cell signaling.'
+  journal: IET Syst. Biol.
+  doi: 10.1049/iet-syb.2010.0006
+  system: FcεRI signaling
+  pmid: '21073233'
+- year: 2010
+  authors: Nag A et al.
+  title: A detailed mathematical model predicts that serial engagement of IgE-FcεRI complexes can enhance
+    Syk activation in mast cells.
+  journal: J. Immunol.
+  doi: 10.4049/jimmunol.1000326
+  system: FcεRI signaling
+  pmid: '20733205'
+- year: 2010
+  authors: Monine MI et al.
+  title: Modeling multivalent ligand-receptor interactions with steric constraints on configurations of
+    cell-surface receptor aggregates.
+  journal: Biophys. J.
+  doi: 10.1016/j.bpj.2009.09.043
+  system: Multivalent receptor aggregation
+  pmid: '20085718'
+- year: 2010
+  authors: Gong J et al.
+  title: Analysis and verification of the HMGB1 signaling pathway.
+  journal: BMC Bioinformatics
+  doi: 10.1186/1471-2105-11-s7-s10
+  system: HMGB1 signaling
+  pmid: '21106117'
+- year: 2010
+  authors: Ray JC, Igoshin OA.
+  title: Adaptable functionality of transcriptional feedback in bacterial two-component systems.
+  journal: PLOS Comput. Biol.
+  doi: 10.1371/journal.pcbi.1000676
+  system: Bacterial two-component systems
+  pmid: '20168997'
+- year: 2009
+  authors: Dushek O, Das R, Coombs D.
+  title: A role for rebinding in rapid and reliable T cell responses to antigen.
+  journal: PLOS Comput. Biol.
+  doi: 10.1371/journal.pcbi.1000578
+  system: TCR signaling
+  pmid: '19956745'
+- year: 2009
+  authors: Barua D, Faeder JR, Haugh JM.
+  title: A bipolar clamp mechanism for activation of Jak-family protein tyrosine kinases.
+  journal: PLOS Comput. Biol.
+  doi: 10.1371/journal.pcbi.1000364
+  system: JAK kinase activation
+  pmid: '19381268'
+  rulehub: Barua2009
+- year: 2009
+  authors: An GC, Faeder JR.
+  title: Detailed qualitative dynamic knowledge representation using a BioNetGen model of TLR-4 signaling
+    and preconditioning.
+  journal: Math. Biosci.
+  doi: 10.1016/j.mbs.2008.08.013
+  system: TLR-4 signaling
+  pmid: '18835283'
+  rulehub: An2009
+- year: 2009
+  authors: Nag A et al.
+  title: 'Aggregation of membrane proteins by cytosolic cross-linkers: theory and simulation of the LAT-Grb2-SOS1
+    system.'
+  journal: Biophys. J.
+  doi: 10.1016/j.bpj.2009.01.019
+  system: LAT/Grb2 signaling
+  pmid: '19348745'
+  rulehub: Nag2009
+- year: 2008
+  authors: Barua D, Faeder JR, Haugh JM.
+  title: Computational models of tandem SRC homology 2 domain interactions and application to phosphoinositide
+    3-kinase.
+  journal: J. Biol. Chem.
+  doi: 10.1074/jbc.m708359200
+  system: SH2/PI3K signaling
+  pmid: '18204097'
+- year: 2008
+  authors: Lipniacki T et al.
+  title: Stochastic effects and bistability in T cell receptor signaling.
+  journal: J. Theor. Biol.
+  doi: 10.1016/j.jtbi.2008.05.001
+  system: TCR signaling
+  pmid: '18556025'
+- year: 2007
+  authors: Mu F et al.
+  title: Carbon-fate maps for metabolic reactions.
+  journal: Bioinformatics
+  doi: 10.1093/bioinformatics/btm498
+  system: Metabolic networks
+  pmid: '17933853'
+- year: 2007
+  authors: Barua D, Faeder JR, Haugh JM.
+  title: 'Structure-based kinetic models of modular signaling protein function: focus on Shp2.'
+  journal: Biophys. J.
+  doi: 10.1529/biophysj.106.093484
+  system: Shp2 signaling
+  pmid: '17208977'
+  rulehub: Barua2007
+- year: 2006
+  authors: Blinov ML et al.
+  title: A network model of early events in epidermal growth factor receptor signaling that accounts for
+    combinatorial complexity.
+  journal: Biosystems
+  doi: 10.1016/j.biosystems.2005.06.014
+  system: EGFR signaling
+  pmid: '16233948'
+  rulehub: Blinov2006
+- year: 2006
+  authors: Kiyatkin A et al.
+  title: Scaffolding Protein Grb2-associated Binder 1 Sustains Epidermal Growth Factor-induced Mitogenic
+    and Survival Signaling by Multiple Positive Feedback Loops.
+  journal: J. Biol. Chem.
+  doi: 10.1074/jbc.m600482200
+  system: EGFR/Gab1 signaling
+  pmid: '16687399'
+- year: 2005
+  authors: Faeder JR et al.
+  title: Combinatorial complexity and dynamical restriction of network flows in signal transduction.
+  journal: IET Syst. Biol.
+  doi: 10.1049/sb:20045031
+  system: Signal transduction theory
+  pmid: '17091578'
+- year: 2003
+  authors: Faeder JR et al.
+  title: Investigation of early events in FcεRI-mediated signaling using a detailed mathematical model.
+  journal: J. Immunol.
+  doi: 10.4049/jimmunol.170.7.3769
+  system: FcεRI signaling
+  pmid: '12646643'
+  rulehub: Faeder2003

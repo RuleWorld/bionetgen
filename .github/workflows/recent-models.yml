@@ -1,0 +1,45 @@
+name: Recent models page (gh-pages recent-models.md)
+
+# No `schedule` trigger here (unlike citation-watch.yml): GitHub only fires
+# cron schedules from the workflow file on the default branch (master), and
+# this page only needs to regenerate when _data/publications.yaml changes or
+# on demand (e.g. after a new model is curated into RuleHub) — both covered
+# below without touching master.
+on:
+  push:
+    branches: [gh-pages]
+    paths: ["_data/publications.yaml"]
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  regenerate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out gh-pages
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install graphviz
+        run: sudo apt-get update && sudo apt-get install -y graphviz
+
+      - name: Install Python dependencies
+        run: pip install bionetgen networkx pyyaml
+
+      - name: Generate recent-models.md
+        run: python3 scripts/generate_recent_models.py
+
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add recent-models.md assets/recent-models
+          git diff --cached --quiet && echo "No change to recent-models.md." && exit 0
+          git commit -m "Regenerate recent-models.md [skip ci]"
+          git push origin HEAD:gh-pages

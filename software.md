@@ -3,7 +3,7 @@ title: Software
 layout: default
 permalink: /software
 parent: Uses of BioNetGen
-nav_order: 2
+nav_order: 3
 # TODO: Sort software into those that use BNG & those that support BNGL models; add blurbs about usage/compatibility
 ---
 

@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """
 Find new publications that cite the core BioNetGen papers and are not yet
-listed on published.md, so they can be triaged as candidates for that page.
+listed in _data/publications.yaml, so they can be triaged as candidates.
+
+Requires PyYAML (not stdlib).
 
 Usage:
     python3 scripts/citation_watch.py --bootstrap   # mark all current citations as seen, no issue body
@@ -14,8 +16,10 @@ import re
 import urllib.request
 from pathlib import Path
 
+import yaml
+
 REPO_ROOT = Path(__file__).resolve().parent.parent
-PUBLISHED_MD = REPO_ROOT / "published.md"
+PUBLICATIONS_YAML = REPO_ROOT / "_data" / "publications.yaml"
 SEEN_PATH = REPO_ROOT / "_data" / "citation_seen.json"
 
 # OpenAlex work IDs for the core BioNetGen papers we track citations to.
@@ -57,11 +61,11 @@ def fetch_all_citing_works() -> list[dict]:
 
 
 def existing_identifiers_from_page() -> tuple[set, set, set]:
-    """Return (pmids, dois, normalized_titles) already present on published.md."""
-    text = PUBLISHED_MD.read_text()
-    pmids = set(re.findall(r"pubmed(?:\.ncbi\.nlm\.nih\.gov)?/(\d+)", text))
-    dois = set(d.rstrip(")").lower() for d in re.findall(r"doi\.org/(10\.\S+)", text))
-    titles = set(normalize_title(t) for t in re.findall(r"\[([^\]]+)\]\(http", text))
+    """Return (pmids, dois, normalized_titles) already present in publications.yaml."""
+    records = yaml.safe_load(PUBLICATIONS_YAML.read_text()) or []
+    pmids = {str(r["pmid"]) for r in records if r.get("pmid")}
+    dois = {r["doi"].lower() for r in records if r.get("doi")}
+    titles = {normalize_title(r["title"]) for r in records if r.get("title")}
     return pmids, dois, titles
 
 
@@ -168,10 +172,11 @@ def main():
         body = "No new candidate citations since the last check."
     else:
         lines = [
-            f"Found **{len(candidates)}** new work(s) citing a core BioNetGen paper that aren't yet on "
-            f"[published.md](../blob/master/published.md). Review each: check the box and add a properly "
-            f"formatted entry to published.md for anything that applies BioNetGen to a specific biological "
-            f"system; leave unchecked (and close) items that are just tool/method citations.\n",
+            f"Found **{len(candidates)}** new work(s) citing a core BioNetGen paper that aren't yet in "
+            f"[_data/publications.yaml](../blob/gh-pages/_data/publications.yaml). Review each: check the box "
+            f"and add a properly formatted record (year, authors, title, journal, doi, system, and pmid/rulehub "
+            f"if available) for anything that applies BioNetGen to a specific biological system; leave "
+            f"unchecked (and close) items that are just tool/method citations.\n",
         ]
         lines += [format_candidate(w) for w in candidates]
         body = "\n".join(lines)
