@@ -3,3 +3,36 @@ _site
 .jekyll-cache
 .jekyll-metadata
 vendor
+
+# BNG2 build/test artifacts (not part of the website, but present in the
+# shared working tree when this branch is checked out alongside master)
+*.log
+*.scan
+*.cdat
+*.gdat
+*.net
+*.xml
+*.gml
+*.graphml
+*.swp
+*~
+*.m
+*.o
+*.pyc
+tags
+.DS_Store
+.vscode
+__pycache__/
+Benchmarks/
+bng2/Network3/Makefile
+bng2/Network3/CMakeFiles/
+bng2/Network3/CMakeCache.txt
+bng2/Network3/cmake_install.cmake
+bng2/Network3/run_network
+bng2/bin
+build
+build-codex
+build-cpp
+lib
+out-codex-check
+comparison_results
