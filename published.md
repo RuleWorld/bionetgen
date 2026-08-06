@@ -37,9 +37,23 @@ Help keep this page current by sending your publications to our [email](mailto:b
 ## 2023
 * Korwek Z et al. [Non-self RNA rewires IFNβ signaling: A mathematical model of the innate immune response.](https://www.science.org/doi/10.1126/scisignal.abq1173) *Sci. Signaling*
 * Zhang Y et al. [Combining Multikinase Tyrosine Kinase Inhibitors Targeting the Vascular Endothelial Growth Factor andCluster ofDifferentiation 47 Signaling Pathways IsPredicted toIncrease theEfficacy of Antiangiogenic Combination Therapies](https://doi.org/10.1021/acsptsci.3c00008) *ACS Pharmacol. Transl. Sci.*
+* Sameni S et al. [Computer simulations predict the impact of neuronal atrophy on the calcium dynamics in Huntington's disease.](https://doi.org/10.1093/pnasnexus/pgad443) *PNAS Nexus*
+* Krantz M et al. [A detailed molecular network map and model of the NLRP3 inflammasome.](https://doi.org/10.3389/fimmu.2023.1233680) *Front. Immunol.*
+* Imoto H et al. [A Combination of Conformation-Specific RAF Inhibitors Overcome Drug Resistance Brought about by RAF Overexpression.](https://doi.org/10.3390/biom13081212) *Biomolecules*
+* Fröhlich F et al. [Mechanistic model of MAPK signaling reveals how allostery and rewiring contribute to drug resistance.](https://doi.org/10.15252/msb.202210988) *Mol. Syst. Biol.*
+* Chattaraj A et al. [The maximum solubility product marks the threshold for condensation of multivalent biomolecules.](https://doi.org/10.1016/j.bpj.2023.03.036) *Biophys. J.*
 
 ## 2022
 * Nosbisch JL et al. [A kinetic model of phospholipase C-γ1 linking structure-based insights to dynamics of enzyme autoinhibition and activation.](https://www.sciencedirect.com/science/article/pii/S002192582200326X) *J. Biol. Chem.*
+* Rukhlenko OS et al. [Control of cell state transitions.](https://doi.org/10.1038/s41586-022-05194-y) *Nature*
+* Erdem C et al. [A scalable, open-source implementation of a large-scale mechanistic model for single cell proliferation and death signaling.](https://doi.org/10.1038/s41467-022-31138-1) *Nat. Commun.*
+* Abrams RE et al. [Quantitative systems pharmacology modeling sheds light into the dose response relationship of a trispecific T cell engager in multiple myeloma.](https://doi.org/10.1038/s41598-022-14726-5) *Sci. Rep.*
+* Leberecht C et al. [A multiscale model of the regulation of aquaporin 2 recycling.](https://doi.org/10.1038/s41540-022-00223-y) *NPJ Syst. Biol. Appl.*
+* Bullock ME et al. [A transcriptional cycling model recapitulates chromatin-dependent features of noisy inducible transcription.](https://doi.org/10.1371/journal.pcbi.1010152) *PLOS Comput. Biol.*
+* Tserunyan V et al. [Computational analysis of 4-1BB-induced NFκB signaling suggests improvements to CAR cell design.](https://doi.org/10.1186/s12964-022-00937-w) *Cell Commun. Signal.*
+* Wysocka E et al. [Comparison of rule- and ordinary differential equation-based dynamic model of DARPP-32 signalling network.](https://doi.org/10.7717/peerj.14516) *PeerJ*
+* Bottorff T et al. [Translational buffering by ribosome stalling in upstream open reading frames.](https://doi.org/10.1371/journal.pgen.1010460) *PLoS Genetics*
+* Loell K et al. [Activation domains can decouple the mean and noise of gene expression.](https://doi.org/10.1016/j.celrep.2022.111118) *Cell Reports*
 
 ## 2021
 * McMillan D et al. [Structural insights into the disruption of TNF-TNFR1 signalling by small molecules stabilising a distorted TNF.](https://pubmed.ncbi.nlm.nih.gov/33495441/) *Nat. Commun.*
