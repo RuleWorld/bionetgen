@@ -1,0 +1,56 @@
+name: Citation watch (gh-pages published.md)
+
+# This workflow file must live on the default branch (master) for the
+# `schedule` trigger to fire, but all actual work happens against the
+# gh-pages branch, which is where published.md, the script, and the
+# seen-citations data file live. See scripts/citation_watch.py on gh-pages.
+
+on:
+  schedule:
+    - cron: "0 13 1 * *"  # 13:00 UTC on the 1st of each month
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  check-citations:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out gh-pages
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Find new citing works
+        run: python3 scripts/citation_watch.py --out candidates.md
+
+      - name: Create issue if there are new candidates
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh label create "citation-candidates" --color "0e8a16" \
+            --description "New BioNetGen citations awaiting triage for published.md" || true
+          if grep -q "No new candidate citations" candidates.md; then
+            echo "Nothing new, skipping issue creation."
+          else
+            gh issue create \
+              --title "New BioNetGen citations to review - $(date +%Y-%m-%d)" \
+              --label "citation-candidates" \
+              --body-file candidates.md
+          fi
+
+      - name: Commit updated seen-list
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add _data/citation_seen.json
+          git diff --cached --quiet && echo "No change to seen-list." && exit 0
+          git commit -m "Update citation_seen.json [skip ci]"
+          git push origin HEAD:gh-pages

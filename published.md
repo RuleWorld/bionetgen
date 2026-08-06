@@ -12,6 +12,12 @@ This page links to publications that have applied a BioNetGen rule-based model t
 
 Help keep this page current by sending your publications to our [email](mailto:bionetgen.help@gmail.com) or [Twitter](http://twitter.com/bionetgen).
 
+## 2025
+* Sarabipour S et al. [Impact of ligand binding on VEGFR1, VEGFR2, and NRP1 localization in human endothelial cells.](https://doi.org/10.1371/journal.pcbi.1013254) *PLOS Comput. Biol.*
+
+## 2024
+* Sarabipour S et al. [Trafficking dynamics of VEGFR1, VEGFR2, and NRP1 in human endothelial cells.](https://doi.org/10.1371/journal.pcbi.1011798) *PLOS Comput. Biol.*
+
 ## 2023
 * Korwek Z et al. [Non-self RNA rewires IFNβ signaling: A mathematical model of the innate immune response.](https://www.science.org/doi/10.1126/scisignal.abq1173) *Sci. Signaling*
 * Zhang Y et al. [Combining Multikinase Tyrosine Kinase Inhibitors Targeting the Vascular Endothelial Growth Factor andCluster ofDifferentiation 47 Signaling Pathways IsPredicted toIncrease theEfficacy of Antiangiogenic Combination Therapies](https://doi.org/10.1021/acsptsci.3c00008) *ACS Pharmacol. Transl. Sci.*
