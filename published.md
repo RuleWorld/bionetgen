@@ -12,11 +12,27 @@ This page links to publications that have applied a BioNetGen rule-based model t
 
 Help keep this page current by sending your publications to our [email](mailto:bionetgen.help@gmail.com) or [Twitter](http://twitter.com/bionetgen).
 
+## 2026
+* Callenbach A et al. [Quantitative modelling of P-TEFb mediated CTD phosphorylation identifies local cooperativity.](https://doi.org/10.1371/journal.pcbi.1014531) *PLOS Comput. Biol.*
+* Linhart B et al. [IgE Occupancy and Antigen Valency Cooperate to Control FcεRI Aggregation Geometry and Signaling Efficiency.](https://doi.org/10.3390/ijms27156762) *Int. J. Mol. Sci.*
+* Mohanty V et al. [Biophysical fitness landscape design traps viral evolution.](https://doi.org/10.1073/pnas.2611571123) *PNAS*
+* Imoto H et al. [Dual RAF inhibition outperforms RAF-MEK combinations for suppressing ERK signaling in KRAS mutant cells.](https://doi.org/10.1038/s41540-026-00710-6) *NPJ Syst. Biol. Appl.*
+* Kocieniewski P et al. [A computational rule-based model of MAPK/ERK system regulation.](https://doi.org/10.1038/s41598-026-44353-3) *Sci. Rep.*
+
 ## 2025
 * Sarabipour S et al. [Impact of ligand binding on VEGFR1, VEGFR2, and NRP1 localization in human endothelial cells.](https://doi.org/10.1371/journal.pcbi.1013254) *PLOS Comput. Biol.*
+* Larkin CI et al. [A detailed kinetic model of Eastern equine encephalitis virus replication in a susceptible host cell.](https://doi.org/10.1371/journal.pcbi.1013082) *PLOS Comput. Biol.*
+* Zhang Y et al. [Promoting vascular stability through Src inhibition and Tie2 activation: A model-based analysis.](https://doi.org/10.1016/j.isci.2025.112625) *iScience*
+* Bartol TM et al. [A spatial model of autophosphorylation of CaMKII predicts that the lifetime of phospho-CaMKII after induction of synaptic plasticity is greatly prolonged by CaM-trapping.](https://doi.org/10.3389/fnsyn.2025.1547948) *Front. Synaptic Neurosci.*
+* Millan AJ et al. [SYK negatively regulates ITAM-mediated human NK cell signaling and CD19-CAR NK cell efficacy.](https://doi.org/10.1093/jimmun/vkaf012) *J. Immunol.*
 
 ## 2024
 * Sarabipour S et al. [Trafficking dynamics of VEGFR1, VEGFR2, and NRP1 in human endothelial cells.](https://doi.org/10.1371/journal.pcbi.1011798) *PLOS Comput. Biol.*
+* Sevrin T et al. [Cell-specific models reveal conformation-specific RAF inhibitor combinations that synergistically inhibit ERK signaling in pancreatic cancer cells.](https://doi.org/10.1016/j.celrep.2024.114710) *Cell Reports*
+* Goetz A et al. [Computational Modeling of Drug Response Identifies Mutant-Specific Constraints for Dosing panRAF and MEK Inhibitors in Melanoma.](https://doi.org/10.3390/cancers16162914) *Cancers*
+* Bouguéon M et al. [A rule-based multiscale model of hepatic stellate cell plasticity: Critical role of the inactivation loop in fibrosis progression.](https://doi.org/10.1371/journal.pcbi.1011858) *PLOS Comput. Biol.*
+* Lang P et al. [Reusable rule-based cell cycle model explains compartment-resolved dynamics of 16 observables in RPE-1 cells.](https://doi.org/10.1371/journal.pcbi.1011151) *PLOS Comput. Biol.*
+* Cheemalavagu N et al. [Predicting gene-level sensitivity to JAK-STAT signaling perturbation using a mechanistic-to-machine learning framework.](https://doi.org/10.1016/j.cels.2023.12.006) *Cell Systems*
 
 ## 2023
 * Korwek Z et al. [Non-self RNA rewires IFNβ signaling: A mathematical model of the innate immune response.](https://www.science.org/doi/10.1126/scisignal.abq1173) *Sci. Signaling*
