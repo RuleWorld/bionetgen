@@ -59,6 +59,8 @@ Help keep this page current by sending your publications to our [email](mailto:b
 * McMillan D et al. [Structural insights into the disruption of TNF-TNFR1 signalling by small molecules stabilising a distorted TNF.](https://pubmed.ncbi.nlm.nih.gov/33495441/) *Nat. Commun.*
 * Zhang Y et al. [A systems biology model of junctional localization and downstream signaling of the Ang-Tie signaling pathway.](https://pubmed.ncbi.nlm.nih.gov/34417472/) *NPJ Syst. Biol. Appl.*
 * Erdem C et al. [Inhibition of RPS6K reveals context-dependent Akt activity in luminal breast cancer cells.](https://pubmed.ncbi.nlm.nih.gov/34191793/) *PLOS Comput. Biol.*
+* Haack F et al. [Receptor/Raft Ratio Is a Determinant for LRP6 Phosphorylation and WNT/β-Catenin Signaling.](https://doi.org/10.3389/fcell.2021.706731) *Front. Cell Dev. Biol.*
+* Hayford CE et al. [An in vitro model of tumor heterogeneity resolves genetic, epigenetic, and stochastic sources of cell state variability.](https://doi.org/10.1371/journal.pbio.3000797) *PLOS Biology*
 
 ## 2020
 * Bolado-Carrancio A et al. [Periodic propagating waves coordinate RhoGTPase network dynamics at the leading and trailing edges during cell migration.](https://pubmed.ncbi.nlm.nih.gov/32705984/) *Elife*
@@ -69,11 +71,20 @@ Help keep this page current by sending your publications to our [email](mailto:b
 * Kapralov AA et al. [Redox lipid reprogramming commands susceptibility of macrophages and microglia to ferroptotic death.](https://pubmed.ncbi.nlm.nih.gov/32080625/) *Nat. Chem. Biol.*
 * Paoletti F et al. [Molecular flexibility of DNA as a key determinant of RAD51 recruitment.](https://pubmed.ncbi.nlm.nih.gov/31943278/) *EMBO J.*
 * Salazar-Cavazos E et al. [Multisite EGFR phosphorylation is regulated by adaptor protein abundances and dimer lifetimes.](https://pubmed.ncbi.nlm.nih.gov/31913761/) *Mol. Biol. Cell*
+* Prada J et al. [A systems-biology model of the tumor necrosis factor (TNF) interactions with TNF receptor 1 and 2.](https://doi.org/10.1093/bioinformatics/btaa844) *Bioinformatics*
+* Kochańczyk M et al. [Super-spreading events initiated the exponential growth phase of COVID-19 with R0 higher than initially estimated.](https://doi.org/10.1098/rsos.200786) *R. Soc. Open Sci.*
+* Hat B et al. [Model-based optimization of combination protocols for irradiation-insensitive cancers.](https://doi.org/10.1038/s41598-020-69380-6) *Sci. Rep.*
+* Makaryan SZ et al. [Enhancing network activation in natural killer cells: predictions from in silico modeling.](https://doi.org/10.1093/intbio/zyaa008) *Integrative Biology*
 
 ## 2019
 * Erickson KE et al. [Modeling cell line-specific recruitment of signaling proteins to the insulin-like growth factor 1 receptor.](https://pubmed.ncbi.nlm.nih.gov/30653502/) *PLOS Comput. Biol.*
 * Nikolaev Y et al. [Systems NMR: single-sample quantification of RNA, proteins and metabolites for biomolecular network analysis.](https://pubmed.ncbi.nlm.nih.gov/31363225/) *Nat. Methods*
 * Lin YT, Feng S, Hlavacek WS. [Scaling methods for accelerating kinetic Monte Carlo simulations of chemical reaction networks.](https://pubmed.ncbi.nlm.nih.gov/31255063/) *J. Chem. Phys.*
+* Pharris MC et al. [A multi-state model of the CaMKII dodecamer suggests a role for calmodulin in maintenance of autophosphorylation.](https://doi.org/10.1371/journal.pcbi.1006941) *PLOS Comput. Biol.*
+* Cess CG et al. [Data-driven analysis of a mechanistic model of CAR T cell signaling predicts effects of cell-to-cell heterogeneity.](https://doi.org/10.1016/j.jtbi.2019.110125) *J. Theor. Biol.*
+* Khetan J et al. [Analysis of Fn14–NF-κB signaling response dynamics using a mechanistic model.](https://doi.org/10.1016/j.jtbi.2019.07.016) *J. Theor. Biol.*
+* Li D et al. [Exploring the Extracellular Regulation of the Tumor Angiogenic Interaction Network Using a Systems Biology Model.](https://doi.org/10.3389/fphys.2019.00823) *Front. Physiol.*
+* Münzner U et al. [A comprehensive, mechanistically detailed, and executable model of the cell division cycle in Saccharomyces cerevisiae.](https://doi.org/10.1038/s41467-019-08903-w) *Nat. Commun.*
 
 ## 2018 
 * Wong VC et al. [NF-κB-Chromatin Interactions Drive Diverse Phenotypes by Modulating Transcriptional Noise.](http://www.ncbi.nlm.nih.gov/pubmed/29346759) *Cell Reports*
@@ -84,12 +95,23 @@ Help keep this page current by sending your publications to our [email](mailto:b
 * James JR. [Tuning ITAM multiplicity on T cell receptors can control potency and selectivity to ligand density.](https://pubmed.ncbi.nlm.nih.gov/29789296/) *Sci. Signal*
 * Czerkies M et al. [Cell fate in antiviral response arises in the crosstalk of IRF, NF-κB and JAK/STAT pathways.](https://pubmed.ncbi.nlm.nih.gov/29402958/) *Nat. Commun.*
 * Rukhlenko OS et al. [Dissecting RAF Inhibitor Resistance by Structure-based Modeling Reveals Ways to Overcome Oncogenic RAS Signaling](https://pubmed.ncbi.nlm.nih.gov/30007540/) *Cell Syst.*
+* Bazzazi H et al. [Computer Simulation of TSP1 Inhibition of VEGF–Akt–eNOS: An Angiogenesis Triple Threat.](https://doi.org/10.3389/fphys.2018.00644) *Front. Physiol.*
+* Bouhaddou M et al. [A mechanistic pan-cancer pathway model informed by multi-omics data interprets stochastic cell fate responses to drugs and mitogens.](https://doi.org/10.1371/journal.pcbi.1005985) *PLOS Comput. Biol.*
+* Lin YT et al. [A stochastic and dynamical view of pluripotency in mouse embryonic stem cells.](https://doi.org/10.1371/journal.pcbi.1006000) *PLOS Comput. Biol.*
+* Antunes G et al. [Molecular mechanisms of detection and discrimination of dynamic signals.](https://doi.org/10.1038/s41598-018-20842-y) *Sci. Rep.*
+* Shahinuzzaman M et al. [A spatio-temporal model reveals self-limiting FcεRI cross-linking by multivalent antigens.](https://doi.org/10.1098/rsos.180190) *R. Soc. Open Sci.*
+* Li D et al. [The impact of tumor receptor heterogeneity on the response to anti-angiogenic cancer treatment.](https://doi.org/10.1039/c8ib00019k) *Integrative Biology*
 
 ## 2017
 * Harmon B et al. [Timescale Separation of Positive and Negative Signaling Creates History-Dependent Responses to IgE Receptor Stimulation.](https://pubmed.ncbi.nlm.nih.gov/29138425/) *Sci. Rep.*
 * Meng X et al. [Minimum-noise production of translation factor eIF4G maps to a mechanistically determined optimal rate control window for protein synthesis.](https://pubmed.ncbi.nlm.nih.gov/27928055/) *Nucleic Acids Res.*
 * Bazzazi J, Isenberg JS, Popel AS. [Inhibition of VEGFR2 Activation and Its Downstream Signaling to ERK1/2 and Calcium by Thrombospondin-1 (TSP1): *In silico* Investigation.](https://pubmed.ncbi.nlm.nih.gov/28220078/) *Front Physiol.*
 * Bazzazi J, Popel AS. [Computational investigation of sphingosine kinase 1 (SphK1) and calcium dependent ERK1/2 activation downstream of VEGFR2 in endothelial cells.](https://pubmed.ncbi.nlm.nih.gov/28220078/) *PLoS Comput. Biol.*
+* Varga A et al. [RAF1/BRAF dimerization integrates the signal from RAS to ERK and ROKα.](https://doi.org/10.1126/scisignal.aai8482) *Sci. Signaling*
+* Goyette J et al. [Biophysical assay for tethered signaling reactions reveals tether-controlled activity for the phosphatase SHP-1.](https://doi.org/10.1126/sciadv.1601692) *Sci. Adv.*
+* Falkenberg CV et al. [Multivalent Molecules as Modulators of RNA Granule Size and Composition.](https://doi.org/10.1016/j.bpj.2017.01.031) *Biophys. J.*
+* Kochańczyk M et al. [Relaxation oscillations and hierarchy of feedbacks in MAPK signaling.](https://doi.org/10.1038/srep38244) *Sci. Rep.*
+* Tudelska K et al. [Information processing in the NF-κB pathway.](https://doi.org/10.1038/s41598-017-16166-y) *Sci. Rep.*
 
 ## 2016
 * Antunes G, Roque AC, Simoes de Souza FM. [Modelling intracellular competition for calcium: kinetic and thermodynamic control of different molecular modes of signal decoding.](http://www.ncbi.nlm.nih.gov/pubmed/27033299) *Sci. Rep.*
@@ -98,6 +120,8 @@ Help keep this page current by sending your publications to our [email](mailto:b
 * Rohrs JA, Sulistio CD, Finley SD. [Predictive model of thrombospondin-1 and vascular endothelial growth factor in breast tumor tissue.](https://pubmed.ncbi.nlm.nih.gov/28713587/) *NPJ Syst. Biol. Appl.*
 * Korwek Z et al. [Importins promote high-frequency NF-κB oscillations increasing information channel capacity.](https://pubmed.ncbi.nlm.nih.gov/27835978/) *Biol. Direct*
 * Camillo BD et al. [A rule-based model of insulin signalling pathway.](https://pubmed.ncbi.nlm.nih.gov/27245161/) *BMC Syst. Biol.*
+* Dalle Pezze P et al. [A systems study reveals concurrent activation of AMPK and mTOR by amino acids.](https://doi.org/10.1038/ncomms13254) *Nat. Commun.*
+* Das AA et al. [Agent-based re-engineering of ErbB signaling: a modeling pipeline for integrative systems biology.](https://doi.org/10.1093/bioinformatics/btw709) *Bioinformatics*
 
 ## 2015
 * Dolan DWP et al. [Integrated Stochastic Model of DNA Damage Repair by Non-homologous End Joining and p53/p21- Mediated Early Senescence Signalling.](http://www.ncbi.nlm.nih.gov/pubmed/26020242) *PLOS Comput. Biol.*
@@ -105,6 +129,10 @@ Help keep this page current by sending your publications to our [email](mailto:b
 * Hawse WF et al. [Cutting Edge: Differential Regulation of PTEN by TCR, Akt, and FoxO1 Controls CD4+ T Cell Fate Decisions.](http://www.ncbi.nlm.nih.gov/pubmed/25855357) *J. Immunol.*
 * Szymańska P et al. [Computational analysis of an autophagy/translation switch based on mutual inhibition of MTORC1 and ULK1.](http://www.ncbi.nlm.nih.gov/pubmed/25761126) *PLOS One*
 * Birtwistle MR. [Analytical reduction of combinatorial complexity arising from multiple protein modification sites.](http://www.ncbi.nlm.nih.gov/pubmed/25519995) *J. R. Soc. Interface*
+* Fey D et al. [Signaling pathway models as biomarkers: Patient-specific simulations of JNK activity predict the survival of neuroblastoma patients.](https://doi.org/10.1126/scisignal.aab0990) *Sci. Signaling*
+* Tse MJ et al. [DNA-Binding Kinetics Determines the Mechanism of Noise-Induced Switching in Gene Networks.](https://doi.org/10.1016/j.bpj.2015.08.035) *Biophys. J.*
+* Haack F et al. [Spatio-temporal Model of Endogenous ROS and Raft-Dependent WNT/Beta-Catenin Signaling Driving Cell Fate Commitment in Human Neural Progenitor Cells.](https://doi.org/10.1371/journal.pcbi.1004106) *PLOS Comput. Biol.*
+* Mueller S et al. [T160-phosphorylated CDK2 defines threshold for HGF-dependent proliferation in primary hepatocytes.](https://doi.org/10.15252/msb.20156032) *Mol. Syst. Biol.*
 
 ## 2014
 * Ligon TS, Leonhardt C, Rädler JO. [Multi-level kinetic model of mRNA delivery via transfection of lipoplexes.](http://www.ncbi.nlm.nih.gov/pubmed/25237886) *PLOS One*
@@ -125,6 +153,11 @@ Help keep this page current by sending your publications to our [email](mailto:b
 * Liu Y et al. [Single-cell measurements of IgE-mediated FcεRI signaling using an integrated microfluidic platform.](http://www.ncbi.nlm.nih.gov/pubmed/23544131) *PLOS One*
 * Falkenberg CV, Loew LM.[Computational analysis of Rho GTPase cycling.](http://www.ncbi.nlm.nih.gov/pubmed/23326220) *PLOS Comput. Biol.*
 * Kesseler KJ et al. [A predictive mathematical model of the DNA damage G2 checkpoint.](http://www.ncbi.nlm.nih.gov/pubmed/23266715) *J. Theor. Biol.*
+* Kiel C et al. [Integration of Protein Abundance and Structure Data Reveals Competition in the ErbB Signaling Network.](https://doi.org/10.1126/scisignal.2004560) *Sci. Signaling*
+* Pontius W et al. [Adaptation Dynamics in Densely Clustered Chemoreceptors.](https://doi.org/10.1371/journal.pcbi.1003230) *PLOS Comput. Biol.*
+* Kocieniewski P et al. [MEK1 and MEK2 differentially control the duration and amplitude of the ERK cascade response.](https://doi.org/10.1088/1478-3975/10/3/035006) *Phys. Biol.*
+* Aitken S et al. [A rule-based kinetic model of RNA polymerase II C-terminal domain phosphorylation.](https://doi.org/10.1098/rsif.2013.0438) *J. R. Soc. Interface*
+* Smith GR et al. [Computational modelling of the regulation of Insulin signalling by oxidative stress.](https://doi.org/10.1186/1752-0509-7-41) *BMC Syst. Biol.*
 
 ## 2012
 * Barua D, Goldstein B. [A mechanistic model of early FcεRI signaling: lipid rafts and the question of protection from dephosphorylation.](http://www.ncbi.nlm.nih.gov/pubmed/23284735) *PLOS One*
@@ -132,11 +165,16 @@ Help keep this page current by sending your publications to our [email](mailto:b
 * Barua D, Hlavacek WS, Lipniacki T. [A computational model for early events in B cell antigen receptor signaling: analysis of the roles of Lyn and Fyn.](http://www.ncbi.nlm.nih.gov/pubmed/22711887) *J. Immunol.*
 * Michalski PJ, Loew LM. [CaMKII activation and dynamics are independent of the holoenzyme structure: an infinite subunit holoenzyme approximation.](http://www.ncbi.nlm.nih.gov/pubmed/22683827) *Phys. Biol.*
 * Kocieniewski P, Faeder JR, Lipniacki T.[The interplay of double phosphorylation and scaffolding in MAPK pathways.](http://www.ncbi.nlm.nih.gov/pubmed/22123371) *J. Theor. Biol.*
+* Martin KR et al. [Computational model for autophagic vesicle dynamics in single cells.](https://doi.org/10.4161/auto.22532) *Autophagy*
+* Radhakrishnan K et al. [Mathematical Simulation of Membrane Protein Clustering for Efficient Signal Transduction.](https://doi.org/10.1007/s10439-012-0599-z) *Ann. Biomed. Eng.*
+* Abel SM et al. [The Membrane Environment Can Promote or Suppress Bistability in Cell Signaling Networks.](https://doi.org/10.1021/jp2102385) *J. Phys. Chem. B*
 
 ## 2011
 * Geier F, Fengos G, Iber D. [A computational analysis of the dynamic roles of talin, Dok1, and PIPKI for integrin activation.](http://www.ncbi.nlm.nih.gov/pubmed/22110576) *PLOS One*
 * Dushek O, van der Merwe PA, Shahrezaei V. [Ultrasensitivity in multisite phosphorylation of membrane-anchored proteins.](http://www.ncbi.nlm.nih.gov/pubmed/21354391) *Biophys. J.*
 * Thomson TM et al. [Scaffold number in yeast signaling system sets tradeoff between system output and dynamic range.](http://www.ncbi.nlm.nih.gov/pubmed/22114196) *PNAS*
+* Bauer AL et al. [Investigating the Role of Cross-Talk Between Chemical and Stromal Factors in Endothelial Cell Phenotype Determination.](https://doi.org/10.1007/978-1-4614-0052-3_4) *Modeling Tumor Vasculature*
+* Feinerman O et al. [Single-cell quantification of IL-2 response by effector and regulatory T cells reveals critical plasticity in immune response.](https://doi.org/10.1038/msb.2010.90) *Mol. Syst. Biol.*
 
 ## 2010
 * Nag A, Faeder JR, Goldstein B. [Shaping the response: the role of FcεRI and Syk expression levels in mast cell signaling.](http://www.ncbi.nlm.nih.gov/pubmed/21073233) *IET Syst. Biol.*
@@ -153,6 +191,7 @@ Help keep this page current by sending your publications to our [email](mailto:b
 
 ## 2008
 * Barua D, Faeder JR, Haugh JM. [Computational models of tandem SRC homology 2 domain interactions and application to phosphoinositide 3-kinase.](http://www.ncbi.nlm.nih.gov/pubmed/18204097) *J. Biol. Chem.*
+* Lipniacki T et al. [Stochastic effects and bistability in T cell receptor signaling.](https://doi.org/10.1016/j.jtbi.2008.05.001) *J. Theor. Biol.*
 
 ## 2007
 * Mu F et al. [Carbon-fate maps for metabolic reactions.](http://www.ncbi.nlm.nih.gov/pubmed/17933853) *Bioinformatics*
@@ -160,6 +199,7 @@ Help keep this page current by sending your publications to our [email](mailto:b
 
 ## 2006
 * Blinov ML et al. [A network model of early events in epidermal growth factor receptor signaling that accounts for combinatorial complexity.](http://www.ncbi.nlm.nih.gov/pubmed/16233948) *Biosystems*
+* Kiyatkin A et al. [Scaffolding Protein Grb2-associated Binder 1 Sustains Epidermal Growth Factor-induced Mitogenic and Survival Signaling by Multiple Positive Feedback Loops.](https://doi.org/10.1074/jbc.m600482200) *J. Biol. Chem.*
 
 ## 2005
 * Faeder JR et al. [Combinatorial complexity and dynamical restriction of network flows in signal transduction.](http://www.ncbi.nlm.nih.gov/pubmed/17091578) *IET Syst. Biol.*
