@@ -149,6 +149,15 @@ private:
         double sensParamDirectScale = 1.0;              // unitFactor * statFactor
     };
 
+    struct CompiledConstantReaction {
+        std::size_t reactantOffset = 0;
+        std::size_t productOffset = 0;
+        std::size_t reactantCount = 0;
+        std::size_t productCount = 0;
+        double rateConstant = 0.0;
+        bool isTotalRate = false;
+    };
+
     struct CompiledGroup {
         std::string name;
         std::vector<std::pair<std::size_t, double>> entries;  // (speciesIndex, weight)
@@ -163,7 +172,11 @@ private:
     // Performance optimizations
     mutable std::vector<double> groupValues_;                  // Pre-allocated for derivs()
     std::unordered_map<std::string, std::size_t> observableIndex_; // O(1) observable lookup
-    std::vector<std::size_t> constantRxnIndices_;              // Indices of constant-rate reactions
+    std::vector<std::size_t> constantRxnIndices_;               // Fallback indices for small networks
+    std::vector<CompiledConstantReaction> constantReactions_;  // Compact constant-rate reaction data
+    std::vector<std::size_t> constantReactantIndices_;         // Flattened reactant species indices
+    std::vector<std::size_t> constantProductIndices_;          // Flattened product species indices
+    bool useCompactConstantReactions_ = false;
     std::vector<std::size_t> functionalRxnIndices_;            // Indices of functional-rate reactions
     std::vector<std::size_t> directSensRxnIndices_;            // Indices of bare-sensitivity-parameter reactions (fast path)
     std::unordered_map<std::string, const ast::Expression*> functionMap_; // O(1) function lookup

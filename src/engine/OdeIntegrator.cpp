@@ -761,19 +761,48 @@ void OdeIntegrator::compile() {
     // 2. Pre-allocate groupValues for reuse in derivs()
     groupValues_.resize(compiledGroups_.size(), 0.0);
 
-    // 3. Separate constant-rate vs functional-rate reaction indices
+    // 3. Keep large constant-reaction networks in compact, contiguous arrays
+    // for derivs(). Small networks retain the original indexed representation
+    // because their one-time packing cost is not amortized by CVODE callbacks.
+    constexpr std::size_t compactReactionThreshold = 512;
     constantRxnIndices_.clear();
+    constantReactions_.clear();
+    constantReactantIndices_.clear();
+    constantProductIndices_.clear();
+    useCompactConstantReactions_ = false;
     functionalRxnIndices_.clear();
     for (std::size_t i = 0; i < compiledRxns_.size(); ++i) {
         if (compiledRxns_[i].sensParamDirectIdx.has_value()) {
             continue;  // tracked via directSensRxnIndices_ instead; would otherwise
-                       // also land in constantRxnIndices_ (isFunctional is false)
+                       // also land in constantReactions_ (isFunctional is false)
                        // and get double-counted in derivs().
         }
         if (compiledRxns_[i].isFunctional) {
             functionalRxnIndices_.push_back(i);
         } else {
             constantRxnIndices_.push_back(i);
+        }
+    }
+
+    if (constantRxnIndices_.size() >= compactReactionThreshold) {
+        useCompactConstantReactions_ = true;
+        constantReactions_.reserve(constantRxnIndices_.size());
+        constantReactantIndices_.reserve(constantRxnIndices_.size());
+        constantProductIndices_.reserve(constantRxnIndices_.size());
+        for (const auto idx : constantRxnIndices_) {
+            const auto& rxn = compiledRxns_[idx];
+            CompiledConstantReaction compact;
+            compact.reactantOffset = constantReactantIndices_.size();
+            compact.productOffset = constantProductIndices_.size();
+            compact.reactantCount = rxn.reactantIndices.size();
+            compact.productCount = rxn.productIndices.size();
+            compact.rateConstant = rxn.rateConstant;
+            compact.isTotalRate = rxn.isTotalRate;
+            constantReactantIndices_.insert(constantReactantIndices_.end(),
+                                            rxn.reactantIndices.begin(), rxn.reactantIndices.end());
+            constantProductIndices_.insert(constantProductIndices_.end(),
+                                           rxn.productIndices.begin(), rxn.productIndices.end());
+            constantReactions_.push_back(compact);
         }
     }
 
@@ -984,19 +1013,43 @@ void OdeIntegrator::derivs(double t, const double* y, double* dydt) const {
         updateGroups(y, groupValues_);
     }
 
-    // Process constant-rate reactions first (no expression evaluation needed)
-    for (const auto idx : constantRxnIndices_) {
-        const auto& rxn = compiledRxns_[idx];
-        double rate = rxn.rateConstant;
+    // Process constant-rate reactions first (no expression evaluation needed).
+    if (useCompactConstantReactions_) {
+        // Their small index arrays are flattened so this hot loop does not
+        // chase a vector allocation for every reaction.
+        for (const auto& rxn : constantReactions_) {
+            double rate = rxn.rateConstant;
 
-        if (!rxn.isTotalRate) {
-            for (const auto ri : rxn.reactantIndices) {
-                rate *= y[ri];
+            if (!rxn.isTotalRate && rxn.reactantCount > 0) {
+                const auto* reactants = constantReactantIndices_.data() + rxn.reactantOffset;
+                for (std::size_t i = 0; i < rxn.reactantCount; ++i) {
+                    rate *= y[reactants[i]];
+                }
+            }
+
+            if (rxn.reactantCount > 0) {
+                const auto* reactants = constantReactantIndices_.data() + rxn.reactantOffset;
+                for (std::size_t i = 0; i < rxn.reactantCount; ++i) { dydt[reactants[i]] -= rate; }
+            }
+            if (rxn.productCount > 0) {
+                const auto* products = constantProductIndices_.data() + rxn.productOffset;
+                for (std::size_t i = 0; i < rxn.productCount; ++i) { dydt[products[i]] += rate; }
             }
         }
+    } else {
+        for (const auto idx : constantRxnIndices_) {
+            const auto& rxn = compiledRxns_[idx];
+            double rate = rxn.rateConstant;
 
-        for (const auto ri : rxn.reactantIndices) { dydt[ri] -= rate; }
-        for (const auto pi : rxn.productIndices) { dydt[pi] += rate; }
+            if (!rxn.isTotalRate) {
+                for (const auto ri : rxn.reactantIndices) {
+                    rate *= y[ri];
+                }
+            }
+
+            for (const auto ri : rxn.reactantIndices) { dydt[ri] -= rate; }
+            for (const auto pi : rxn.productIndices) { dydt[pi] += rate; }
+        }
     }
 
     // Fast path: reactions whose rate law is exactly a bare sensitivity

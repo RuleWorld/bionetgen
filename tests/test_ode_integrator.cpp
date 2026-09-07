@@ -166,3 +166,33 @@ TEST_CASE("OdeIntegrator handles cvode simulation", "[OdeIntegrator]") {
     REQUIRE_THAT(result.concentrations.back()[0], Catch::Matchers::WithinAbs(0.904837, 1e-5)); // e^-0.1
     REQUIRE_THAT(result.concentrations.back()[1], Catch::Matchers::WithinAbs(0.095162, 1e-5)); // 1 - e^-0.1
 }
+
+TEST_CASE("OdeIntegrator preserves multi-species derivative updates", "[OdeIntegrator]") {
+    bng::ast::Model model;
+    GeneratedNetwork network;
+    network.species.setCheckIso(false);
+
+    for (double amount : {3.0, 4.0, 0.0, 0.0}) {
+        bng::ast::SpeciesGraph graph;
+        network.species.add(bng::ast::Species(graph, amount));
+    }
+
+    // Cross the compact-reaction threshold while retaining a two-reactant,
+    // two-product update shape representative of generated networks.
+    for (std::size_t i = 0; i < 512; ++i) {
+        network.reactions.add(bng::ast::Rxn(
+            "R" + std::to_string(i), {0, 1}, {2, 3}, "2.0", 1.0,
+            "rule" + std::to_string(i)));
+    }
+
+    OdeIntegrator integrator(model, network);
+    double state[] = {3.0, 4.0, 0.0, 0.0};
+    double derivatives[] = {0.0, 0.0, 0.0, 0.0};
+    integrator.derivs(0.0, state, derivatives);
+
+    constexpr double expectedRate = 2.0 * 3.0 * 4.0 * 512.0;
+    REQUIRE_THAT(derivatives[0], Catch::Matchers::WithinAbs(-expectedRate, 1e-12));
+    REQUIRE_THAT(derivatives[1], Catch::Matchers::WithinAbs(-expectedRate, 1e-12));
+    REQUIRE_THAT(derivatives[2], Catch::Matchers::WithinAbs(expectedRate, 1e-12));
+    REQUIRE_THAT(derivatives[3], Catch::Matchers::WithinAbs(expectedRate, 1e-12));
+}
