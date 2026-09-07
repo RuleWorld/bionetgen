@@ -670,7 +670,7 @@
       </Observable>
       <Observable id="O9" name="R5" type="Species" output="1">
         <ListOfPatterns>
-          <Pattern id="O9_P1" automorphisms="1" relation=">" quantity="4">
+          <Pattern id="O9_P1" automorphisms="1" relation="&gt;" quantity="4">
             <ListOfMolecules>
               <Molecule id="O9_P1_M1" name="R"/>
             </ListOfMolecules>
