@@ -1,5 +1,7 @@
 #include <fstream>
+#include <filesystem>
 #include <iostream>
+#include <limits>
 #include <memory>
 #include <string>
 #include <vector>
@@ -9,6 +11,7 @@
 #include "BNGLexer.h"
 #include "BNGParser.h"
 #include "actions/ActionDispatch.hpp"
+#include "cli/BatchRunner.hpp"
 #include "console/Console.hpp"
 #include "parser/BNGAstVisitor.hpp"
 
@@ -56,8 +59,25 @@ ParseResult parseFile(const std::string& path) {
 }
 
 void printUsage() {
-    std::cerr << "Usage: bng_cpp [--check] [--verbose] [--version] [--console|-i] <model1.bngl> [model2.bngl ...]\n";
+    std::cerr << "Usage: bng_cpp [--check] [--verbose] [--version] [--console|-i] [--parallel JOBS] [--parallel-dir DIR] <model1.bngl> [model2.bngl ...]\n";
     std::cerr << "  --console, -i   Enter interactive console mode\n";
+    std::cerr << "  --parallel JOBS Run independent models in isolated child processes (alias: --jobs)\n";
+    std::cerr << "  --parallel-dir DIR  Store isolated job outputs under DIR\n";
+}
+
+bool parsePositiveSize(const std::string& value, std::size_t& result) {
+    try {
+        std::size_t consumed = 0;
+        const auto parsed = std::stoull(value, &consumed);
+        if (consumed != value.size() || parsed == 0
+            || parsed > static_cast<unsigned long long>(std::numeric_limits<std::size_t>::max())) {
+            return false;
+        }
+        result = static_cast<std::size_t>(parsed);
+        return true;
+    } catch (...) {
+        return false;
+    }
 }
 
 } // namespace
@@ -66,6 +86,8 @@ int main(int argc, char** argv) {
     bool checkOnly = false;
     bool verbose = false;
     bool consoleMode = false;
+    std::size_t parallelJobs = 0;
+    std::filesystem::path parallelDirectory;
     std::vector<std::string> inputs;
 
     for (int i = 1; i < argc; ++i) {
@@ -86,7 +108,47 @@ int main(int argc, char** argv) {
             consoleMode = true;
             continue;
         }
+        if (arg == "--parallel" || arg == "--jobs") {
+            if (i + 1 >= argc || !parsePositiveSize(argv[++i], parallelJobs)) {
+                std::cerr << "error: --parallel requires a positive integer job count\n";
+                return 1;
+            }
+            continue;
+        }
+        if (arg.rfind("--parallel=", 0) == 0 || arg.rfind("--jobs=", 0) == 0) {
+            const auto separator = arg.find('=');
+            if (!parsePositiveSize(arg.substr(separator + 1), parallelJobs)) {
+                std::cerr << "error: --parallel requires a positive integer job count\n";
+                return 1;
+            }
+            continue;
+        }
+        if (arg == "--parallel-dir") {
+            if (i + 1 >= argc) {
+                std::cerr << "error: --parallel-dir requires a directory\n";
+                return 1;
+            }
+            parallelDirectory = argv[++i];
+            continue;
+        }
+        if (arg.rfind("--parallel-dir=", 0) == 0) {
+            parallelDirectory = arg.substr(std::string("--parallel-dir=").size());
+            if (parallelDirectory.empty()) {
+                std::cerr << "error: --parallel-dir requires a directory\n";
+                return 1;
+            }
+            continue;
+        }
         inputs.push_back(arg);
+    }
+
+    if (parallelJobs != 0 && consoleMode) {
+        std::cerr << "error: --parallel cannot be combined with --console\n";
+        return 1;
+    }
+    if (parallelJobs == 0 && !parallelDirectory.empty()) {
+        std::cerr << "error: --parallel-dir requires --parallel\n";
+        return 1;
     }
 
     // Console mode: optionally load a model, then enter REPL
@@ -112,6 +174,19 @@ int main(int argc, char** argv) {
     if (inputs.empty()) {
         printUsage();
         return 1;
+    }
+
+    if (parallelJobs != 0) {
+        bng::cli::ParallelBatchOptions options;
+        options.executable = argv[0];
+        options.maxJobs = parallelJobs;
+        options.outputRoot = parallelDirectory;
+        options.checkOnly = checkOnly;
+        options.verbose = verbose;
+        for (const auto& input : inputs) {
+            options.inputs.emplace_back(input);
+        }
+        return bng::cli::runParallelBatch(options);
     }
 
     int failures = 0;

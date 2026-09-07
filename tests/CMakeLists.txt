@@ -404,3 +404,12 @@ target_include_directories(test_michaelis_menten PRIVATE
 )
 target_link_libraries(test_michaelis_menten PRIVATE Catch2::Catch2WithMain Catch2::Catch2 bng_ast)
 catch_discover_tests(test_michaelis_menten)
+
+add_executable(test_batch_runner test_batch_runner.cpp)
+target_compile_definitions(test_batch_runner PRIVATE
+    BNG_CPP_PATH="$<TARGET_FILE:bng_cpp>"
+    BNG_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
+)
+target_link_libraries(test_batch_runner PRIVATE Catch2::Catch2WithMain Catch2::Catch2 bng_engine)
+add_dependencies(test_batch_runner bng_cpp)
+catch_discover_tests(test_batch_runner)

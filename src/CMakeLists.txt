@@ -92,6 +92,7 @@ add_library(bng_engine STATIC
     io/SscWriter.cpp
     actions/ActionDispatch.cpp
     console/Console.cpp
+    cli/BatchRunner.cpp
 )
 
 # Link SUNDIALS/CVODE from FetchContent
@@ -113,6 +114,7 @@ target_link_libraries(bng_engine PUBLIC
     sundials_sunlinsoldense_static
     sundials_sunlinsolspgmr_static
     sundials_sunmatrixdense_static
+    Threads::Threads
 )
 target_compile_definitions(bng_engine PUBLIC BNG_CPP_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
 
