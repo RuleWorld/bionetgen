@@ -398,7 +398,7 @@ foreach $ii (@species2) {
       foreach (@sit) {  s/[!~].*//; }             
       foreach (@sit) {  $nm_site->{$name.":".$_}++; }   # L:l 2; 
       while(($key,$val) = each(%$nm_site)) {
-        if ( $key=~/:/ && $val gt 1 ) { $nm2_site->{$key} = $val; }  
+        if ( $key=~/:/ && $val > 1 ) { $nm2_site->{$key} = $val; }
       }
       $nm_site->{$name}= scalar(@sit);        # L 2
     }##if !(exists

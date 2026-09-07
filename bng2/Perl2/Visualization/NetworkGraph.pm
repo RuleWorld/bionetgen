@@ -298,8 +298,11 @@ sub unprettify
 	my $string = shift @_;
 	$string =~ s/\s//g;
 	$string =~ s/\(\)//g;
-	$string =~ s/^0//g;
-	$string =~ s/0$//g;
+	# Remove only the synthetic zero used for an empty rule side.  Molecule
+	# names may legitimately begin or end with the character "0" (for example,
+	# ZAP70), so an unrestricted trim corrupts graph labels.
+	$string =~ s/^0(?=->)//;
+	$string =~ s/(?<=->)0$//;
 	return $string;
 }
 
@@ -978,4 +981,3 @@ sub duplicateNetworkGraph
 
 }
 1;
-

@@ -2673,6 +2673,48 @@ sub findMap
 
 	# Find reactant graph automorphisms
 	my @r_auto   = $rg->isomorphicToSubgraph($rg);
+	# The aggregate graph loses the boundary between reactant patterns.  Keep
+	# only automorphisms that map each pattern's complete molecule set to a
+	# complete pattern molecule set; otherwise disconnected molecules from two
+	# identical patterns can be exchanged independently and over-correct the
+	# statistical factor.
+	my @pattern_r_auto = ();
+	foreach my $auto (@r_auto)
+	{
+	    my %pattern_image = ();
+	    my %image_pattern = ();
+	    my $preserves_patterns = 1;
+	    foreach my $src_ptr (keys %{$auto->MapF})
+	    {
+	        next unless $src_ptr =~ /^\d+$/;
+	        my $targ_ptr = $auto->MapF->{$src_ptr};
+	        unless (defined $targ_ptr && $targ_ptr =~ /^\d+$/ &&
+	                defined $aggMapR[$src_ptr] && defined $aggMapR[$targ_ptr])
+	        {
+	            $preserves_patterns = 0;
+	            last;
+	        }
+
+	        my ($src_pattern)  = ($aggMapR[$src_ptr]  =~ /^(\d+)/);
+	        my ($targ_pattern) = ($aggMapR[$targ_ptr] =~ /^(\d+)/);
+	        if (defined $pattern_image{$src_pattern} &&
+	            $pattern_image{$src_pattern} != $targ_pattern)
+	        {
+	            $preserves_patterns = 0;
+	            last;
+	        }
+	        if (defined $image_pattern{$targ_pattern} &&
+	            $image_pattern{$targ_pattern} != $src_pattern)
+	        {
+	            $preserves_patterns = 0;
+	            last;
+	        }
+        $pattern_image{$src_pattern} = $targ_pattern;
+        $image_pattern{$targ_pattern} = $src_pattern;
+    }
+    push @pattern_r_auto, $auto if $preserves_patterns;
+	}
+	@r_auto = @pattern_r_auto;
 	# Find product graph automorphisms
 	my @p_auto   = $pg->isomorphicToSubgraph($pg);
 	

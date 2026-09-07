@@ -1088,7 +1088,7 @@ int main(int argc, char *argv[]){
 
 //	exit:
 	// Clean up memory allocated for functions
-	if (network.has_functions) delete[] network.rates->elt;
+	if (network.has_functions) free(network.rates->elt);
 	if (propagator == SSA){
 		// GSP.included added to GSP struct in code extension for functions
 		// NOTE: GSP.included is created whether functions exist or not, so it must always be deleted

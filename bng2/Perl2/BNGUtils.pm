@@ -17,6 +17,7 @@ use constant DEFAULT_CODENAME => "";
 require Exporter;
 our @ISA = qw( Exporter );
 our @EXPORT = qw( BNGversion BNGcodename compareVersions isReal booleanToInt BNGroot BNGpath exit_error send_warning cpu_time average_runs create_sbml 
+	              send_error
 	              head split_obj split_comp verify_pattern process_val_string
 		          validate_rate_law MIN MAX SQR log10 );
 

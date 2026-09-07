@@ -1065,7 +1065,7 @@ sub simulate_nf
     else
     {
         send_warning( "system state was not retrieved following simulate_nf. "
-                     ."To retreive system state, call simulate_nf with option: get_final_state=>1." );
+                     ."To retrieve system state, call simulate_nf with option: get_final_state=>1." );
     }
 
     $model->Time($t_end);

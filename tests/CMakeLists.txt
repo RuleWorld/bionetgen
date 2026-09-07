@@ -160,6 +160,89 @@ target_link_libraries(test_action_dispatch PRIVATE
 )
 catch_discover_tests(test_action_dispatch)
 
+add_test(
+    NAME bng_cpp_action_errors
+    COMMAND ${CMAKE_COMMAND}
+        -DBNG_CPP_PATH=$<TARGET_FILE:bng_cpp>
+        -DMODEL_PATH=${CMAKE_CURRENT_SOURCE_DIR}/fixtures/issue_328_missing_net.bngl
+        -P ${CMAKE_CURRENT_SOURCE_DIR}/test_bng_cpp_action_errors.cmake
+)
+
+add_test(
+    NAME bng_cpp_blbr_parity
+    COMMAND ${CMAKE_COMMAND}
+        -DBNG_CPP_PATH=$<TARGET_FILE:bng_cpp>
+        -DMODEL_PATH=${CMAKE_CURRENT_SOURCE_DIR}/../bng2/Validate/blbr.bngl
+        -DREFERENCE_PATH=${CMAKE_CURRENT_SOURCE_DIR}/../bng2/Validate/DAT_validate/blbr.net
+        -DOUTPUT_DIR=${CMAKE_CURRENT_BINARY_DIR}
+        -P ${CMAKE_CURRENT_SOURCE_DIR}/test_bng_cpp_blbr_parity.cmake
+)
+
+find_program(BNG_PERL_EXECUTABLE perl)
+if(BNG_PERL_EXECUTABLE)
+    add_test(
+        NAME bng2_function_cycle
+        COMMAND ${CMAKE_COMMAND}
+            -DBNG_PERL_EXECUTABLE=${BNG_PERL_EXECUTABLE}
+            -DBNG2_PATH=${CMAKE_CURRENT_SOURCE_DIR}/../bng2/BNG2.pl
+            -DMODEL_PATH=${CMAKE_CURRENT_SOURCE_DIR}/fixtures/issue_217_circular_functions.bngl
+            -P ${CMAKE_CURRENT_SOURCE_DIR}/test_bng2_function_cycle.cmake
+    )
+
+    add_test(
+        NAME bng2_xml_pattern_quantifier
+        COMMAND ${CMAKE_COMMAND}
+            -DBNG_PERL_EXECUTABLE=${BNG_PERL_EXECUTABLE}
+            -DBNG2_PATH=${CMAKE_CURRENT_SOURCE_DIR}/../bng2/BNG2.pl
+            -DMODEL_PATH=${CMAKE_CURRENT_SOURCE_DIR}/fixtures/issue_234_pattern_quantifier.bngl
+            -DOUTPUT_PATH=${CMAKE_CURRENT_BINARY_DIR}/issue_234_pattern_quantifier.xml
+            -DEXPECTED_MARKER=relation=\"&lt;\"
+            -P ${CMAKE_CURRENT_SOURCE_DIR}/test_bng2_xml_output.cmake
+    )
+
+    add_test(
+        NAME bng2_xml_matchonce
+        COMMAND ${CMAKE_COMMAND}
+            -DBNG_PERL_EXECUTABLE=${BNG_PERL_EXECUTABLE}
+            -DBNG2_PATH=${CMAKE_CURRENT_SOURCE_DIR}/../bng2/BNG2.pl
+            -DMODEL_PATH=${CMAKE_CURRENT_SOURCE_DIR}/fixtures/issue_312_matchonce.bngl
+            -DOUTPUT_PATH=${CMAKE_CURRENT_BINARY_DIR}/issue_312_matchonce.xml
+            -DEXPECTED_MARKER=matchOnce=\"1\"
+            -DEXPECTED_COUNT=2
+            -P ${CMAKE_CURRENT_SOURCE_DIR}/test_bng2_xml_output.cmake
+    )
+
+    add_test(
+        NAME bng2_cvode_operator_export
+        COMMAND ${CMAKE_COMMAND}
+            -DBNG_PERL_EXECUTABLE=${BNG_PERL_EXECUTABLE}
+            -DBNG2_PATH=${CMAKE_CURRENT_SOURCE_DIR}/../bng2/BNG2.pl
+            -DMODEL_PATH=${CMAKE_CURRENT_SOURCE_DIR}/fixtures/issue_295_operator_export.bngl
+            -DOUTPUT_PATH=${CMAKE_CURRENT_BINARY_DIR}/issue_295_operator_export_cvode.c
+            -DEXPECTED_MARKER=1.0!=0.0
+            -P ${CMAKE_CURRENT_SOURCE_DIR}/test_bng2_text_output.cmake
+    )
+
+    add_test(
+        NAME bng2_console_errors_on_stderr
+        COMMAND ${CMAKE_COMMAND}
+            -DBNG_PERL_EXECUTABLE=${BNG_PERL_EXECUTABLE}
+            -DBNG2_PATH=${CMAKE_CURRENT_SOURCE_DIR}/../bng2/BNG2.pl
+            -DINPUT_PATH=${CMAKE_CURRENT_SOURCE_DIR}/fixtures/issue_112_console_action.in
+            -P ${CMAKE_CURRENT_SOURCE_DIR}/test_bng2_console_streams.cmake
+    )
+
+    add_test(
+        NAME bng2_implicit_bond_symmetry_factor
+        COMMAND ${CMAKE_COMMAND}
+            -DBNG_PERL_EXECUTABLE=${BNG_PERL_EXECUTABLE}
+            -DBNG2_PATH=${CMAKE_CURRENT_SOURCE_DIR}/../bng2/BNG2.pl
+            -DMODEL_PATH=${CMAKE_CURRENT_SOURCE_DIR}/fixtures/issue_090_implicit_bonds.bngl
+            -DOUTPUT_PATH=${CMAKE_CURRENT_BINARY_DIR}/issue_090_implicit_bonds.net
+            -P ${CMAKE_CURRENT_SOURCE_DIR}/test_bng2_symmetry_factor.cmake
+    )
+endif()
+
 add_executable(test_GraphTypeRegistry ast/test_GraphTypeRegistry.cpp)
 
 add_executable(test_Compartment ast/test_Compartment.cpp)

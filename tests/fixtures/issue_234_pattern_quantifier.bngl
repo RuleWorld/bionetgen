@@ -1,0 +1,17 @@
+begin model
+
+begin molecule types
+  R()
+end molecule types
+
+begin seed species
+  R() 10
+end seed species
+
+begin observables
+  Species R5 R<4
+end observables
+
+writeXML({prefix=>"issue_234_pattern_quantifier",overwrite=>1})
+
+end model

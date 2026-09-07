@@ -110,6 +110,14 @@ sub readString
 		# Read attributes in braces
 		elsif ( $string_left =~ s/^[{]// )
 		{
+			# MatchOnce and Fixed are SpeciesGraph attributes.  Leave them
+			# for SpeciesGraph::readString even when no whitespace separates
+			# the final molecule from the graph modifier.
+			if ( $string_left =~ /^(?:MatchOnce|Fixed)(?:=|[,}])/ )
+			{
+				$string_left = "{" . $string_left;
+				last;
+			}
 			while ( !( $string_left =~ s/^\}// ) )
 			{
 				my $attr  = '';

@@ -1390,7 +1390,7 @@ sub writeSSCcfg
 	my $version = BNGversion();
 
 	open( SSCcfgfile, '>', $file ) || die "Couldn't open $file: $!\n";
-	print STDOUT "\n Writting SSC cfg file \n";
+	print STDOUT "\n Writing SSC cfg file \n";
 	print SSCcfgfile "# SSC cfg file for model $model_name created by BioNetGen $version\n";
 	print SSCcfgfile $model->ParamList->writeSSCcfg();
 
@@ -3967,12 +3967,13 @@ sub writeMfile_QueryNames
     
     my $q_mscript = 'QueryNames.m';
     
-    open( Q_Mscript, '>', $q_mscript );
+    open( Q_Mscript, '>', $q_mscript )
+        or return "Couldn't open $q_mscript for writing: $!\n";
     print Q_Mscript <<"EOF";
 function [ param_labels, param_defaults, obs_labels, species_labels] = QueryNames( inputlist )
 % % Loads all the parameter labels, parameter defaults, observable labels and species labels in the model
-% % If generate_network() was executed, then the nanmes of all species are passed
-% % If generate_network() was not executed, then the names of the seed speceis are passed
+% % If generate_network() was executed, then the names of all species are passed
+% % If generate_network() was not executed, then the names of the seed species are passed
 
 	param_labels = { $mscript_param_names };
 	param_defaults = [ $mscript_param_values ];

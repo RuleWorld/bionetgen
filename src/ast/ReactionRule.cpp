@@ -2466,6 +2466,14 @@ bool ReactionRule::buildReaction(
             }
         }
 
+        // A dotted product pattern describes one species graph.  A pure
+        // bond-breaking rule may therefore not turn it into multiple species:
+        // that is a bridge-bond dissociation, not the reverse of a ring-closure
+        // rule.  Users must express an intended dissociation with '+' patterns.
+        if (isPureBondRule && productGraphs.size() > productPatterns_.size()) {
+            return false;
+        }
+
         if (productGraphs.size() > productPatterns_.size()) {
             // More product components than product patterns.  Match each product
             // pattern to a product graph; unmatched graphs are orphan fragments.

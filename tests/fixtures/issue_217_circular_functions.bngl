@@ -1,0 +1,26 @@
+begin model
+
+begin parameters
+  k 1
+end parameters
+
+begin molecule types
+  A()
+end molecule types
+
+begin seed species
+  A() 1
+end seed species
+
+begin functions
+  g f()
+  f g()
+end functions
+
+begin reaction rules
+  0 -> A() f
+end reaction rules
+
+generate_network()
+
+end model

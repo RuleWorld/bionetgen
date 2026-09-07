@@ -107,12 +107,6 @@ namespace BNGcore
     ////
 
 
-    // template for negation of equality operator
-    template < class T >
-    bool  operator!= ( const T & x1, const T & x2 )
-    {   return !( x1 == x2 );   };
-
-
     ////
     ////
     ////
@@ -916,6 +910,26 @@ namespace BNGcore
             virtual int  map ( const Node & node ) const;
             virtual int  map ( const Node & node1, const Node & node2 ) const;             
     };
+
+    // Keep the legacy negation helpers scoped to BNGcore types.  A generic
+    // operator!= here is also considered by ADL for std:: types that contain
+    // a BNGcore type (for example std::reverse_iterator<Node**>), which is
+    // ambiguous with libc++'s standard comparison operators.
+    inline bool operator!=(const StateType& lhs, const StateType& rhs) {
+        return !(lhs == rhs);
+    }
+
+    inline bool operator!=(const State& lhs, const State& rhs) {
+        return !(lhs == rhs);
+    }
+
+    inline bool operator!=(const NodeType& lhs, const NodeType& rhs) {
+        return !(lhs == rhs);
+    }
+
+    inline bool operator!=(const Node& lhs, const Node& rhs) {
+        return !(lhs == rhs);
+    }
 
 
     ////

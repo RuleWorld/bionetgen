@@ -1,0 +1,9 @@
+begin seed species
+  S(a!0,b!1,c!2).A(b,s!0).B(a,s!1).C(c,s!2)  2
+end seed species
+
+begin reaction rules
+  A(b).B(a).C(c) + A(b).B(a).C(c) -> A(b!0).B(a!1).C(c!2).A(b!1).B(a!0).C(c!2)  1
+end reaction rules
+
+generate_network({overwrite=>1})

@@ -60,7 +60,7 @@ sub BNGconsole
             {
                 if (defined $model)
                 {
-                    send_warning( "Attempted to load model while another model is active." );
+                    send_error( "Attempted to load model while another model is active." );
                     last PROCESS_INPUT;
                 }
     
@@ -80,7 +80,7 @@ sub BNGconsole
 		
                 unless ($filename and -e $filename)
                 {
-                    send_warning( "Attempted to load model, but file '$filename' was not found." );
+                    send_error( "Attempted to load model, but file '$filename' was not found." );
                     last PROCESS_INPUT;
                 }
 
@@ -106,7 +106,7 @@ sub BNGconsole
 						}
 					}
 					else{
-	                    send_warning( "Error processing command line arguments: " . $linein );
+	                    send_error( "Error processing command line arguments: " . $linein );
 	                    last PROCESS_INPUT;
 	                }
 					$local_params->{$key} = $val;
@@ -122,7 +122,7 @@ sub BNGconsole
                     {   # undefine model and send warning
                         %$model = ();  undef %$model;  $model = undef;
                         $BNGModel::GLOBAL_MODEL = undef;
-                        send_warning( "Some problem processing '$filename': $err" );
+                        send_error( "Some problem processing '$filename': $err" );
                         last PROCESS_INPUT;
                     }
                 }
@@ -133,7 +133,7 @@ sub BNGconsole
             {
                 unless (defined $model)
                 {
-                    send_warning( "Attempt to execute action without loading model." );
+                    send_error( "Attempt to execute action without loading model." );
                     last PROCESS_INPUT;
                 }
                    
@@ -145,14 +145,14 @@ sub BNGconsole
                 }
                 else
                 {
-                    send_warning( "Invalid action syntax. Try: action actionName(options)." );
+                    send_error( "Invalid action syntax. Try: action actionName(options)." );
                     last PROCESS_INPUT;
                 }
 		    	
                 # check if action is valid
                 if (!$model->can($action))
                 {
-                    send_warning( "Problem executing action: Invalid action: $action." );
+                    send_error( "Problem executing action: Invalid action: $action." );
                     last PROCESS_INPUT;
                 }
                 print "Begin action $action\n";
@@ -162,7 +162,7 @@ sub BNGconsole
                     my $err = $model->ParamList->check();
                     if ($err)
                     {
-                        send_warning( "Problem executing action: paramlist failed consistency check." );
+                        send_error( "Problem executing action: paramlist failed consistency check." );
                         last PROCESS_INPUT;
                     }
                 }
@@ -173,12 +173,12 @@ sub BNGconsole
                     my ($err, $eval_err) = BNGModel::_invoke_model_action($model, $action, $options);
                     if ($eval_err)
                     {
-                        send_warning("Problem executing action: $eval_err.");
+                        send_error("Problem executing action: $eval_err.");
                         last PROCESS_INPUT;
                     }
                     if ($err)
                     {
-                        send_warning("Problem executing action: $err");
+                        send_error("Problem executing action: $err");
                         last PROCESS_INPUT;
                     }
 		    	    my $t_elapsed = cpu_time($t_start);
@@ -191,7 +191,7 @@ sub BNGconsole
             {
                 unless (defined $model)
                 {
-                    send_warning( "Attempt to clear model without loaded model." );
+                    send_error( "Attempt to clear model without loaded model." );
                     last PROCESS_INPUT;
                 }
                 # undefine model

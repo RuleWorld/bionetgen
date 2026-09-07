@@ -815,6 +815,15 @@ sub check
     }
     if ($err) { return ($err) };
 
+    # Named functions are represented as parameters, so the ordinary
+    # expression dependency walk does not descend into their definitions.
+    # Check the function call graph explicitly before any later writer or
+    # evaluator can recurse through a cycle.
+    if ( $err = _check_function_cycles($plist) )
+    {
+        return ($err);
+    }
+
     foreach my $param ( @{$plist->Unchecked} )
     {
         #printf "Checking parameter %s for cycles.\n", $param->Name;
@@ -834,6 +843,63 @@ sub check
         #printf "Unchecked=%d\n", scalar(@{$plist->Unchecked});
     }
     return ($err);
+}
+
+sub _check_function_cycles
+{
+    my $plist = shift;
+    my %visiting;
+    my %visited;
+    my @path;
+
+    foreach my $param ( @{$plist->Array} )
+    {
+        next unless defined $param->Type && $param->Type eq 'Function';
+        my $err = _visit_function( $plist, $param, \%visiting, \%visited, \@path );
+        return $err if $err;
+    }
+
+    return '';
+}
+
+sub _visit_function
+{
+    my ($plist, $param, $visiting, $visited, $path) = @_;
+    my $name = $param->Name;
+
+    if ( $visiting->{$name} )
+    {
+        my $start = 0;
+        ++$start while $start < @$path && $path->[$start] ne $name;
+        my @cycle = ( @$path[$start .. $#$path], $name );
+        return 'Function dependency cycle: ' . join( ' -> ', @cycle );
+    }
+    return '' if $visited->{$name};
+
+    $visiting->{$name} = 1;
+    push @$path, $name;
+
+    my $dependencies = $param->Expr->getVariables($plist);
+    if ( exists $dependencies->{'Function'} )
+    {
+        foreach my $dependency_name ( keys %{$dependencies->{'Function'}} )
+        {
+            my ($dependency) = $plist->lookup($dependency_name);
+            next unless $dependency && defined $dependency->Type && $dependency->Type eq 'Function';
+            my $err = _visit_function( $plist, $dependency, $visiting, $visited, $path );
+            if ($err)
+            {
+                pop @$path;
+                delete $visiting->{$name};
+                return $err;
+            }
+        }
+    }
+
+    pop @$path;
+    delete $visiting->{$name};
+    $visited->{$name} = 1;
+    return '';
 }
 
 

@@ -154,7 +154,15 @@ int main(int argc, char** argv) {
                 if (verbose) {
                     std::cerr << "[bng_cpp] executing actions for " << input << '\n';
                 }
-                bng::actions::ActionDispatch::execute(*result.model, input, verbose);
+                try {
+                    bng::actions::ActionDispatch::execute(*result.model, input, verbose);
+                } catch (const std::exception& ex) {
+                    std::cerr << input << ": action execution failed: " << ex.what() << '\n';
+                    ++failures;
+                } catch (...) {
+                    std::cerr << input << ": action execution failed with an unknown exception\n";
+                    ++failures;
+                }
             }
         }
     }

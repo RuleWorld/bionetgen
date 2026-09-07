@@ -1876,7 +1876,7 @@ sub toCVodeString
             my $fcn = $fcn_name;
             # we can't call function by name, so we have to expand the function expression with args in place
             (my $local_fcn) = $fcn->evaluate_local( [@{$expr->Arglist}], $plist, $level+1 );
-            unless (defined $local_fcn) { die "Error in Expression->toMatlabString(): some problem evaluating anonymous function"; }
+            unless (defined $local_fcn) { die "Error in Expression->toCVodeString(): some problem evaluating anonymous function"; }
             $string = $local_fcn->Expr->toCVodeString($plist, $level+1, $expand);
         }
         elsif ( isBuiltIn($fcn_name) )
@@ -1903,7 +1903,7 @@ sub toCVodeString
             elsif( $fcn_name eq 'sum' or $fcn_name eq 'avg')
             {
             		my @sarr = ( map {$_->toCVodeString($plist, $level+1)} @{$expr->Arglist}[1..$#{$expr->Arglist}] );
-            		if ( @sarr ge 1 )
+                if ( @sarr >= 1 )
                 {   
                 		$string = '('. $sarr[0];
                 		for(my $i=1; $i < scalar(@sarr); $i++){
@@ -1970,16 +1970,21 @@ sub toCVodeString
     }
     else
     {   
+        # Convert operators that have different spellings in Perl and C.
+        my $operator = $type;
+        $operator = '!=' if $operator eq '~=';
+        $operator = '!'  if $operator eq '~';
+
         # handling some other operator (+,-,*,/)
         # enclose in brackets (always. just to be safe)        
         my @sarr = ( map {$_->toCVodeString($plist, $level+1, $expand)} @{$expr->Arglist} );
         if ( @sarr > 1 )
         {   # binary or higher order
-            $string = '(' . join( $type, @sarr ) . ')';
+            $string = '(' . join( $operator, @sarr ) . ')';
         }
         else
         {   # unary operator
-            $string = '(' . $type . $sarr[0] . ')';
+            $string = '(' . $operator . $sarr[0] . ')';
         }
     }
 

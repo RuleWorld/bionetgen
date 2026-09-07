@@ -231,10 +231,11 @@ void append_Elt_array(Elt_array* earray1, Elt_array* earray2) {
 		++index;
 	}
 
-	/* Free unused space for earray2 */
+	/* Free unused space for earray2.  Elt_array has C++ members, so the
+	 * object itself must be destroyed with delete; its pointer array remains
+	 * a calloc/realloc/free allocation. */
 	free(earray2->elt);
-	// We don't free earray2's modern structures explicitly here, they are members.
-	free(earray2);
+	delete earray2;
 
 	return;
 }
@@ -286,7 +287,7 @@ void free_Elt_array(Elt_array* earray) {
 			new_elt = elt->next;
 			free_Elt(elt);
 		}
-		free(earray);
+		delete earray;
 	}
 	return;
 }
@@ -461,26 +462,92 @@ bool read_tfun_file(const string& filename, vector<double>& x_vals, vector<doubl
     return true;
 }
 
+static bool is_tfun_name_char(char c) {
+    return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') ||
+           (c >= '0' && c <= '9') || c == '_';
+}
+
+static size_t find_tfun_call(const string& expression, size_t search_from,
+                             size_t& open_pos) {
+    for (size_t pos = search_from; pos + 4 <= expression.size(); ++pos) {
+        if (expression.compare(pos, 4, "tfun") != 0 ||
+            (pos > 0 && is_tfun_name_char(expression[pos - 1]))) {
+            continue;
+        }
+
+        size_t candidate = pos + 4;
+        while (candidate < expression.size() &&
+               (expression[candidate] == ' ' || expression[candidate] == '\t')) {
+            ++candidate;
+        }
+        if (candidate < expression.size() && expression[candidate] == '(') {
+            open_pos = candidate;
+            return pos;
+        }
+    }
+    return string::npos;
+}
+
+static size_t find_matching_paren(const string& expression, size_t open_pos) {
+    int depth = 0;
+    char quote = '\0';
+    bool escaped = false;
+
+    for (size_t pos = open_pos; pos < expression.size(); ++pos) {
+        const char c = expression[pos];
+        if (quote != '\0') {
+            if (escaped) {
+                escaped = false;
+            } else if (c == '\\') {
+                escaped = true;
+            } else if (c == quote) {
+                quote = '\0';
+            }
+            continue;
+        }
+        if (c == '\'' || c == '"') {
+            quote = c;
+        } else if (c == '(') {
+            ++depth;
+        } else if (c == ')' && --depth == 0) {
+            return pos;
+        }
+    }
+    return string::npos;
+}
+
 /**
- * Helper to parse tfun syntax from NET file
- * Returns true if function_string is a tfun, false otherwise
+ * Helper to parse one tfun call from a NET function expression.
+ * Returns true when a call was found and replaces it with a bound value
+ * variable, allowing ordinary wrapper arithmetic to be parsed by muParser.
  *
  * Tfun syntax:
  *   Inline: tfun([x1,x2,...],[y1,y2,...],index,method=>"...")
  *   File:   tfun('file.tfun',index,method=>"...")
  */
-bool parse_tfun_from_net(const string& func_name, const string& function_string,
+bool parse_tfun_from_net(const string& func_name, string& function_string,
                          map<string,double*>& param_map,
                          map<string,int>& observ_index_map) {
-    // Check if function starts with "tfun("
-    if (function_string.substr(0, 5) != "tfun(") {
-        return false;  // Not a tfun
+    size_t open_pos = string::npos;
+    const size_t tfun_pos = find_tfun_call(function_string, 0, open_pos);
+    if (tfun_pos == string::npos) {
+        return false;
+    }
+
+    const size_t close_pos = find_matching_paren(function_string, open_pos);
+    if (close_pos == string::npos) {
+        cerr << "ERROR: Unterminated tfun call in function '" << func_name << "'\n";
+        exit(1);
     }
 
     // Extract tfun arguments
-    size_t start = 5;  // After "tfun("
-    size_t end = function_string.find_last_of(')');
-    string args = function_string.substr(start, end - start);
+    string args = function_string.substr(open_pos + 1, close_pos - open_pos - 1);
+    const size_t first_arg = args.find_first_not_of(" \t");
+    if (first_arg == string::npos) {
+        cerr << "ERROR: Empty tfun call in function '" << func_name << "'\n";
+        exit(1);
+    }
+    args.erase(0, first_arg);
 
     // Parse mode: check if starts with '[' (inline) or quote (file)
     bool is_inline = (args[0] == '[');
@@ -613,7 +680,7 @@ bool parse_tfun_from_net(const string& func_name, const string& function_string,
     try {
         BNG::Tfun* tfun = new BNG::Tfun(x_vals, y_vals, method);
         network.tfuns.push_back(tfun);
-        network.tfun_name_map[func_name] = network.tfuns.size() - 1;
+        const size_t tfun_index = network.tfuns.size() - 1;
         network.tfun_index_names.push_back(index_name);
         network.tfun_index_ptrs.push_back(index_ptr);  // NULL for time, pointer otherwise
 
@@ -621,6 +688,11 @@ bool parse_tfun_from_net(const string& func_name, const string& function_string,
         double* val_ptr = new double;
         *val_ptr = 0.0;  // Initial value
         network.tfun_value_ptrs.push_back(val_ptr);
+
+        const string value_name = "__tfun_" + to_string(tfun_index);
+        network.tfun_name_map[value_name] = tfun_index;
+        param_map[value_name] = val_ptr;
+        function_string.replace(tfun_pos, close_pos - tfun_pos + 1, value_name);
 
         network.has_tfuns = true;
 
@@ -729,70 +801,11 @@ void read_functions_array(const char* netfile, Elt_array*& rates, map<string,dou
 				// create parser for that function
 				readLine >> func_name >> function_string;
 
-				// Check if this is a tfun (before argument validation)
-				bool is_tfun = parse_tfun_from_net(func_name, function_string,
-				                                     param_map, observ_index_map);
-
-				if (is_tfun) {
-					// Erase '()' from function name
-					func_name.erase(func_name.length()-2, func_name.length());
-
-					// Create a dummy parser that returns the tfun value
-					mu::Parser tfun_parser;
-					int tfun_idx = network.tfun_name_map[func_name];
-					tfun_parser.DefineVar(func_name, network.tfun_value_ptrs[tfun_idx]);
-					tfun_parser.SetExpr(func_name);
-
-					// Add parser to functions vector
-					network.functions.push_back(tfun_parser);
-					network.func_observ_depend.push_back(vector<int>());  // Empty for now
-					network.func_param_depend.push_back(vector<int>());
-
-					// Create a new parameter Elt with the function name
-					Elt* new_elt;
-					if (rates) new_elt = new_Elt((char*)func_name.c_str(), 0.0, rates->n_elt+1);
-					else new_elt = new_Elt((char*)func_name.c_str(), 0.0, 1);
-					new_elt->next = NULL;
-					network.is_func_map[func_name] = true;
-
-					// Push index of new parameter into var_parameters vector
-					if (rates) network.var_parameters.push_back(rates->n_elt+1);
-					else network.var_parameters.push_back(1);
-					if (network.functions.size() != network.var_parameters.size()){
-						cout << "ERROR: Function and variable parameter indices do not match." << endl;
-						exit(1);
-					}
-
-					// Add to rates array
-					if (rates){
-						// allocate space in elt_array **elt (double the space), if necessary
-						if (num_free_spaces == 0) {
-							Elt** elt_temp = new Elt*[2*rates->n_elt];
-							for (int q = 0; q < rates->n_elt; q++){
-								elt_temp[q] = rates->elt[q];
-							}
-							delete[] rates->elt;
-							rates->elt = elt_temp;
-							num_free_spaces = rates->n_elt;
-						}
-
-						// push and link parameter into elt_array
-						rates->elt[rates->n_elt++] = new_elt;
-						Elt* curr = rates->list;
-						Elt* prev = curr;
-						for (; curr != NULL; prev = curr, curr = curr->next);
-						prev->next = new_elt;
-						num_free_spaces--;
-					}
-					else{
-						rates = new_Elt_array(new_elt);
-					}
-
-					// Add param_map entry for muParser
-					param_map[func_name] = &(new_elt->val);
-
-					// Continue to next function
-					continue;
+				// Replace each tfun call with a bound value variable before the
+				// ordinary function parser sees the expression.  This preserves
+				// arithmetic wrapped around the call (and supports multiple calls).
+				while (parse_tfun_from_net(func_name, function_string,
+				                           param_map, observ_index_map)) {
 				}
 
 				// Check for function arguments -- exit if they exist
@@ -847,6 +860,10 @@ void read_functions_array(const char* netfile, Elt_array*& rates, map<string,dou
 						}
 						else if (param_index_map.find(variable_names[i]) != param_index_map.end()) { // Parameter dependencies
 							param_depend.push_back(param_index_map[variable_names[i]]);
+						}
+						else if (network.tfun_name_map.find(variable_names[i]) != network.tfun_name_map.end()) {
+							// Tfun values are refreshed independently before function
+							// evaluation; they are not ordinary rate parameters.
 						}
 						else {
 							cout << "Ummm, variable '" << variable_names[i] << "' in function '" << func_name
@@ -928,11 +945,12 @@ void read_functions_array(const char* netfile, Elt_array*& rates, map<string,dou
 			if (rates){
 				// allocate space in elt_array **elt (double the space), if necessary
 				if (num_free_spaces == 0) {
-					Elt** elt_temp = new Elt*[2*rates->n_elt]; // This is deleted at the end of run_network
-					for (int q = 0; q < rates->n_elt; q++){
-						elt_temp[q] = rates->elt[q];
+					Elt** elt_temp = (Elt**) realloc(rates->elt,
+							2 * rates->n_elt * sizeof(Elt*));
+					if (!elt_temp) {
+						perror("read_functions_array: realloc");
+						exit(EXIT_FAILURE);
 					}
-					delete[] rates->elt;
 					rates->elt = elt_temp;
 					num_free_spaces = rates->n_elt;
 				}
@@ -3055,13 +3073,12 @@ int rxn_rates_network(double* rxn_rates, int discrete) {
 	int error = 0, n_reactions, n_species;
 	Rxn** rarray;
 	double *X;
-//	double *conc = NULL;
+	double *conc = NULL;
 
 	n_reactions = n_rxns_network();
 	n_species = n_species_network();
 
-//	conc = ALLOC_VECTOR(n_species);
-	double conc[n_species];
+	conc = ALLOC_VECTOR(n_species);
 
 	if (get_conc_network(conc)){
 		cout << "Error in network::rxn_rates_network(): 'conc' vector could not be populated. Exiting." << endl;
@@ -3075,6 +3092,7 @@ int rxn_rates_network(double* rxn_rates, int discrete) {
 	for (i = 0; i < n_reactions; ++i) {
 		rxn_rates[i] = rxn_rate(rarray[i], X, discrete);
 	}
+	FREE_VECTOR(conc);
 /*
 cout << "\n__before FREE_VECTOR(conc)__" << endl;
 cout << "n_elt: " << network.rates->n_elt << endl;
@@ -3084,9 +3102,7 @@ for (int j=0;j < network.rates->n_elt;j++){
 	cout << " = " << network.rates->elt[j]->val << endl;
 }
 */
-//  exit:
-//	if (conc)
-//		FREE_VECTOR(conc);
+	//  exit:
 /*
 cout << "\n__after FREE_VECTOR(conc)__" << endl;
 cout << "n_elt: " << network.rates->n_elt << endl;
@@ -3311,8 +3327,8 @@ int print_derivs_network(FILE* out) {
 	int error = 0, n_species;
 
 	n_species = n_species_network();
-	double X[n_species];
-	double dX[n_species];
+	double *X = ALLOC_VECTOR(n_species);
+	double *dX = ALLOC_VECTOR(n_species);
 
 	// Compute time derivs of species concentration by reaction
 	if (get_conc_network(X)){
@@ -3329,6 +3345,8 @@ int print_derivs_network(FILE* out) {
 		fprintf(out, "\n");
 	}
 	fprintf(out, "end derivs\n");
+	FREE_VECTOR(X);
+	FREE_VECTOR(dX);
 
 	return (error);
 }
@@ -4023,6 +4041,20 @@ int propagate_rkcs_network(double* t, double delta_t, double* n_steps, double to
 	return (error);
 }
 
+static bool format_output_filename(char* buffer, size_t buffer_size,
+		const char* prefix, const char* suffix) {
+	if (!prefix || !suffix) {
+		fprintf(stderr, "Output filename prefix or suffix is null.\n");
+		return false;
+	}
+	int written = snprintf(buffer, buffer_size, "%s%s", prefix, suffix);
+	if (written < 0 || static_cast<size_t>(written) >= buffer_size) {
+		fprintf(stderr, "Output filename is too long for the legacy Network3 buffer.\n");
+		return false;
+	}
+	return true;
+}
+
 FILE *init_print_concentrations_network(char* prefix, int append){
 	FILE* out;
 	int i, error = 0;
@@ -4034,7 +4066,8 @@ FILE *init_print_concentrations_network(char* prefix, int append){
 	if (append) mode = (char*)"a";
 	else mode = (char*)"w";
 
-	snprintf(buf, sizeof(buf), "%s.cdat", prefix);
+	if (!format_output_filename(buf, sizeof(buf), prefix, ".cdat"))
+		return NULL;
 	if (!(out = fopen(buf, mode))) {
 		++error;
 		fprintf(stderr, "Couldn't open file %s.\n", buf);
@@ -4117,7 +4150,8 @@ FILE* init_print_group_concentrations_network(char* prefix, int append, bool no_
 		out = NULL;
 		return (out); // exit
 	}*/
-        snprintf(buf, sizeof(buf), "%s.gdat", prefix);
+	if (!format_output_filename(buf, sizeof(buf), prefix, ".gdat"))
+		return NULL;
 
 	if (!(out = fopen(buf, mode))) {
 		++error;
@@ -4298,7 +4332,8 @@ FILE* init_print_species_stats(char* prefix, int append) {
 	else
 		mode = (char*)"w";
 
-	snprintf(buf, sizeof(buf), "%s.jdat", prefix);
+	if (!format_output_filename(buf, sizeof(buf), prefix, ".jdat"))
+		return NULL;
 	if (!(out = fopen(buf, mode))) {
 		++error;
 		fprintf(stderr, "Couldn't open file %s.\n", buf);
@@ -4360,7 +4395,8 @@ FILE* init_print_flux_network(char* prefix) {
 	int error = 0;
 	char buf[1000];
 
-	snprintf(buf, sizeof(buf), "%s.fdat", prefix);
+	if (!format_output_filename(buf, sizeof(buf), prefix, ".fdat"))
+		return NULL;
 	printf("Writing fluxes to file %s.\n", buf);
 	if (!(out = fopen(buf, "w"))) {
 		++error;
@@ -4379,6 +4415,10 @@ int print_flux_network(FILE* out, double t, int discrete) {
 	int error = 0, n_reactions;
 	double* rates_rxn = NULL;
 	const char* fmt = "%15.8e";
+
+	if (!out) {
+		return 1;
+	}
 
 	n_reactions = n_rxns_network();
 	rates_rxn = ALLOC_VECTOR(n_reactions);

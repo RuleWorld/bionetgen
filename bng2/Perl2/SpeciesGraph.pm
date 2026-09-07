@@ -266,7 +266,14 @@ sub readString
 		# Handle continuation and stopping
 		# molecule separator characters
 		next if ( $string_left =~ s/^\.// );
-		last if ( $stop  and  $string_left =~ /$stop/ );
+		if ( $stop and $string_left =~ /$stop/ )
+		{
+			# Graph modifiers may be separated from the final molecule by
+			# whitespace.  Consume only that whitespace so the modifier is
+			# handled below; ordinary whitespace still terminates the graph.
+			next if ( $string_left =~ s/^\s+(?=\{(?:MatchOnce|Fixed)(?:=|[,}]))// );
+			last;
+		}
 
 		# Handle modifier syntax
 		if ( $string_left =~ s/^\$// )
@@ -2094,6 +2101,13 @@ sub toXML
 	if ( $sg->Quantifier )
     {
 		my ( $relation, $quantity ) = ( $sg->Quantifier =~ /(=|==|<=|>=|<|>)(\d+)/ );
+		my %xml_relation = (
+			'<'  => '&lt;',
+			'>'  => '&gt;',
+			'<=' => '&lt;=',
+			'>=' => '&gt;=',
+		);
+		$relation = $xml_relation{$relation} if exists $xml_relation{$relation};
 		$string .= ' relation="' . $relation . '" quantity="' . $quantity . '"';
 	}
 

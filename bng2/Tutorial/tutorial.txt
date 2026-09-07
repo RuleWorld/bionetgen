@@ -294,6 +294,13 @@ S + E -> P + E Sat(kcat,Km)
 
 will have the rate law, rate= kcat*[S]*[E]/(Km + [S]).  Note that the term in
 the denominator must appear first in the reaction rule.   
+
+For a saturation rate law with parameters kcat,K1,...,KN, all matched
+reactants contribute to the numerator.  Each saturation constant Ki is paired
+with the corresponding reactant in the denominator, so the denominator terms
+are (K1 + [R1]) through (KN + [RN]).  The number of saturation constants must
+not exceed the number of reactants.  This is the behavior used by the network
+and XML writers; use the validation models to check backend-specific output.
  
 There is also a MM rate law type that gives the rate of the reaction corrected
 for the amount of S bound in the ES complex (solves quadratic formula for

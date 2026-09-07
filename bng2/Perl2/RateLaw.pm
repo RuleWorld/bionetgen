@@ -121,7 +121,7 @@ sub newRateLaw
         if ($err) { return '', $err }
         # get name for ratelaw
         my $name1 = $expr1->getName( $model->ParamList, "_localFuncL", $force_fcn );
-        # retreive param with this name
+        # retrieve param with this name
         (my $param1, $err) = $model->ParamList->lookup($name1);
         if ($err) { return undef, $err; }
 
@@ -131,7 +131,7 @@ sub newRateLaw
         if ($err) { return '', $err }
         # get name for ratelaw
         my $name2 = $expr2->getName( $model->ParamList, "_localFuncR", $force_fcn );
-        # retreive param with this name
+        # retrieve param with this name
         (my $param2, $err) = $model->ParamList->lookup($name2);
         if ($err) { return undef, $err; }
 
@@ -229,7 +229,7 @@ sub newRateLaw
 		    
         # get name for ratelaw
         my $name = $expr->getName( $model->ParamList, $basename, $force_fcn );
-        # retreive param with this name
+        # retrieve param with this name
         (my $param, $err) = $model->ParamList->lookup($name);
         if ($err) { return '', $err; }
 
@@ -1360,7 +1360,7 @@ sub toMathMLString
     }
     elsif ( $type eq 'Sat' )
     {
-        # NOTE: THIS CODE IS NOT TESTED!
+        # Serialize the same saturation semantics used by the other writers.
         # One parameter:
         #    rate = $statFactor*$k[0]
         # Two or more parameters (N denominator terms, N+1 parameters)

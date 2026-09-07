@@ -9,6 +9,7 @@ TEST_CASE("Node::operator==", "[BNGcore][Node]") {
         Node node1(type);
         Node node2(type);
         REQUIRE(node1 == node2);
+        REQUIRE_FALSE(node1 != node2);
     }
 
     SECTION("Nodes with different types are not equal") {
@@ -17,6 +18,7 @@ TEST_CASE("Node::operator==", "[BNGcore][Node]") {
         Node node1(type1);
         Node node2(type2);
         REQUIRE_FALSE(node1 == node2);
+        REQUIRE(node1 != node2);
     }
 
     SECTION("Nodes with different states are not equal") {
@@ -37,6 +39,7 @@ TEST_CASE("Node::operator==", "[BNGcore][Node]") {
         node2.set_state(*state2);
 
         REQUIRE_FALSE(node1 == node2);
+        REQUIRE(node1 != node2);
 
         delete state1;
         delete state2;

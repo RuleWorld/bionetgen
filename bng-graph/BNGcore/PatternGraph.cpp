@@ -401,6 +401,14 @@ PatternGraph::find_canonical_order ( bool preserve_prior_order ) const
     if ( !preserve_prior_order )
         reset_index();
 
+    // An empty graph has no Nauty arrays or node indices to initialize.
+    if ( nodes.empty() )
+    {
+        label.clear();
+        canonical_flag = true;
+        return;
+    }
+
     //std::cout << "find_canonical_order" << std::endl;
     int   nv, m, nde;
     int   v_index, e_index;

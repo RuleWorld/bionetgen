@@ -1,0 +1,24 @@
+begin model
+
+begin molecule types
+  A(b,b)
+  B(a)
+end molecule types
+
+begin seed species
+  A(b,b) 10
+  B(a) 20
+end seed species
+
+begin observables
+  Molecules A_space A(b!+) {MatchOnce}
+  Molecules A_nospace A(b!+){MatchOnce}
+end observables
+
+begin reaction rules
+  A(b) + B(a) <-> A(b!1).B(a!1) 1, 0.1
+end reaction rules
+
+writeXML({prefix=>"issue_312_matchonce",overwrite=>1})
+
+end model
