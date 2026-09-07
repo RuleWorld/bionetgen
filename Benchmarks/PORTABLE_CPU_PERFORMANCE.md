@@ -559,6 +559,93 @@ fork default-branch push be made. The final branch was pushed only to the
 fork; local Release, independent-reference, full-harness, and ASan/UBSan
 evidence above are the available validation for this no-PR delivery.
 
+
+## Expanded-scope ODE integration result
+
+Branch `codex/ode-integration-20260901` is based directly on CPU tip
+`305b7482febe3dd52ccd517fa4cd2e02504e834c` and is pushed only to the fork. The
+validated commit is `dd665873` (`perf: flatten large ODE reaction updates`).
+`src/engine/OdeIntegrator.hpp:152-179` adds compact reaction metadata and
+contiguous reactant/product index storage. `src/engine/OdeIntegrator.cpp:764-807`
+packs only constant-rate networks with at least 512 reactions; smaller or
+functional networks keep the prior representation. The hot loop at
+`src/engine/OdeIntegrator.cpp:1016-1053` traverses the packed arrays in the
+original reaction order, retaining double-precision multiplication and update
+ordering. `tests/test_ode_integrator.cpp:170-198` covers the 512-reaction,
+two-reactant/two-product boundary and exact derivative signs/magnitudes. No
+public API, CLI, output format, or numerical option changed.
+
+The production paired command was:
+
+```sh
+python3 Benchmarks/portable_cpu_benchmark.py \
+  --executable-a /private/tmp/bng-cpu-base-305b7482 \
+  --executable-b /private/tmp/bng-ode-flat-gated-reserved \
+  --model bng2/Models2/blbr.bngl \
+  --model bng2/Models2/SHP2_base_model.bngl \
+  --model bng2/Models2/egfr_net.bngl \
+  --model bng2/Models2/fceri_ji.bngl \
+  --repetitions 40 --timeout 30 \
+  --output /private/tmp/portable_cpu_ode_flat_gated_reserved_40.json
+```
+
+The baseline executable SHA-256 was
+`c4eeb05df99869d34364671089df598c7ecfc5f700c70e957297e968cb9b4d15`; the
+candidate SHA-256 was
+`0be9540ea0a07a3ad17ca463a963b15479ae07773c796e91e8ec2621c45d5b52`. The
+runner used fresh child processes and directories, alternated execution order,
+and recorded wall time, user/system CPU time, maximum RSS, output bytes and
+hashes, network counts, data rows, and command lines. Values below are median
+baseline -> candidate seconds, followed by paired candidate-minus-baseline
+percentage with inclusive IQR; negative means faster.
+
+| Workload | Wall seconds; paired delta | CPU seconds; paired delta | Result |
+| --- | --- | --- | --- |
+| `blbr` | 0.024055 -> 0.024077; +0.847% [-1.657..+2.278] | 0.020343 -> 0.020497; +0.928% [-0.535..+2.404] | fallback/noise; reject as performance evidence |
+| `SHP2_base_model` | 0.153589 -> 0.153425; -0.213% [-1.303..+0.721] | 0.147073 -> 0.146619; -0.173% [-1.015..+0.440] | neutral |
+| `egfr_net` | 0.583170 -> 0.584392; +0.061% [-0.614..+1.293] | 0.565531 -> 0.563940; -0.144% [-0.574..+0.874] | neutral |
+| `fceri_ji` | 0.678768 -> 0.656870; -3.736% [-4.714..-2.331] | 0.650026 -> 0.623834; -3.713% [-4.356..-2.403] | retain |
+
+All 40 candidate runs produced byte-identical output-hash maps and sizes to
+their paired baselines. Median maximum-RSS changes were -0.366%, -0.652%,
+-0.277%, and +0.307% in workload order. The only material end-to-end gain is
+the large FcERI ODE workload; the threshold gate avoids imposing packing cost
+on the small fallback case. The independent Perl BNG2 generation checks still
+show the pre-existing SHP2/blbr reaction-count mismatches, while EGFR and FcERI
+match. A separate Perl-generated ODE trajectory could not be established
+because the pinned reference environment lacks `run_network`; candidate-vs-
+baseline hashes and the focused derivative test therefore provide the
+available candidate evidence, not independent solver parity.
+
+The baseline macOS `sample` profile used 30 FcERI model copies for 10 seconds.
+The dominant work was CVODE's finite-difference Jacobian-vector path:
+`OdeIntegrator::derivs` about 2,100 samples under `cvLsDQJtimes`, with
+`SUNLinSolSolve_SPGMR` about 2,237 and `CVode` about 3,018. The final candidate
+profile remained solver-dominated (`CVode` 3,062, `SUNLinSolSolve_SPGMR` 2,204,
+`cvLsDQJtimes` 2,103, and `OdeIntegrator::derivs` 2,092); packing reduced the
+reaction-update portion but did not remove the solver bottleneck.
+
+Rejected ODE alternatives were measured and removed: skipping the fixed-
+species scan was +0.514% wall / +0.535% CPU on FcERI, derivative-loop
+specialization was +0.362% CPU on FcERI with cross-workload spread, a diagonal
+preconditioner was +13.719% wall / +13.825% CPU and changed output hashes, and
+an analytic mass-action J-times callback was +6.196% wall / +6.163% CPU and
+changed output hashes. The compact representation is the remaining validated
+portable CPU win. Release CTest passed 81/81 on the fresh build
+`/private/tmp/bng-final-ode-20260901` (candidate executable SHA above). The
+ASan/UBSan build passed its full 81-test run and the focused ODE test passed 23
+assertions in 5 cases; all four production models exited successfully without
+sanitizer diagnostics. The repository's full 41-model harness was rerun and
+gave 34 passes and the same seven pre-existing environment/reference failures
+listed earlier.
+
+The remaining profile-dominant cost is CVODE's SPGMR/finite-difference J-times
+interaction. A material next CPU gain requires a solver-aware Jacobian,
+preconditioner, or reaction-network storage redesign; an equivalent GPU path
+would require a broader device-resident integration design rather than a
+per-callback offload. Those changes are outside this portable, semantics-
+preserving branch.
+
 ## Canonical-certificate and deduplication redesign screens
 
 The expanded canonical track tested three representation-level directions on
