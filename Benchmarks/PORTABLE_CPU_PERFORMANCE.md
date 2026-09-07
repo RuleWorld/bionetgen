@@ -408,6 +408,103 @@ batch-deduplicates graphs while preserving BNG2 ordering and collision-safe
 semantics. Parallel/GPU execution or a different-language implementation would
 also require a broader design; none is folded into this portable CPU branch.
 
+## Canonical-label follow-up
+
+Branch `codex/canonical-redesign-20260901` starts at the graph/string tip
+`62f4dc6bd2a191d89a593e2d952e6c74c5b47271` and is pushed only to the fork. The
+retained source commit is `b73d9e3d` (`perf: streamline canonical node
+labels`). `src/core/Node.cpp:190-199` replaces the temporary
+`std::stringstream` in `Node::get_label()` with one `std::string` assembled by
+append and `std::to_string`. Canonical indices, node-type/state labels, graph
+ordering, and all downstream formats are unchanged. The focused regression in
+`tests/test_pattern_graph.cpp:213-219` requires the exact `7:A~<0>` label.
+
+The candidate was compared with the retained graph/string executable using 40
+paired repetitions per production model. The input hashes, commands, fresh
+worker processes, alternating order, output measurements, and timeout were the
+same as the graph/string run above; raw results are in
+`/private/tmp/portable_cpu_node_label_40.json`:
+
+```sh
+python3 Benchmarks/portable_cpu_benchmark.py \
+  --executable-a /private/tmp/bng-graph-string-builder \
+  --executable-b /private/tmp/bng-canonical-direct-index/src/bng_cpp \
+  --model bng2/Models2/blbr.bngl \
+  --model bng2/Models2/SHP2_base_model.bngl \
+  --model bng2/Models2/egfr_net.bngl \
+  --model bng2/Models2/fceri_ji.bngl \
+  --repetitions 40 --timeout 30 \
+  --output /private/tmp/portable_cpu_node_label_40.json
+```
+
+The baseline executable SHA-256 was
+`bdd7b6b590b77c10bd1c6a46e76645c5b5e76b3d03c815a12f3630e1a323e772`; the
+candidate SHA-256 was
+`9675de22ee67be6e2e5031ad815c6d033e9fe540ee07457043b334a19d533039`. The
+table reports median baseline -> candidate seconds and paired median
+candidate-minus-baseline reduction, where positive means faster. IQR is the
+inclusive paired reduction spread.
+
+| Workload | Wall seconds; reduction | CPU seconds; reduction | Result |
+| --- | --- | --- | --- |
+| `blbr` | 0.021886 -> 0.021758; +0.588% [-1.043..+2.933] | 0.019167 -> 0.018891; +1.443% [-0.996..+2.852] | small correctness/noise check |
+| `SHP2_base_model` | 0.149267 -> 0.148588; +0.455% [-1.492..+1.571] | 0.143792 -> 0.143190; +0.419% [-1.229..+1.626] | small but positive |
+| `egfr_net` | 0.554846 -> 0.546493; +1.505% [+0.492..+2.931] | 0.542507 -> 0.532942; +1.763% [+0.618..+2.862] | retain |
+| `fceri_ji` | 0.630641 -> 0.621653; +1.425% [+0.552..+2.547] | 0.617730 -> 0.609962; +1.258% [+0.562..+2.484] | retain |
+
+Wall/CPU wins were 24/40 and 23/40 for `blbr`, 26/40 and 24/40 for SHP2,
+33/40 and 36/40 for EGFR, and 33/40 and 34/40 for FcERI. Median maximum-RSS
+changes were +0.584%, +0.374%, +0.150%, and +0.184%. Every pair on every
+workload had identical output-hash maps, output sizes, and network
+species/reaction counts. The focused pattern-graph test passed 40 assertions
+in 7 cases; the fresh Release build at
+`/private/tmp/bng-final-canonical-20260901` passed CTest 80/80, and its
+ASan/UBSan build plus all four production runs completed without diagnostics.
+
+Several broader local-index shortcuts were screened and removed: a gated
+node-index lookup regressed EGFR by 0.968% wall and 0.925% CPU while giving
+mixed results elsewhere, and an edge-vector fast path was within noise or
+slower on the larger models. The retained label-builder change is therefore a
+small implementation improvement around the measured canonical hotspot, not a
+claim that Nauty/canonical deduplication has been solved.
+
+The remaining dominant canonical/Nauty work is the graph deduplication data
+structure and repeated canonical-certificate construction inside rule
+expansion. A material portable gain requires a broader representation-level
+redesign that can reuse collision-safe certificates or batch-deduplicate
+graphs while preserving BNG2 ordering. Process-level parallel work and the
+GPU experiment remain on separate opt-in branches; the GPU path was not
+retained because the required double-precision Metal kernel was not portable
+to the available toolchain. A language rewrite is likewise out of scope.
+
+## Current hotspot re-audit
+
+The final canonical executable was re-profiled on the pinned production
+`egfr_net` model on 2026-09-01 using a fresh 2-second macOS `sample` capture
+(`/private/tmp/bng-hotspot-recheck.KqmjIE/canonical-egfr.sample`). The top
+stack was `ActionDispatch::execute` (307 samples),
+`NetworkGenerator::generate`/`generateNative` (278), and
+`ReactionRule::expandRule` (106). Canonical work remained visible below it:
+`PatternGraph::get_label`, `find_canonical_order`, `Node::get_label`, and
+`PatternGraph::get_BNG2_string`/edge sorting. The run produced the pinned
+EGFR network hash `84dce91d99d292092ec89878103d2f1ff6819d9f08415937728e733cd0a4eb71`.
+
+A fresh 10-pair all-model sanity recheck used the same runner and paired
+process protocol as the 40-pair result above. Reductions are positive when
+the candidate is faster; all four models had equal output hashes, sizes, and
+network counts:
+
+| Workload | Canonical wall reduction | Canonical CPU reduction |
+| --- | ---: | ---: |
+| `blbr` | +1.294% | +1.566% |
+| `SHP2_base_model` | +1.205% | +1.284% |
+| `egfr_net` | +1.135% | +1.278% |
+| `fceri_ji` | +0.759% | +0.776% |
+
+This short recheck confirms that the branch/toolchain still exercises the
+same canonical path; the earlier 40-pair matrix remains the performance
+decision because the small sample is not a replacement for its spread.
+
 ## Validation commands and status
 
 Targeted tests and the full Release CTest suite were run on the candidate:
@@ -461,6 +558,7 @@ explicitly directed that no pull request be opened against `RuleWorld` and no
 fork default-branch push be made. The final branch was pushed only to the
 fork; local Release, independent-reference, full-harness, and ASan/UBSan
 evidence above are the available validation for this no-PR delivery.
+
 
 ## Expanded-scope ODE integration result
 
@@ -547,3 +645,57 @@ preconditioner, or reaction-network storage redesign; an equivalent GPU path
 would require a broader device-resident integration design rather than a
 per-callback offload. Those changes are outside this portable, semantics-
 preserving branch.
+
+## Canonical-certificate and deduplication redesign screens
+
+The expanded canonical track tested three representation-level directions on
+the existing `codex/canonical-redesign-20260901` source tip, then removed all
+three because they were slower on the pinned production matrix. Each screen
+used the retained canonical executable as baseline, 10 paired fresh processes
+per model with alternating order, and deterministic output-hash comparison.
+The baseline executable SHA-256 was
+`9675de22ee67be6e2e5031ad815c6d033e9fe540ee07457043b334a19d533039`.
+
+The benchmark commands had this common form, with the temporary candidate
+executable varied per screen:
+
+```sh
+python3 Benchmarks/portable_cpu_benchmark.py \
+  --executable-a /private/tmp/bng-final-canonical-20260901/src/bng_cpp \
+  --executable-b /private/tmp/bng-canonical-certificate-screen \
+  --model bng2/Models2/blbr.bngl \
+  --model bng2/Models2/SHP2_base_model.bngl \
+  --model bng2/Models2/egfr_net.bngl \
+  --model bng2/Models2/fceri_ji.bngl \
+  --repetitions 10 --timeout 30 \
+  --output /private/tmp/portable_cpu_canonical_certificate_screen_10.json
+```
+
+The second screen used `bng-canonical-certificate-screen-fast` and
+`portable_cpu_canonical_certificate_screen_fast_10.json`; the third used
+`bng-canonical-refine-screen` and
+`portable_cpu_canonical_refine_screen_10.json`. Candidate hashes were,
+respectively, `4c920951aacdca8581f7e618405c39e9079c8a6b12a02d4d1b82eb5a53859a94`,
+`288241c73050699cdbd7458091a171db3c2abc4d4942637b232152d7e1a94d69`, and
+`c95fc2f13009ba1f826d9887171a93b8faba7b6ab0194dce86afa05ce092b40b`.
+The table gives baseline-minus-candidate reduction, where positive is faster;
+the bracket is inclusive IQR. Workloads are ordered `blbr`, SHP2, EGFR,
+FcERI.
+
+| Screen | Wall reduction by workload (median [IQR], %) | CPU-user reduction by workload (median [IQR], %) | Decision |
+| --- | --- | --- | --- |
+| Numeric certificate hash map plus sorted tokens | -4.342 [2.596], -1.097 [1.110], -1.464 [1.367], -1.067 [1.154] | -4.152 [2.387], -1.378 [1.351], -1.432 [1.619], -0.776 [1.074] | reject: slower across all four |
+| Allocation-free commutative certificate accumulators | -2.582 [3.679], -1.251 [7.877], -1.138 [2.472], -2.010 [5.782] | -3.653 [2.254], -1.272 [4.107], -0.574 [2.128], -1.689 [4.237] | reject: slower across all four |
+| Weisfeiler-Leman color refinement before Nauty (`nv >= 24`) | -5.113 [1.917], -2.108 [2.500], -4.415 [1.910], -1.521 [1.286] | -4.397 [2.524], -1.687 [2.395], -4.640 [1.706], -2.033 [1.639] | reject: added refinement cost |
+
+All three screens produced byte-identical deterministic output maps to the
+baseline for every paired run, but none produced a material end-to-end CPU
+reduction. The first two screens added compact numeric invariants and
+certificate indexes before the existing collision-safe canonical/Ullmann
+path; the third added bounded color-refinement rounds before Nauty. Their
+guard/index/refinement work costs more than it saves on these production
+graphs. ASan/UBSan and Release validation for the retained source are recorded
+above; no rejected implementation was committed. The remaining dominant
+hotspot is therefore the canonical-certificate/deduplication representation
+itself, where a material improvement requires a broader redesign of graph
+storage, certificate reuse, collision handling, and ordering semantics.

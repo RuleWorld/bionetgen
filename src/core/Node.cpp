@@ -191,9 +191,11 @@ Node::less_by_index ( const Node * node1, const Node * node2 )
 std::string
 Node::get_label ( ) const
 {
-    std::stringstream s;
-    s << index << ":" << type->get_label() << state->get_label();
-    return s.str();
+    std::string s = std::to_string(index);
+    s += ":";
+    s += type->get_label();
+    s += state->get_label();
+    return s;
 }
 
 
