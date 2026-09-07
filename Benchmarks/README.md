@@ -2,6 +2,13 @@
 
 This directory contains scripts for benchmarking BioNetGen performance across different versions, branches, or commits.
 
+## Writing up a result
+
+If you're documenting a benchmark or validation run (not just using the
+scripts below), add a new file under [`reports/`](reports/README.md) named
+after your branch. Don't append to an existing report file — see
+`reports/README.md` for why.
+
 ## Quick Start
 
 ### Compare two branches/commits:
