@@ -76,7 +76,7 @@ TEST_CASE("PatternGraph operations", "[BNGcore][PatternGraph]") {
         graph.add_edge(nodeA, nodeB);
 
         std::string bng_str = graph.get_BNG2_string();
-        REQUIRE(bng_str.length() > 0);
+        REQUIRE(bng_str == "A(B)");
     }
 
     SECTION("Splicing two PatternGraphs") {
@@ -208,6 +208,14 @@ TEST_CASE("PatternGraph canonical finding and fast merge", "[BNGcore][PatternGra
         // Adding a node should unset it
         graph.add_node(node1);
         REQUIRE(graph.is_canonical() == false);
+    }
+
+    SECTION("Canonical node labels retain their exact format") {
+        NodeType type("A", ENTITY_NODE_TYPE, NULL_STATE_TYPE);
+        Node node(type);
+        node.set_index(7);
+
+        REQUIRE(node.get_label() == "7:A~<0>");
     }
 
     SECTION("Empty graph canonicalization is defined") {
