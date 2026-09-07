@@ -1,5 +1,11 @@
 # Portable CPU performance report
 
+> **This file is a historical record (PRs #329-#333) and is no longer
+> appended to.** New performance/validation write-ups go in their own file
+> under [`Benchmarks/reports/`](reports/README.md), one per branch, to avoid
+> the repeated merge conflicts this file accumulated from parallel branches
+> editing its tail.
+
 ## Scope and result
 
 This series targets the native C++ network-generation path used by production
