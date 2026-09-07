@@ -699,3 +699,54 @@ above; no rejected implementation was committed. The remaining dominant
 hotspot is therefore the canonical-certificate/deduplication representation
 itself, where a material improvement requires a broader redesign of graph
 storage, certificate reuse, collision handling, and ordering semantics.
+
+## Separate opt-in parallel track
+
+The existing `codex/parallel-optin-20260901` branch adds
+`Benchmarks/parallel_batch.py`, an opt-in process-level launcher. Each model
+runs in an isolated child process and working directory, so native mutable
+graph state and generated files are not shared. The normal `bng_cpp` CLI and
+single-process behavior are unchanged. The launcher records commands, model
+and executable hashes, wall/CPU/RSS measurements, output sizes, and output
+hashes.
+
+The paired commands used the final launcher and executable hashes below. The
+models are deterministic network/ODE workloads, so no stochastic seed is
+needed for this matrix:
+
+```sh
+python3 /private/tmp/parallel_pair_benchmark.py \
+  --batch-script Benchmarks/parallel_batch.py \
+  --executable build/src/bng_cpp \
+  --workload small=bng2/Models2/blbr.bngl,bng2/Models2/SHP2_base_model.bngl \
+  --repetitions 20 --parallel-jobs 2 --timeout 60 \
+  --output /private/tmp/portable_parallel_batch_small_medium_20.json
+
+python3 /private/tmp/parallel_pair_benchmark.py \
+  --batch-script Benchmarks/parallel_batch.py \
+  --executable build/src/bng_cpp \
+  --workload large=bng2/Models2/egfr_net.bngl,bng2/Models2/fceri_ji.bngl \
+  --repetitions 20 --parallel-jobs 2 --timeout 60 \
+  --output /private/tmp/portable_parallel_batch_large_20.json
+```
+
+The launcher SHA-256 was
+`aeb709ff1d81675ee48372bc53f1471b296299284cbfc459820fe1c9675e5a39`; the
+Release executable SHA-256 was
+`c4eeb05df99869d34364671089df598c7ecfc5f700c70e957297e968cb9b4d15`.
+Paired reductions are baseline-minus-candidate, with positive values faster:
+
+| Batch | Wall median [IQR; min..max] | CPU user median [IQR; min..max] | RSS median [IQR; min..max] | Artifact equality |
+| --- | ---: | ---: | ---: | --- |
+| `blbr` + `SHP2_base_model` (20 pairs) | +13.614% [2.502; +7.061..+17.171] | -0.373% [3.034; -5.659..+4.401] | +0.410% [2.596; -2.852..+2.250] | 40/40 job maps equal |
+| `egfr_net` + `fceri_ji` (20 pairs) | +45.808% [0.567; +41.810..+46.931] | -2.267% [1.045; -9.392..-0.754] | -0.177% [0.416; -3.633..+1.641] | 40/40 job maps equal |
+
+The large-batch result is a material throughput win: all 20 pairs improved in
+wall time while aggregate CPU user time remained approximately conserved and
+all per-model `.net`, `.cdat`, and `.gdat` hashes matched. The small-batch
+result is also wall-positive but CPU-neutral, so this is retained as an
+opt-in batch-throughput facility, not as a claim that one model runs faster.
+The limitation is fundamental to this implementation: independent models
+can overlap, while a single model remains single-process and shared-state
+safe. Further scaling requires a larger independent workload batch or a
+broader thread-safe engine redesign.
