@@ -76,7 +76,7 @@ TEST_CASE("PatternGraph operations", "[BNGcore][PatternGraph]") {
         graph.add_edge(nodeA, nodeB);
 
         std::string bng_str = graph.get_BNG2_string();
-        REQUIRE(bng_str.length() > 0);
+        REQUIRE(bng_str == "A(B)");
     }
 
     SECTION("Splicing two PatternGraphs") {

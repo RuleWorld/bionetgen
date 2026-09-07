@@ -321,6 +321,93 @@ would require a broader canonicalization and deduplication data-structure
 redesign, parallel/GPU execution, or a different-language implementation;
 those are outside this portable, semantics-preserving scope.
 
+## Expanded-scope graph/string result
+
+Branch `codex/graph-string-20260901` is based directly on CPU tip
+`305b7482febe3dd52ccd517fa4cd2e02504e834c` and is pushed only to the fork. The
+validated source commit is `556099d3` (`perf: reduce BNG2 graph string
+allocations`). `src/core/Node.cpp:290-422` changes the recursive BNG2 graph
+serializer from temporary `std::stringstream` objects to `std::string`
+append operations and `std::to_string`. It leaves edge sorting, bond numbering,
+canonical indices, compartment handling, and traversal order unchanged.
+`tests/test_pattern_graph.cpp:78` strengthens the serializer regression to
+require the exact `A(B)` artifact. No public API, CLI form, generated-file
+format, or numerical behavior changed.
+
+The production paired command was:
+
+```sh
+python3 Benchmarks/portable_cpu_benchmark.py \
+  --executable-a /private/tmp/bng-cpu-base-305b7482 \
+  --executable-b /private/tmp/bng-graph-string-builder \
+  --model bng2/Models2/blbr.bngl \
+  --model bng2/Models2/SHP2_base_model.bngl \
+  --model bng2/Models2/egfr_net.bngl \
+  --model bng2/Models2/fceri_ji.bngl \
+  --repetitions 40 --timeout 30 \
+  --output /private/tmp/portable_cpu_graph_string_builder_40.json
+```
+
+The baseline executable SHA-256 was
+`c4eeb05df99869d34364671089df598c7ecfc5f700c70e957297e968cb9b4d15`; the
+candidate SHA-256 was
+`bdd7b6b590b77c10bd1c6a46e76645c5b5e76b3d03c815a12f3630e1a323e772`. The
+runner used paired fresh processes/directories with alternating order and
+recorded wall/user/system CPU time, maximum RSS, output bytes and hashes,
+network counts, data rows, input hashes, executable hashes, and command lines.
+The table reports median baseline -> candidate seconds and paired
+candidate-minus-baseline percentage with inclusive IQR; negative means
+faster.
+
+| Workload | Wall seconds; paired delta | CPU seconds; paired delta | Result |
+| --- | --- | --- | --- |
+| `blbr` | 0.024425 -> 0.023488; -3.612% [-5.171..-2.477] | 0.020522 -> 0.019635; -4.071% [-5.637..-3.043] | small correctness/noise check |
+| `SHP2_base_model` | 0.154169 -> 0.152491; -1.411% [-2.040..-0.463] | 0.146467 -> 0.144727; -1.321% [-1.643..-0.694] | repeatable |
+| `egfr_net` | 0.569308 -> 0.554045; -2.930% [-3.681..-2.028] | 0.553046 -> 0.538493; -2.676% [-3.459..-2.184] | retain |
+| `fceri_ji` | 0.638793 -> 0.630779; -1.201% [-1.944..-0.805] | 0.624821 -> 0.616700; -1.410% [-1.856..-0.917] | retain |
+
+The graph/string candidate was faster in 39/40 wall and 40/40 CPU pairs for
+`blbr`, 34/40 wall and 38/40 CPU pairs for SHP2, 40/40 wall and CPU pairs for
+EGFR, and 34/40 wall and 35/40 CPU pairs for FcERI. All 40 repetitions for all
+four workloads had identical candidate/baseline output-hash maps, output
+sizes, and network counts. Median maximum-RSS changes were -0.146%, -0.046%,
++0.478%, and -0.215% in workload order. The deterministic artifacts are
+therefore byte-identical while the large production models show material
+CPU-time reductions.
+
+The baseline macOS `sample` profile captured 12 copies of EGFR for 5 seconds
+(`/private/tmp/bng-canonical-profile.iZwsyJ/profile.txt`); its top stacks were
+`ActionDispatch::execute` (2,523),
+`NetworkGenerator::generateNative` (2,261),
+`ReactionRule::expandRule` (887), and `buildReaction` (193). Canonical graph
+and string routines were visible inside those stacks:
+`PatternGraph::get_label` about 59/56 samples across its top paths,
+`find_canonical_order` about 26, `UllmannSGIso::refine_M` 41, and multiple
+`Node::get_BNG2_string` paths. A unique-initial-color early return in
+`PatternGraph::find_canonical_order` was tested on the same production matrix
+and rejected: its 20-pair wall deltas were +0.843%, +0.841%, +0.681%, +0.710%
+and CPU deltas +1.185%, +0.566%, +0.573%, +0.698% for
+`blbr`, SHP2, EGFR, and FcERI respectively. It was removed and never
+committed.
+
+The fresh Release build at `/private/tmp/bng-final-graph-20260901` passed
+CTest 80/80 and produced the candidate SHA above. The graph-branch
+ASan/UBSan build passed its 80-test suite, the focused pattern-graph and ODE
+tests passed, and all four production models exited without sanitizer
+diagnostics. The repository's full 41-model harness was rerun and produced 34
+passes and the same seven pre-existing environment/reference failures listed
+earlier. Independent Perl BNG2 network checks preserve the existing
+SHP2/blbr reaction-count discrepancies and pass for EGFR/FcERI; they do not
+show a graph/string artifact change.
+
+The remaining profile-dominant work is the canonical labeling/Nauty and
+graph-deduplication machinery itself. The rejected early return demonstrates
+that a local heuristic does not pay for its guard cost. A material next gain
+requires a representation-level redesign that reuses canonical certificates or
+batch-deduplicates graphs while preserving BNG2 ordering and collision-safe
+semantics. Parallel/GPU execution or a different-language implementation would
+also require a broader design; none is folded into this portable CPU branch.
+
 ## Validation commands and status
 
 Targeted tests and the full Release CTest suite were run on the candidate:

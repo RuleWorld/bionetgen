@@ -289,7 +289,7 @@ Node::validate_typing ( bool instance ) const
 std::string
 Node::get_BNG2_string ( link_index_t & link_index, int & next_bond ) const
 {
-    std::stringstream  s;
+    std::string s;
 
     if ( get_type() < LINK_NODE_TYPE )
     {   // handle a link node
@@ -301,12 +301,14 @@ Node::get_BNG2_string ( link_index_t & link_index, int & next_bond ) const
             if ( it == link_index.end() )
             {
                 link_index.insert( std::pair<const Node*,int>( this, next_bond ) );
-                s << "!" << next_bond;
+                s += "!";
+                s += std::to_string(next_bond);
                 ++next_bond;
             }
             else
             {
-                s << "!" << it->second;
+                s += "!";
+                s += std::to_string(it->second);
             }
         }
         //else
@@ -315,7 +317,7 @@ Node::get_BNG2_string ( link_index_t & link_index, int & next_bond ) const
     else
     {   // handle other node types.
         // local variables:
-        std::stringstream  t;
+        std::string t;
         
         bool  found_entity_child;
         bool  has_entity_parent;
@@ -325,9 +327,9 @@ Node::get_BNG2_string ( link_index_t & link_index, int & next_bond ) const
         std::vector<Node*>::iterator  node_iter;
         
         // add type_name
-        s << get_type().get_BNG2_string( true );
+        s += get_type().get_BNG2_string( true );
         // add state
-        s << get_state().get_BNG2_string( );  
+        s += get_state().get_BNG2_string( );
         
         // sort out_edges using Perl BNG2 convention for components:
         // 1. By type name (lexical)
@@ -396,19 +398,23 @@ Node::get_BNG2_string ( link_index_t & link_index, int & next_bond ) const
             child_node = *node_iter;
             if ( child_node->get_type() < ENTITY_NODE_TYPE )
             {
-                if ( found_entity_child )  t << ",";
-                t << child_node->get_BNG2_string( link_index, next_bond );
+                if ( found_entity_child )  t += ",";
+                t += child_node->get_BNG2_string( link_index, next_bond );
                 found_entity_child = true;
             }
             else if ( child_node->get_type() < LINK_NODE_TYPE )
-                s << child_node->get_BNG2_string( link_index, next_bond );
+                s += child_node->get_BNG2_string( link_index, next_bond );
         }
     
         // if there are any children, include in string
         if ( found_entity_child )
-            s << "(" << t.str() << ")";
+        {
+            s += "(";
+            s += t;
+            s += ")";
+        }
         else if ( !has_entity_parent )
-            s << "()";
+            s += "()";
 
         // Per-molecule compartment suffix (@CYT) is NOT added here because it
         // changes the .net output format and breaks comparison with Perl.
@@ -416,5 +422,5 @@ Node::get_BNG2_string ( link_index_t & link_index, int & next_bond ) const
         // in SpeciesList::add().
     }
     // return string
-    return s.str();
+    return s;
 }
