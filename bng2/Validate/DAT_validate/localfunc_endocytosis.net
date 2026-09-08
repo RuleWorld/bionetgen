@@ -1,0 +1,63 @@
+# Created by BioNetGen 2.9.3
+begin parameters
+    1 k_on               0.01  # Constant
+    2 k_off              1.0  # Constant
+    3 kp_LL              0.01  # Constant
+    4 km_LL              1.0  # Constant
+    5 k_endo             0.05  # Constant
+    6 mod_endo_lig       5.0  # Constant
+    7 R0                 100  # Constant
+    8 L0                 50  # Constant
+    9 _Rule_endo_local1  (k_endo*if((0>=1),mod_endo_lig,1))  # ConstantExpression
+   10 _Rule_endo_local2  (k_endo*if((1>=1),mod_endo_lig,1))  # ConstantExpression
+   11 _Rule_endo_local3  (k_endo*if((2>=1),mod_endo_lig,1))  # ConstantExpression
+end parameters
+begin species
+    1 @PM::R(l) R0
+    2 @EC::L(d,r) L0
+    3 @PM::L(d,r!1)@EC.R(l!1) 0
+    4 @EC::L(d!1,r).L(d!1,r) 0
+    5 @EM::R(l) 0
+    6 @PM::L(d!1,r!2)@EC.L(d!1,r)@EC.R(l!2) 0
+    7 @PM::L(d!1,r!2)@EC.L(d!1,r!3)@EC.R(l!2).R(l!3) 0
+    8 @EM::L(d,r!1)@EN.R(l!1) 0
+    9 @EN::L(d,r) 0
+   10 @EM::L(d!1,r!2)@EN.L(d!1,r!3)@EN.R(l!2).R(l!3) 0
+   11 @EM::L(d!1,r!2)@EN.L(d!1,r)@EN.R(l!2) 0
+   12 @EN::L(d!1,r).L(d!1,r) 0
+end species
+begin reactions
+    1 1,2 3 0.1*k_on #_R1 unit_conversion=1/10
+    2 2,2 4 0.05*kp_LL #_R2 unit_conversion=1/10
+    3 1 5 _Rule_endo_local1 #Rule_endo
+    4 1,4 6 0.2*k_on #_R1 unit_conversion=1/10
+    5 3 1,2 k_off #_reverse__R1
+    6 2,3 6 0.1*kp_LL #_R2 unit_conversion=1/10
+    7 3,3 7 0.5*kp_LL #_R2 unit_conversion=1/1
+    8 4 2,2 km_LL #_reverse__R2
+    9 3 8 _Rule_endo_local2 #Rule_endo
+   10 1,6 7 1*k_on #_R1 unit_conversion=1/1
+   11 6 1,4 k_off #_reverse__R1
+   12 7 1,6 2*k_off #_reverse__R1
+   13 8 5,9 k_off #_reverse__R1
+   14 8,8 10 5*kp_LL #_R2 unit_conversion=1/0.1
+   15 6 2,3 km_LL #_reverse__R2
+   16 7 3,3 km_LL #_reverse__R2
+   17 6 11 _Rule_endo_local3 #Rule_endo
+   18 7 10 _Rule_endo_local3 #Rule_endo
+   19 5,9 8 20*k_on #_R1 unit_conversion=1/0.05
+   20 5,11 10 10*k_on #_R1 unit_conversion=1/0.1
+   21 10 5,11 2*k_off #_reverse__R1
+   22 11 5,12 k_off #_reverse__R1
+   23 8,9 11 20*kp_LL #_R2 unit_conversion=1/0.05
+   24 9,9 12 10*kp_LL #_R2 unit_conversion=1/0.05
+   25 10 8,8 km_LL #_reverse__R2
+   26 11 8,9 km_LL #_reverse__R2
+   27 5,12 11 40*k_on #_R1 unit_conversion=1/0.05
+   28 12 9,9 km_LL #_reverse__R2
+end reactions
+begin groups
+    1 Lig_local            2,3,2*4,2*6,2*7,8,9,2*10,2*11,2*12
+    2 R_PM                 1,3,6,2*7
+    3 R_EM                 5,8,2*10,11
+end groups

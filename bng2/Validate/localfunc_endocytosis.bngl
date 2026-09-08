@@ -1,0 +1,129 @@
+# Local functions + compartmental BNGL: a rate that depends on the CONTENTS of a
+# complex, not on how many receptors that complex happens to contain.
+#
+# Scenario: receptor R is endocytosed (PM -> EM) at base rate k_endo. If the complex
+# being internalized also contains at least one ligand L, the rate is boosted by a
+# factor mod_endo_lig. Requirements:
+#   (1) the ligand boost is a 0/1 switch -- "L present" not "how many L's"
+#   (2) the whole-complex transport rate must not scale with how many R's are in
+#       the complex (a receptor dimer/cluster still moves as ONE event)
+#
+# Two ways to reference "the matched complex" from a rate law are demonstrated.
+# The recommended one is used in the active rule; the alternative is included
+# below, commented out, for comparison.
+#
+#   %x@PM:R()          -- SPECIES-level tag (recommended for this problem).
+#                          "x" refers to the whole matched complex, with no
+#                          specific molecule as anchor.  Observables called as
+#                          Obs(x) inside a local function just return their
+#                          ordinary (global) match count *for that species* --
+#                          no special pattern requirements.  Because the tag
+#                          carries no molecule identity, every one of the n
+#                          embeddings of "R()" in an n-receptor complex resolves
+#                          to the exact same reference, so BNG only ever
+#                          generates ONE reaction, at the correct rate --
+#                          automatically, not by convention.
+#
+#   R%x()               -- MOLECULE-level tag (see commented block below).
+#                          "x" refers to one specific matched R instance.
+#                          Evaluating Obs(x) forces the FIRST molecule of Obs's
+#                          pattern to BE that instance, so Obs must start with
+#                          the same molecule type as the anchor (an observable
+#                          of plain "L()" would silently evaluate to 0 -- type
+#                          mismatch against the R anchor). This form is needed
+#                          when the rate genuinely depends on a property of one
+#                          particular matched molecule (e.g. "how many ligands
+#                          are bound directly to *this* receptor"). For a
+#                          whole-complex property like this one, it also works,
+#                          but only if the observable is written to be
+#                          anchor-invariant (same value regardless of which R
+#                          is matched) -- get that wrong and BNG will silently
+#                          keep an arbitrary one of the differing per-match
+#                          values rather than summing or erroring.  {MatchOnce}
+#                          on the reactant pattern is good practice with this
+#                          form, to guarantee a single reaction independent of
+#                          that concern.
+#
+# Verified with BNG2.pl 2.9.3: a complex with 2 receptors (bridged by a ligand
+# dimer) and a complex with 3 receptors (asymmetric chain, ligand on one end
+# only) both generate exactly one Rule_endo reaction, at rate k_endo*mod_endo_lig,
+# not 2x or 3x that.
+
+begin model
+
+begin parameters
+  k_on          0.01     # ligand-receptor association
+  k_off         1.0      # ligand-receptor dissociation
+  kp_LL         0.01     # ligand dimerization (this is what lets a complex carry >1 R)
+  km_LL         1.0
+  k_endo        0.05     # base endocytosis rate (PM -> EM)
+  mod_endo_lig  5.0      # fold-increase in endocytosis rate if >=1 L is present
+
+  R0            100
+  L0            50
+end parameters
+
+begin compartments
+  EC   3   10          # extracellular volume (outermost)
+  PM   2   1      EC   # plasma membrane;    outside = EC
+  CP   3   1      PM   # cytoplasm;          outside = PM
+  EM   2   0.1    CP   # endosomal membrane; outside = CP
+  EN   3   0.05   EM   # endosome interior;  outside = EM
+end compartments
+  # EN is required: BNG only allows PM->EM transport if EM has an "inside"
+  # volume, mirroring real endo/exocytosis topology (see Compartment::
+  # separated_by_volume in Perl2/Compartment.pm).
+
+begin molecule types
+  R(l)        # receptor; l = ligand-binding site
+  L(r,d)      # ligand;   r = receptor-binding site, d = ligand dimerization site
+end molecule types
+
+begin seed species
+  @PM:R(l)    R0
+  @EC:L(r,d)  L0
+end seed species
+
+begin observables
+  # No R() anchor needed -- see header note on species- vs molecule-level tags.
+  Molecules  Lig_local   L()
+
+  Molecules  R_PM   R()@PM
+  Molecules  R_EM   R()@EM
+
+  # Alternative (molecule-level tag) would instead need:
+  #   Molecules  Lig_local_anchored   R().L()   # must start with R() -- see header
+end observables
+
+begin functions
+  # x = the whole complex matched by %x in the rule below (species-level tag).
+  # Lig_local(x) = number of L's anywhere in that complex.
+  # if(...) collapses that to a 0/1-style switch, so the modifier is applied
+  # once per complex, not once per bound L.
+  rate_endo(x) = k_endo*if(Lig_local(x)>=1, mod_endo_lig, 1)
+
+  # Alternative (molecule-level tag) would instead need:
+  #   rate_endo_mol(x) = k_endo*if(Lig_local_anchored(x)>=1, mod_endo_lig, 1)
+end functions
+
+begin reaction rules
+  # Ligand binds receptor.
+  L(r) + R(l)  <->  L(r!1).R(l!1)         k_on, k_off
+
+  # Ligand dimerizes -- this is what lets one complex bridge 2 (or more) R's,
+  # e.g. R-L-L-R, so we actually have something to test "not per-R" against.
+  L(d) + L(d)  <->  L(d!1).L(d!1)         kp_LL, km_LL
+
+  # Endocytosis: transport any complex containing >=1 R from PM to EM.
+  # No TotalRate: BNG rejects TotalRate combined with a local function, and it
+  # isn't needed -- see header note on why a complex with several R's still
+  # produces exactly one reaction at rate_endo(x), not n*rate_endo(x).
+  Rule_endo: %x@PM:R() -> %x@EM:R()   rate_endo(x)
+
+  # Alternative (molecule-level tag), for comparison -- see header note:
+  #   Rule_endo_molecule_tagged: @PM:R%x(){MatchOnce} -> @EM:R%x()   rate_endo_mol(x)
+end reaction rules
+
+end model
+
+generate_network({overwrite=>1})
