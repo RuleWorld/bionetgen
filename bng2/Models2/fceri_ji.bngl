@@ -1,3 +1,14 @@
+# Model of early signaling events downstream of the high-affinity IgE
+# receptor FceRI on mast cells/basophils: antigen-mediated receptor
+# aggregation, Lyn-mediated ITAM transphosphorylation, and Syk recruitment
+# and activation. See docs/source/immune_receptor_signaling.rst for a
+# tutorial walkthrough.
+#
+# Faeder JR, Hlavacek WS, Reischl I, Blinov ML, Metzger H, Redondo A,
+# Wofsy C, Goldstein B. Investigation of early events in FceRI-mediated
+# signaling using a detailed mathematical model. J Immunol.
+# 170(7):3769-3781, 2003.
+
 begin model
 begin parameters
     Lig_tot  6.0e3  # units: molecules

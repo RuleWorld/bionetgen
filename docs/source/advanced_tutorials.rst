@@ -13,4 +13,6 @@ basics covered in :ref:`bng_quickstart` and the PyBioNetGen
    :caption: Contents:
 
    transport_local_functions
+   immune_receptor_signaling
+   growth_factor_signaling
    pybng_atomizer
