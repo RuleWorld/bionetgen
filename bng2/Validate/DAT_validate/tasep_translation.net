@@ -1,0 +1,228 @@
+# Created by BioNetGen 2.9.3
+begin parameters
+    1 mRNA_0           1  # Constant
+    2 Ribosome_0       10  # Constant
+    3 k_init           1e-1  # Constant
+    4 k_hop            1  # Constant
+    5 k_term           1  # Constant
+end parameters
+begin species
+    1 Site(next!1,occ,prev!2).Site(next!3,occ,prev!1).Site(next!4,occ,prev!3).Site(next!5,occ,prev!4).Site(next!2,occ,prev).Site(next,occ,prev!5) mRNA_0
+    2 Ribosome(site) Ribosome_0
+    3 Ribosome(site!1).Site(next!2,occ!1,prev).Site(next!3,occ,prev!2).Site(next!4,occ,prev!3).Site(next!5,occ,prev!4).Site(next!6,occ,prev!5).Site(next,occ,prev!6) 0
+    4 Ribosome(site!1).Site(next!2,occ!1,prev!3).Site(next!4,occ,prev!2).Site(next!5,occ,prev!4).Site(next!6,occ,prev!5).Site(next!3,occ,prev).Site(next,occ,prev!6) 0
+    5 Ribosome(site!1).Ribosome(site!2).Site(next!3,occ!2,prev!4).Site(next!4,occ!1,prev).Site(next!5,occ,prev!3).Site(next!6,occ,prev!5).Site(next!7,occ,prev!6).Site(next,occ,prev!7) 0
+    6 Ribosome(site!1).Site(next!2,occ!1,prev!3).Site(next!3,occ,prev!4).Site(next!5,occ,prev!2).Site(next!6,occ,prev!5).Site(next!4,occ,prev).Site(next,occ,prev!6) 0
+    7 Ribosome(site!1).Ribosome(site!2).Site(next!3,occ!2,prev!4).Site(next!5,occ!1,prev).Site(next!4,occ,prev!5).Site(next!6,occ,prev!3).Site(next!7,occ,prev!6).Site(next,occ,prev!7) 0
+    8 Ribosome(site!1).Site(next!2,occ!1,prev!3).Site(next!3,occ,prev!4).Site(next!4,occ,prev!5).Site(next!6,occ,prev!2).Site(next!5,occ,prev).Site(next,occ,prev!6) 0
+    9 Ribosome(site!1).Ribosome(site!2).Site(next!3,occ!2,prev!4).Site(next!5,occ!1,prev).Site(next!4,occ,prev!6).Site(next!6,occ,prev!5).Site(next!7,occ,prev!3).Site(next,occ,prev!7) 0
+   10 Ribosome(site!1).Ribosome(site!2).Site(next!3,occ!2,prev!4).Site(next!4,occ!1,prev!5).Site(next!6,occ,prev!3).Site(next!7,occ,prev!6).Site(next!5,occ,prev).Site(next,occ,prev!7) 0
+   11 Ribosome(site!1).Site(next!2,occ!1,prev!3).Site(next!3,occ,prev!4).Site(next!4,occ,prev!5).Site(next!5,occ,prev!6).Site(next!6,occ,prev).Site(next,occ,prev!2) 0
+   12 Ribosome(site!1).Ribosome(site!2).Ribosome(site!3).Site(next!4,occ!3,prev!5).Site(next!5,occ!2,prev!6).Site(next!6,occ!1,prev).Site(next!7,occ,prev!4).Site(next!8,occ,prev!7).Site(next,occ,prev!8) 0
+   13 Ribosome(site!1).Ribosome(site!2).Site(next!3,occ!2,prev!4).Site(next!5,occ!1,prev).Site(next!4,occ,prev!6).Site(next!6,occ,prev!7).Site(next!7,occ,prev!5).Site(next,occ,prev!3) 0
+   14 Ribosome(site!1).Ribosome(site!2).Site(next!3,occ!2,prev!4).Site(next!5,occ!1,prev!6).Site(next!4,occ,prev!5).Site(next!7,occ,prev!3).Site(next!6,occ,prev).Site(next,occ,prev!7) 0
+   15 Ribosome(site!1).Site(next!2,occ,prev!3).Site(next!3,occ,prev!4).Site(next!4,occ,prev!5).Site(next!5,occ,prev!6).Site(next!6,occ,prev).Site(next,occ!1,prev!2) 0
+   16 Ribosome(site!1).Ribosome(site!2).Ribosome(site!3).Site(next!4,occ!3,prev!5).Site(next!6,occ!2,prev!7).Site(next!7,occ!1,prev).Site(next!5,occ,prev!6).Site(next!8,occ,prev!4).Site(next,occ,prev!8) 0
+   17 Ribosome(site!1).Ribosome(site!2).Site(next!3,occ!1,prev).Site(next!4,occ,prev!5).Site(next!5,occ,prev!6).Site(next!6,occ,prev!7).Site(next!7,occ,prev!3).Site(next,occ!2,prev!4) 0
+   18 Ribosome(site!1).Ribosome(site!2).Site(next!3,occ!2,prev!4).Site(next!5,occ!1,prev!6).Site(next!4,occ,prev!7).Site(next!7,occ,prev!5).Site(next!6,occ,prev).Site(next,occ,prev!3) 0
+   19 Ribosome(site!1).Ribosome(site!2).Site(next!3,occ!2,prev!4).Site(next!4,occ!1,prev!5).Site(next!5,occ,prev!6).Site(next!7,occ,prev!3).Site(next!6,occ,prev).Site(next,occ,prev!7) 0
+   20 Protein() 0
+   21 Ribosome(site!1).Ribosome(site!2).Ribosome(site!3).Site(next!4,occ!3,prev!5).Site(next!6,occ!2,prev!7).Site(next!7,occ!1,prev).Site(next!5,occ,prev!8).Site(next!8,occ,prev!6).Site(next,occ,prev!4) 0
+   22 Ribosome(site!1).Ribosome(site!2).Ribosome(site!3).Site(next!4,occ!3,prev!5).Site(next!5,occ!2,prev!6).Site(next!7,occ!1,prev).Site(next!6,occ,prev!7).Site(next!8,occ,prev!4).Site(next,occ,prev!8) 0
+   23 Ribosome(site!1).Ribosome(site!2).Site(next!3,occ!1,prev!4).Site(next!5,occ,prev!6).Site(next!6,occ,prev!7).Site(next!7,occ,prev!3).Site(next!4,occ,prev).Site(next,occ!2,prev!5) 0
+   24 Ribosome(site!1).Ribosome(site!2).Site(next!3,occ!2,prev!4).Site(next!5,occ!1,prev!6).Site(next!6,occ,prev!7).Site(next!4,occ,prev!5).Site(next!7,occ,prev).Site(next,occ,prev!3) 0
+   25 Ribosome(site!1).Ribosome(site!2).Ribosome(site!3).Site(next!4,occ!2,prev!5).Site(next!5,occ!1,prev).Site(next!6,occ,prev!7).Site(next!7,occ,prev!8).Site(next!8,occ,prev!4).Site(next,occ!3,prev!6) 0
+   26 Ribosome(site!1).Ribosome(site!2).Ribosome(site!3).Site(next!4,occ!3,prev!5).Site(next!6,occ!2,prev!7).Site(next!8,occ!1,prev).Site(next!7,occ,prev!8).Site(next!5,occ,prev!6).Site(next,occ,prev!4) 0
+   27 Ribosome(site!1).Ribosome(site!2).Ribosome(site!3).Site(next!4,occ!3,prev!5).Site(next!5,occ!2,prev!6).Site(next!6,occ!1,prev!7).Site(next!8,occ,prev!4).Site(next!7,occ,prev).Site(next,occ,prev!8) 0
+   28 Ribosome(site!1).Ribosome(site!2).Site(next!3,occ!1,prev!4).Site(next!4,occ,prev!5).Site(next!6,occ,prev!7).Site(next!7,occ,prev!3).Site(next!5,occ,prev).Site(next,occ!2,prev!6) 0
+   29 Ribosome(site!1).Ribosome(site!2).Site(next!3,occ!2,prev!4).Site(next!4,occ!1,prev!5).Site(next!5,occ,prev!6).Site(next!6,occ,prev!7).Site(next!7,occ,prev).Site(next,occ,prev!3) 0
+   30 Ribosome(site!1).Ribosome(site!2).Ribosome(site!3).Ribosome(site!4).Site(next!5,occ!4,prev!6).Site(next!6,occ!3,prev!7).Site(next!7,occ!2,prev!8).Site(next!8,occ!1,prev).Site(next!9,occ,prev!5).Site(next,occ,prev!9) 0
+   31 Ribosome(site!1).Ribosome(site!2).Ribosome(site!3).Site(next!4,occ!2,prev!5).Site(next!6,occ!1,prev).Site(next!5,occ,prev!6).Site(next!7,occ,prev!8).Site(next!8,occ,prev!4).Site(next,occ!3,prev!7) 0
+   32 Ribosome(site!1).Ribosome(site!2).Ribosome(site!3).Site(next!4,occ!3,prev!5).Site(next!5,occ!2,prev!6).Site(next!7,occ!1,prev).Site(next!6,occ,prev!8).Site(next!8,occ,prev!7).Site(next,occ,prev!4) 0
+   33 Ribosome(site!1).Ribosome(site!2).Ribosome(site!3).Site(next!4,occ!3,prev!5).Site(next!6,occ!2,prev!7).Site(next!7,occ!1,prev!8).Site(next!5,occ,prev!6).Site(next!8,occ,prev).Site(next,occ,prev!4) 0
+   34 Ribosome(site!1).Ribosome(site!2).Site(next!3,occ!1,prev!4).Site(next!4,occ,prev!5).Site(next!5,occ,prev!6).Site(next!7,occ,prev!3).Site(next!6,occ,prev).Site(next,occ!2,prev!7) 0
+   35 Ribosome(site!1).Ribosome(site!2).Ribosome(site!3).Ribosome(site!4).Site(next!5,occ!4,prev!6).Site(next!7,occ!3,prev!8).Site(next!8,occ!2,prev!9).Site(next!9,occ!1,prev).Site(next!6,occ,prev!7).Site(next,occ,prev!5) 0
+   36 Ribosome(site!1).Ribosome(site!2).Ribosome(site!3).Site(next!4,occ!2,prev!5).Site(next!6,occ!1,prev).Site(next!5,occ,prev!7).Site(next!7,occ,prev!6).Site(next!8,occ,prev!4).Site(next,occ!3,prev!8) 0
+   37 Ribosome(site!1).Ribosome(site!2).Ribosome(site!3).Site(next!4,occ!2,prev!5).Site(next!5,occ!1,prev!6).Site(next!7,occ,prev!8).Site(next!8,occ,prev!4).Site(next!6,occ,prev).Site(next,occ!3,prev!7) 0
+   38 Ribosome(site!1).Ribosome(site!2).Ribosome(site!3).Site(next!4,occ!3,prev!5).Site(next!5,occ!2,prev!6).Site(next!7,occ!1,prev!8).Site(next!6,occ,prev!7).Site(next!8,occ,prev).Site(next,occ,prev!4) 0
+   39 Ribosome(site!1).Ribosome(site!2).Site(next!3,occ!1,prev!4).Site(next!4,occ,prev!5).Site(next!5,occ,prev!6).Site(next!6,occ,prev!7).Site(next!7,occ,prev).Site(next,occ!2,prev!3) 0
+   40 Ribosome(site!1).Ribosome(site!2).Ribosome(site!3).Ribosome(site!4).Site(next!5,occ!3,prev!6).Site(next!6,occ!2,prev!7).Site(next!7,occ!1,prev).Site(next!8,occ,prev!9).Site(next!9,occ,prev!5).Site(next,occ!4,prev!8) 0
+   41 Ribosome(site!1).Ribosome(site!2).Ribosome(site!3).Ribosome(site!4).Site(next!5,occ!4,prev!6).Site(next!6,occ!3,prev!7).Site(next!8,occ!2,prev!9).Site(next!9,occ!1,prev).Site(next!7,occ,prev!8).Site(next,occ,prev!5) 0
+   42 Ribosome(site!1).Ribosome(site!2).Ribosome(site!3).Site(next!4,occ!2,prev!5).Site(next!6,occ!1,prev).Site(next!5,occ,prev!7).Site(next!7,occ,prev!8).Site(next!8,occ,prev!6).Site(next,occ!3,prev!4) 0
+   43 Ribosome(site!1).Ribosome(site!2).Ribosome(site!3).Site(next!4,occ!2,prev!5).Site(next!6,occ!1,prev!7).Site(next!5,occ,prev!6).Site(next!8,occ,prev!4).Site(next!7,occ,prev).Site(next,occ!3,prev!8) 0
+   44 Ribosome(site!1).Ribosome(site!2).Ribosome(site!3).Site(next!4,occ!3,prev!5).Site(next!5,occ!2,prev!6).Site(next!6,occ!1,prev!7).Site(next!7,occ,prev!8).Site(next!8,occ,prev).Site(next,occ,prev!4) 0
+   45 Ribosome(site!1).Ribosome(site!2).Ribosome(site!3).Ribosome(site!4).Site(next!5,occ!3,prev!6).Site(next!7,occ!2,prev!8).Site(next!8,occ!1,prev).Site(next!6,occ,prev!7).Site(next!9,occ,prev!5).Site(next,occ!4,prev!9) 0
+   46 Ribosome(site!1).Ribosome(site!2).Ribosome(site!3).Ribosome(site!4).Site(next!5,occ!4,prev!6).Site(next!6,occ!3,prev!7).Site(next!7,occ!2,prev!8).Site(next!9,occ!1,prev).Site(next!8,occ,prev!9).Site(next,occ,prev!5) 0
+   47 Ribosome(site!1).Ribosome(site!2).Ribosome(site!3).Site(next!4,occ!2,prev!5).Site(next!6,occ!1,prev!7).Site(next!5,occ,prev!8).Site(next!8,occ,prev!6).Site(next!7,occ,prev).Site(next,occ!3,prev!4) 0
+   48 Ribosome(site!1).Ribosome(site!2).Ribosome(site!3).Site(next!4,occ!2,prev!5).Site(next!5,occ!1,prev!6).Site(next!6,occ,prev!7).Site(next!8,occ,prev!4).Site(next!7,occ,prev).Site(next,occ!3,prev!8) 0
+   49 Ribosome(site!1).Ribosome(site!2).Ribosome(site!3).Ribosome(site!4).Site(next!5,occ!3,prev!6).Site(next!7,occ!2,prev!8).Site(next!8,occ!1,prev).Site(next!6,occ,prev!9).Site(next!9,occ,prev!7).Site(next,occ!4,prev!5) 0
+   50 Ribosome(site!1).Ribosome(site!2).Ribosome(site!3).Ribosome(site!4).Site(next!5,occ!3,prev!6).Site(next!6,occ!2,prev!7).Site(next!8,occ!1,prev).Site(next!7,occ,prev!8).Site(next!9,occ,prev!5).Site(next,occ!4,prev!9) 0
+   51 Ribosome(site!1).Ribosome(site!2).Ribosome(site!3).Ribosome(site!4).Site(next!5,occ!4,prev!6).Site(next!6,occ!3,prev!7).Site(next!7,occ!2,prev!8).Site(next!8,occ!1,prev!9).Site(next!9,occ,prev).Site(next,occ,prev!5) 0
+   52 Ribosome(site!1).Ribosome(site!2).Ribosome(site!3).Site(next!4,occ!2,prev!5).Site(next!6,occ!1,prev!7).Site(next!7,occ,prev!8).Site(next!5,occ,prev!6).Site(next!8,occ,prev).Site(next,occ!3,prev!4) 0
+   53 Ribosome(site!1).Ribosome(site!2).Ribosome(site!3).Ribosome(site!4).Ribosome(site!5).Site(next!6,occ!5,prev!7).Site(next!7,occ!4,prev!8).Site(next!8,occ!3,prev!9).Site(next!9,occ!2,prev!10).Site(next!10,occ!1,prev).Site(next,occ,prev!6) 0
+   54 Ribosome(site!1).Ribosome(site!2).Ribosome(site!3).Ribosome(site!4).Site(next!5,occ!3,prev!6).Site(next!7,occ!2,prev!8).Site(next!9,occ!1,prev).Site(next!8,occ,prev!9).Site(next!6,occ,prev!7).Site(next,occ!4,prev!5) 0
+   55 Ribosome(site!1).Ribosome(site!2).Ribosome(site!3).Ribosome(site!4).Site(next!5,occ!3,prev!6).Site(next!6,occ!2,prev!7).Site(next!7,occ!1,prev!8).Site(next!9,occ,prev!5).Site(next!8,occ,prev).Site(next,occ!4,prev!9) 0
+   56 Ribosome(site!1).Ribosome(site!2).Ribosome(site!3).Site(next!4,occ!2,prev!5).Site(next!5,occ!1,prev!6).Site(next!6,occ,prev!7).Site(next!7,occ,prev!8).Site(next!8,occ,prev).Site(next,occ!3,prev!4) 0
+   57 Ribosome(site!1).Ribosome(site!2).Ribosome(site!3).Ribosome(site!4).Ribosome(site!5).Site(next!6,occ!4,prev!7).Site(next!7,occ!3,prev!8).Site(next!8,occ!2,prev!9).Site(next!9,occ!1,prev).Site(next!10,occ,prev!6).Site(next,occ!5,prev!10) 0
+   58 Ribosome(site!1).Ribosome(site!2).Ribosome(site!3).Ribosome(site!4).Site(next!5,occ!3,prev!6).Site(next!6,occ!2,prev!7).Site(next!8,occ!1,prev).Site(next!7,occ,prev!9).Site(next!9,occ,prev!8).Site(next,occ!4,prev!5) 0
+   59 Ribosome(site!1).Ribosome(site!2).Ribosome(site!3).Ribosome(site!4).Site(next!5,occ!3,prev!6).Site(next!7,occ!2,prev!8).Site(next!8,occ!1,prev!9).Site(next!6,occ,prev!7).Site(next!9,occ,prev).Site(next,occ!4,prev!5) 0
+   60 Ribosome(site!1).Ribosome(site!2).Ribosome(site!3).Ribosome(site!4).Ribosome(site!5).Site(next!6,occ!4,prev!7).Site(next!8,occ!3,prev!9).Site(next!9,occ!2,prev!10).Site(next!10,occ!1,prev).Site(next!7,occ,prev!8).Site(next,occ!5,prev!6) 0
+   61 Ribosome(site!1).Ribosome(site!2).Ribosome(site!3).Ribosome(site!4).Site(next!5,occ!3,prev!6).Site(next!6,occ!2,prev!7).Site(next!8,occ!1,prev!9).Site(next!7,occ,prev!8).Site(next!9,occ,prev).Site(next,occ!4,prev!5) 0
+   62 Ribosome(site!1).Ribosome(site!2).Ribosome(site!3).Ribosome(site!4).Ribosome(site!5).Site(next!6,occ!4,prev!7).Site(next!7,occ!3,prev!8).Site(next!9,occ!2,prev!10).Site(next!10,occ!1,prev).Site(next!8,occ,prev!9).Site(next,occ!5,prev!6) 0
+   63 Ribosome(site!1).Ribosome(site!2).Ribosome(site!3).Ribosome(site!4).Site(next!5,occ!3,prev!6).Site(next!6,occ!2,prev!7).Site(next!7,occ!1,prev!8).Site(next!8,occ,prev!9).Site(next!9,occ,prev).Site(next,occ!4,prev!5) 0
+   64 Ribosome(site!1).Ribosome(site!2).Ribosome(site!3).Ribosome(site!4).Ribosome(site!5).Site(next!6,occ!4,prev!7).Site(next!7,occ!3,prev!8).Site(next!8,occ!2,prev!9).Site(next!10,occ!1,prev).Site(next!9,occ,prev!10).Site(next,occ!5,prev!6) 0
+   65 Ribosome(site!1).Ribosome(site!2).Ribosome(site!3).Ribosome(site!4).Ribosome(site!5).Site(next!6,occ!4,prev!7).Site(next!7,occ!3,prev!8).Site(next!8,occ!2,prev!9).Site(next!9,occ!1,prev!10).Site(next!10,occ,prev).Site(next,occ!5,prev!6) 0
+   66 Ribosome(site!1).Ribosome(site!2).Ribosome(site!3).Ribosome(site!4).Ribosome(site!5).Ribosome(site!6).Site(next!7,occ!5,prev!8).Site(next!8,occ!4,prev!9).Site(next!9,occ!3,prev!10).Site(next!10,occ!2,prev!11).Site(next!11,occ!1,prev).Site(next,occ!6,prev!7) 0
+end species
+begin reactions
+    1 1,2 3 k_init #_R1
+    2 3 4 k_hop #_R2
+    3 2,4 5 k_init #_R1
+    4 4 6 k_hop #_R2
+    5 2,6 7 k_init #_R1
+    6 5 7 k_hop #_R2
+    7 6 8 k_hop #_R2
+    8 2,8 9 k_init #_R1
+    9 7 10 k_hop #_R2
+   10 7 9 k_hop #_R2
+   11 8 11 k_hop #_R2
+   12 2,10 12 k_init #_R1
+   13 2,11 13 k_init #_R1
+   14 9 14 k_hop #_R2
+   15 9 13 k_hop #_R2
+   16 10 14 k_hop #_R2
+   17 11 15 k_hop #_R2
+   18 2,14 16 k_init #_R1
+   19 2,15 17 k_init #_R1
+   20 12 16 k_hop #_R2
+   21 13 18 k_hop #_R2
+   22 13 17 k_hop #_R2
+   23 14 19 k_hop #_R2
+   24 14 18 k_hop #_R2
+   25 15 1,2,20 k_term #_R3
+   26 2,18 21 k_init #_R1
+   27 2,19 22 k_init #_R1
+   28 16 22 k_hop #_R2
+   29 16 21 k_hop #_R2
+   30 17 23 k_hop #_R2
+   31 18 24 k_hop #_R2
+   32 18 23 k_hop #_R2
+   33 19 24 k_hop #_R2
+   34 17 2,3,20 k_term #_R3
+   35 2,23 25 k_init #_R1
+   36 2,24 26 k_init #_R1
+   37 21 26 k_hop #_R2
+   38 21 25 k_hop #_R2
+   39 22 27 k_hop #_R2
+   40 22 26 k_hop #_R2
+   41 23 28 k_hop #_R2
+   42 24 29 k_hop #_R2
+   43 24 28 k_hop #_R2
+   44 23 2,4,20 k_term #_R3
+   45 2,27 30 k_init #_R1
+   46 2,28 31 k_init #_R1
+   47 2,29 32 k_init #_R1
+   48 25 31 k_hop #_R2
+   49 26 33 k_hop #_R2
+   50 26 32 k_hop #_R2
+   51 26 31 k_hop #_R2
+   52 27 33 k_hop #_R2
+   53 28 34 k_hop #_R2
+   54 29 34 k_hop #_R2
+   55 25 2,5,20 k_term #_R3
+   56 28 2,6,20 k_term #_R3
+   57 2,33 35 k_init #_R1
+   58 2,34 36 k_init #_R1
+   59 30 35 k_hop #_R2
+   60 31 37 k_hop #_R2
+   61 31 36 k_hop #_R2
+   62 32 38 k_hop #_R2
+   63 32 36 k_hop #_R2
+   64 33 38 k_hop #_R2
+   65 33 37 k_hop #_R2
+   66 34 39 k_hop #_R2
+   67 31 2,7,20 k_term #_R3
+   68 34 2,8,20 k_term #_R3
+   69 2,37 40 k_init #_R1
+   70 2,38 41 k_init #_R1
+   71 2,39 42 k_init #_R1
+   72 35 41 k_hop #_R2
+   73 35 40 k_hop #_R2
+   74 36 43 k_hop #_R2
+   75 36 42 k_hop #_R2
+   76 37 43 k_hop #_R2
+   77 38 44 k_hop #_R2
+   78 38 43 k_hop #_R2
+   79 36 2,9,20 k_term #_R3
+   80 37 2,10,20 k_term #_R3
+   81 39 2,11,20 k_term #_R3
+   82 2,43 45 k_init #_R1
+   83 2,44 46 k_init #_R1
+   84 40 45 k_hop #_R2
+   85 41 46 k_hop #_R2
+   86 41 45 k_hop #_R2
+   87 42 47 k_hop #_R2
+   88 43 48 k_hop #_R2
+   89 43 47 k_hop #_R2
+   90 44 48 k_hop #_R2
+   91 40 2,12,20 k_term #_R3
+   92 42 2,13,20 k_term #_R3
+   93 43 2,14,20 k_term #_R3
+   94 2,47 49 k_init #_R1
+   95 2,48 50 k_init #_R1
+   96 45 50 k_hop #_R2
+   97 45 49 k_hop #_R2
+   98 46 51 k_hop #_R2
+   99 46 50 k_hop #_R2
+  100 47 52 k_hop #_R2
+  101 48 52 k_hop #_R2
+  102 45 2,16,20 k_term #_R3
+  103 47 2,18,20 k_term #_R3
+  104 48 2,19,20 k_term #_R3
+  105 2,51 53 k_init #_R1
+  106 2,52 54 k_init #_R1
+  107 49 54 k_hop #_R2
+  108 50 55 k_hop #_R2
+  109 50 54 k_hop #_R2
+  110 51 55 k_hop #_R2
+  111 52 56 k_hop #_R2
+  112 49 2,20,21 k_term #_R3
+  113 50 2,20,22 k_term #_R3
+  114 52 2,20,24 k_term #_R3
+  115 2,55 57 k_init #_R1
+  116 2,56 58 k_init #_R1
+  117 53 57 k_hop #_R2
+  118 54 59 k_hop #_R2
+  119 54 58 k_hop #_R2
+  120 55 59 k_hop #_R2
+  121 54 2,20,26 k_term #_R3
+  122 55 2,20,27 k_term #_R3
+  123 56 2,20,29 k_term #_R3
+  124 2,59 60 k_init #_R1
+  125 57 60 k_hop #_R2
+  126 58 61 k_hop #_R2
+  127 59 61 k_hop #_R2
+  128 57 2,20,30 k_term #_R3
+  129 58 2,20,32 k_term #_R3
+  130 59 2,20,33 k_term #_R3
+  131 2,61 62 k_init #_R1
+  132 60 62 k_hop #_R2
+  133 61 63 k_hop #_R2
+  134 60 2,20,35 k_term #_R3
+  135 61 2,20,38 k_term #_R3
+  136 2,63 64 k_init #_R1
+  137 62 64 k_hop #_R2
+  138 62 2,20,41 k_term #_R3
+  139 63 2,20,44 k_term #_R3
+  140 64 65 k_hop #_R2
+  141 64 2,20,46 k_term #_R3
+  142 2,65 66 k_init #_R1
+  143 65 2,20,51 k_term #_R3
+  144 66 2,20,53 k_term #_R3
+end reactions
+begin groups
+    1 RibosomesOnMRNA      3,4,2*5,6,2*7,8,2*9,2*10,11,3*12,2*13,2*14,15,3*16,2*17,2*18,2*19,3*21,3*22,2*23,2*24,3*25,3*26,3*27,2*28,2*29,4*30,3*31,3*32,3*33,2*34,4*35,3*36,3*37,3*38,2*39,4*40,4*41,3*42,3*43,3*44,4*45,4*46,3*47,3*48,4*49,4*50,4*51,3*52,5*53,4*54,4*55,3*56,5*57,4*58,4*59,5*60,4*61,5*62,4*63,5*64,5*65,6*66
+    2 ProteinCount         20
+    3 FirstCodonOcc        3,5,7,9,12,13,16,17,21,22,25,26,30,31,32,35,36,40,41,42,45,46,49,50,53,54,57,58,60,62,64,66
+    4 LastCodonOcc         15,17,23,25,28,31,34,36,37,39,40,42,43,45,47,48,49,50,52,54,55,56,57,58,59,60,61,62,63,64,65,66
+end groups

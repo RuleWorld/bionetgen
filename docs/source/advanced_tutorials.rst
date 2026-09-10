@@ -17,4 +17,5 @@ basics covered in :ref:`bng_quickstart` and the PyBioNetGen
    growth_factor_signaling
    jakstat_signaling
    lat_polymerization
+   tasep_translation
    pybng_atomizer

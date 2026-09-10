@@ -1,0 +1,65 @@
+# A simple model of mRNA translation inspired by the Totally Asymmetric
+# Simple Exclusion Process (TASEP): ribosomes hop, one codon at a time, in a
+# single direction along an mRNA, and cannot pass or occupy the same codon
+# as another ribosome. This is an original teaching model (not from a
+# specific paper), built to show that a lattice-exclusion process, usually
+# modeled as its own specialized formalism, is also expressible directly as
+# a handful of BNGL rules -- see Zia, Dong & Schmittmann (2011) for TASEP
+# background. See docs/source/tasep_translation.rst for a tutorial
+# walkthrough.
+#
+# Zia RKP, Dong JJ, Schmittmann B. Modeling translation in protein
+# synthesis with TASEP: a tutorial and recent developments. Journal of
+# Statistical Physics 144:405-428, 2011.
+
+begin model
+
+begin parameters
+  mRNA_0      1     # a single mRNA transcript
+  Ribosome_0  10    # free ribosome pool
+
+  k_init  1e-1   # initiation rate
+  k_hop   1      # elongation (hop) rate
+  k_term  1      # termination rate
+end parameters
+
+begin molecule types
+  Site(prev,next,occ)   # one codon: prev/next link to neighboring codons,
+                         # occ links to a ribosome if one is present
+  Ribosome(site)
+  Protein()
+end molecule types
+
+begin seed species
+  # A 6-codon mRNA: site 1 has no "prev" neighbor, site 6 has no "next"
+  # neighbor -- their free bond identifies them as the start/end of the chain.
+  Site(prev,next!1,occ).Site(prev!1,next!2,occ).Site(prev!2,next!3,occ).Site(prev!3,next!4,occ).Site(prev!4,next!5,occ).Site(prev!5,next,occ)    mRNA_0
+  Ribosome(site)                                                                                                                                  Ribosome_0
+end seed species
+
+begin observables
+  Molecules  RibosomesOnMRNA  Ribosome(site!+)
+  Molecules  ProteinCount     Protein()
+  Molecules  FirstCodonOcc    Site(prev,occ!+)   # occupancy at the start of the mRNA
+  Molecules  LastCodonOcc     Site(next,occ!+)   # occupancy at the end of the mRNA
+end observables
+
+begin reaction rules
+  # Initiation: a free ribosome binds the first codon (the only Site with
+  # prev unbound).
+  Ribosome(site) + Site(prev,occ) -> Ribosome(site!1).Site(prev,occ!1)  k_init
+
+  # Elongation: a ribosome hops forward one codon, but only if that codon
+  # is unoccupied -- simple exclusion, TASEP's namesake rule.
+  Ribosome(site!1).Site(occ!1,next!2).Site(prev!2,occ) -> \
+  Ribosome(site!3).Site(occ,next!2).Site(prev!2,occ!3)  k_hop
+
+  # Termination: a ribosome that reaches the last codon (the only Site
+  # with next unbound) completes translation, releasing a protein and
+  # freeing that codon for the next ribosome.
+  Ribosome(site!1).Site(next,occ!1) -> Ribosome(site) + Site(next,occ) + Protein()  k_term
+end reaction rules
+
+end model
+
+generate_network({overwrite=>1})
