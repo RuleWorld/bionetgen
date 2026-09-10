@@ -1,0 +1,98 @@
+# Simplified single-cytokine JAK-STAT signaling model: a receptor activated
+# by a cytokine (modeled on IL-10) phosphorylates two STATs, which induce a
+# negative-feedback inhibitor (SOCS) that blocks the receptor, together with
+# a constitutive phosphatase (PTP) that dephosphorylates both STATs. This is
+# a teaching-scale simplification -- lumping receptor subunits, JAKs, and
+# multiple SOCS/phosphatase paralogs each into one species -- of the
+# mechanistic modeling approach in Cheemalavagu et al. (2024), which built
+# separate, more detailed IL-6 and IL-10 models sharing a common STAT1/STAT3
+# pool to explain why these two cytokines, acting through the same STATs,
+# produce different (transient vs. sustained) phospho-STAT dynamics and
+# different downstream gene expression. Parameter values here are
+# illustrative, chosen to produce a qualitatively realistic transient
+# pSTAT response -- they are not fit to data.
+#
+# See docs/source/jakstat_signaling.rst for a tutorial walkthrough.
+#
+# Cheemalavagu N, Shoger KE, Cao YM, Michalides BA, Botta SA, Faeder JR,
+# Gottschalk RA. Predicting gene-level sensitivity to JAK-STAT signaling
+# perturbation using a mechanistic-to-machine learning framework. Cell
+# Systems 15(1):37-48, 2024.
+
+begin model
+
+begin parameters
+  IL10_0    500
+  Rec_0     1000
+  STAT1_0   5000
+  STAT3_0   5000
+  SOCS_0    0
+  PTP_0     500
+
+  k_bind        1e-3   # cytokine-receptor binding activates the receptor
+  k_unbind      1e-2
+  k_phos1       2e-4   # active receptor phosphorylates STAT1
+  k_phos3       1e-3   # active receptor phosphorylates STAT3 (faster than STAT1)
+  k_socsbind    2e-3   # SOCS binds the active receptor and blocks it
+  k_socsunbind  1e-2
+  k_ind1        5e-4   # pSTAT1 induces SOCS expression
+  k_ind3        2e-3   # pSTAT3 induces SOCS expression (stronger than pSTAT1)
+  k_socsdeg     1e-2   # SOCS degradation
+  k_dephos1     5e-4   # constitutive phosphatase acting on pSTAT1
+  k_dephos3     5e-4   # constitutive phosphatase acting on pSTAT3
+end parameters
+
+begin molecule types
+  IL10(rec)
+  Rec(lig,socs,state~inactive~active)
+  STAT1(Y~U~P)
+  STAT3(Y~U~P)
+  SOCS(rec)
+  PTP()
+end molecule types
+
+begin seed species
+  IL10(rec)                     IL10_0
+  Rec(lig,socs,state~inactive)  Rec_0
+  STAT1(Y~U)                    STAT1_0
+  STAT3(Y~U)                    STAT3_0
+  SOCS(rec)                     SOCS_0
+  PTP()                         PTP_0
+end seed species
+
+begin observables
+  Molecules  pSTAT1      STAT1(Y~P)
+  Molecules  pSTAT3      STAT3(Y~P)
+  Molecules  Rec_active  Rec(state~active)
+  Molecules  SOCS_total  SOCS()
+end observables
+
+begin reaction rules
+  # Cytokine binding activates the receptor.
+  IL10(rec) + Rec(lig,state~inactive) <-> IL10(rec!1).Rec(lig!1,state~active)  k_bind, k_unbind
+
+  # Active receptor phosphorylates STAT1 and STAT3 (enzymatic: receptor is
+  # not consumed, so it appears on both sides of the rule).
+  Rec(state~active,socs) + STAT1(Y~U) -> Rec(state~active,socs) + STAT1(Y~P)  k_phos1
+  Rec(state~active,socs) + STAT3(Y~U) -> Rec(state~active,socs) + STAT3(Y~P)  k_phos3
+
+  # SOCS binds the active receptor and blocks further STAT phosphorylation
+  # (note: a receptor with socs bound no longer matches "socs" free in the
+  # phosphorylation rules above).
+  Rec(state~active,socs) + SOCS(rec) <-> Rec(state~active,socs!1).SOCS(rec!1)  k_socsbind, k_socsunbind
+
+  # Both phospho-STATs induce SOCS transcription/translation (lumped into a
+  # single synthesis step); SOCS is degraded at a fixed rate.
+  STAT1(Y~P) -> STAT1(Y~P) + SOCS(rec)  k_ind1
+  STAT3(Y~P) -> STAT3(Y~P) + SOCS(rec)  k_ind3
+  SOCS(rec) -> 0  k_socsdeg
+
+  # Constitutive phosphatase activity returns STATs to the unphosphorylated
+  # state.
+  PTP() + STAT1(Y~P) -> PTP() + STAT1(Y~U)  k_dephos1
+  PTP() + STAT3(Y~P) -> PTP() + STAT3(Y~U)  k_dephos3
+end reaction rules
+
+end model
+
+generate_network({overwrite=>1})

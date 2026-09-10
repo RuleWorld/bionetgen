@@ -1,0 +1,54 @@
+# Created by BioNetGen 2.9.3
+begin parameters
+    1 IL10_0        500  # Constant
+    2 Rec_0         1000  # Constant
+    3 STAT1_0       5000  # Constant
+    4 STAT3_0       5000  # Constant
+    5 SOCS_0        0  # Constant
+    6 PTP_0         500  # Constant
+    7 k_bind        1e-3  # Constant
+    8 k_unbind      1e-2  # Constant
+    9 k_phos1       2e-4  # Constant
+   10 k_phos3       1e-3  # Constant
+   11 k_socsbind    2e-3  # Constant
+   12 k_socsunbind  1e-2  # Constant
+   13 k_ind1        5e-4  # Constant
+   14 k_ind3        2e-3  # Constant
+   15 k_socsdeg     1e-2  # Constant
+   16 k_dephos1     5e-4  # Constant
+   17 k_dephos3     5e-4  # Constant
+end parameters
+begin species
+    1 IL10(rec) IL10_0
+    2 Rec(lig,socs,state~inactive) Rec_0
+    3 STAT1(Y~U) STAT1_0
+    4 STAT3(Y~U) STAT3_0
+    5 SOCS(rec) SOCS_0
+    6 PTP() PTP_0
+    7 IL10(rec!1).Rec(lig!1,socs,state~active) 0
+    8 STAT1(Y~P) 0
+    9 STAT3(Y~P) 0
+   10 IL10(rec!1).Rec(lig!1,socs!2,state~active).SOCS(rec!2) 0
+   11 Rec(lig,socs!1,state~inactive).SOCS(rec!1) 0
+end species
+begin reactions
+    1 1,2 7 k_bind #_R1
+    2 5 0 k_socsdeg #_R7
+    3 7 1,2 k_unbind #_reverse__R1
+    4 3,7 7,8 k_phos1 #_R2
+    5 4,7 7,9 k_phos3 #_R3
+    6 5,7 10 k_socsbind #_R4
+    7 10 1,11 k_unbind #_reverse__R1
+    8 10 5,7 k_socsunbind #_reverse__R4
+    9 8 5,8 k_ind1 #_R5
+   10 9 5,9 k_ind3 #_R6
+   11 6,8 3,6 k_dephos1 #_R8
+   12 6,9 4,6 k_dephos3 #_R9
+   13 1,11 10 k_bind #_R1
+end reactions
+begin groups
+    1 pSTAT1               8
+    2 pSTAT3               9
+    3 Rec_active           7,10
+    4 SOCS_total           5,10,11
+end groups
