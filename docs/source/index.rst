@@ -23,10 +23,10 @@ Installation instructions for both can be found at the link below.
     :caption: Contents:
 
     bng_quickstart
-    transport_local_functions
     install
     vsc_ext
     pybng
+    advanced_tutorials
 
 .. image:: ../assets/featured.gif
 

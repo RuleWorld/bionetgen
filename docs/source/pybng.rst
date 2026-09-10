@@ -19,4 +19,3 @@ Please see :ref:`Quickstart` to learn how to install and use PyBioNetGen.
    pybng_tutorials
    pybng_cli
    pybng_library
-   pybng_atomizer

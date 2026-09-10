@@ -18,4 +18,3 @@ These tutorials use a simple BNGL model as an example. The ``SIR.bngl`` file can
 
     pybng_cli_tutorial
     pybng_lib_tutorial
-    pybng_atomizer
