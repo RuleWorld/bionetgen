@@ -107,6 +107,11 @@ Running it
 ``Models2/lat_polymer.bngl`` ships with BioNetGen and has a validated
 regression test (``Validate/lat_polymer.bngl``).
 
+.. code-block:: bngl
+
+   generate_network({overwrite=>1, max_stoich=>{LAT=>3,Grb2=>4,SOS=>3}, max_iter=>50})
+   simulate({method=>"ode",t_end=>500,n_steps=>50})
+
 References
 ==========
 

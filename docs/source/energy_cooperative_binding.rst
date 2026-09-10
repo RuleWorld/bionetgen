@@ -88,6 +88,15 @@ second binding event's ``Keq`` comes out to be exactly
 cooperativity factor built into the model, recovered automatically
 from the free-energy accounting rather than fit or asserted.
 
+Simulating the model to equilibrium (ODE, 20 time units) shows what
+that cooperativity looks like at the population level: starting from
+100 free receptors and excess ligand, the system settles with about
+99.7 receptors fully double-bound, only ~0.25 singly-bound, and ~0.003
+still empty. Singly-bound receptor is a rare, fleeting intermediate
+rather than a stable population -- receptors are effectively either
+"on" or "off," a switch-like equilibrium distribution that is the
+population-level signature of strong positive cooperativity.
+
 Running it
 ==========
 
@@ -97,6 +106,7 @@ validated regression test (``Validate/energy_cooperative.bngl``).
 .. code-block:: bngl
 
    generate_network({overwrite=>1})
+   simulate({method=>"ode",t_end=>20,n_steps=>20})
 
 Going further
 =============

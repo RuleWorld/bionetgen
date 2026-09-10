@@ -96,3 +96,4 @@ end reaction rules
 end model
 
 generate_network({overwrite=>1})
+simulate({method=>"ode",t_end=>90,n_steps=>90})
