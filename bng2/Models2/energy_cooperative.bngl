@@ -1,0 +1,67 @@
+# Simple energy-based BNGL model of cooperative binding: a receptor with 2
+# independent ligand-binding sites, where occupying the second site is
+# thermodynamically favored once the first is already occupied. Demonstrates
+# energy-based modeling (eBNG): free energies of formation are assigned to
+# structural motifs ("energy patterns"), and BNG derives all forward/reverse
+# rate constants -- including how they change with local context -- so that
+# detailed balance holds automatically. See Sekar, Hogg & Faeder (2016) and
+# docs/source/energy_cooperative_binding.rst for a tutorial walkthrough.
+# For a richer worked example (3-partner scaffold complex with several
+# cooperativity terms), see Models2/energy_example1.bngl; for a physics-
+# flavored energy model (Ising spin lattice), see Validate/isingspin_energy.bngl.
+#
+# Sekar JA, Hogg JS, Faeder JR. Energy-based modeling in BioNetGen.
+# Proceedings of the 2016 IEEE International Conference on Bioinformatics
+# and Biomedicine (BIBM), 2016.
+
+begin model
+
+begin parameters
+  R_0   100
+  L_0   200
+
+  Gf_bind  -5.0   # free energy of one L-R bond (dimensionless; negative = favorable)
+  Gf_coop  -3.0   # EXTRA free energy when both sites are occupied (cooperativity;
+                  # negative = positive cooperativity; 0 = independent sites)
+
+  phi  0.5   # rate-distribution parameter (0.5 is a good default choice)
+  Ea0  2.0   # baseline activation energy, dimensionless
+end parameters
+
+begin molecule types
+  R(s1,s2)
+  L(r)
+end molecule types
+
+begin seed species
+  R(s1,s2)  R_0
+  L(r)      L_0
+end seed species
+
+begin energy patterns
+  # Free energy of formation is the sum, over every matching motif in a
+  # complex, of that motif's Gf. A doubly-bound receptor therefore picks up
+  # 2*Gf_bind (one per bond) PLUS Gf_coop once (the third pattern below),
+  # since only the fully-bound complex matches it.
+  R(s1!0).L(r!0)              Gf_bind
+  R(s2!0).L(r!0)              Gf_bind
+  R(s1!0,s2!1).L(r!0).L(r!1)  Gf_coop
+end energy patterns
+
+begin observables
+  Molecules  R_unbound  R(s1,s2)
+  Molecules  R_single   R(s1!0,s2).L(r!0), R(s1,s2!0).L(r!0)
+  Molecules  R_double   R(s1!0,s2!1).L(r!0).L(r!1)
+end observables
+
+begin reaction rules
+  # Each rule is written with no mention of the other site's state -- BNG
+  # derives distinct numeric rate constants for "site free" vs. "other site
+  # already occupied" automatically from the energy patterns above.
+  R0: R(s1) + L(r) <-> R(s1!0).L(r!0)  Arrhenius(phi,Ea0)
+  R1: R(s2) + L(r) <-> R(s2!0).L(r!0)  Arrhenius(phi,Ea0)
+end reaction rules
+
+end model
+
+generate_network({overwrite=>1})
