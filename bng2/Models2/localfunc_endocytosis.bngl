@@ -8,41 +8,22 @@
 #   (2) the whole-complex transport rate must not scale with how many R's are in
 #       the complex (a receptor dimer/cluster still moves as ONE event)
 #
-# Two ways to reference "the matched complex" from a rate law are demonstrated.
-# The recommended one is used in the active rule; the alternative is included
-# below, commented out, for comparison.
+# %x@PM:R()  -- a SPECIES-level tag: "x" refers to the whole matched complex, with
+# no specific molecule serving as an anchor. The "R()" in the pattern is only the
+# rule's trigger condition ("must contain a receptor"); it plays no special role in
+# resolving x. Observables called as Obs(x) inside a local function just return
+# their ordinary (global) match count *for that species* -- no requirement that
+# Obs's pattern start with R, or with any particular molecule type. Because the tag
+# carries no molecule identity, every one of the n embeddings of "R()" in an
+# n-receptor complex resolves to the exact same reference, so BNG only ever
+# generates ONE reaction, at the correct rate -- automatically, not by convention.
 #
-#   %x@PM:R()          -- SPECIES-level tag (recommended for this problem).
-#                          "x" refers to the whole matched complex, with no
-#                          specific molecule as anchor.  Observables called as
-#                          Obs(x) inside a local function just return their
-#                          ordinary (global) match count *for that species* --
-#                          no special pattern requirements.  Because the tag
-#                          carries no molecule identity, every one of the n
-#                          embeddings of "R()" in an n-receptor complex resolves
-#                          to the exact same reference, so BNG only ever
-#                          generates ONE reaction, at the correct rate --
-#                          automatically, not by convention.
-#
-#   R%x()               -- MOLECULE-level tag (see commented block below).
-#                          "x" refers to one specific matched R instance.
-#                          Evaluating Obs(x) forces the FIRST molecule of Obs's
-#                          pattern to BE that instance, so Obs must start with
-#                          the same molecule type as the anchor (an observable
-#                          of plain "L()" would silently evaluate to 0 -- type
-#                          mismatch against the R anchor). This form is needed
-#                          when the rate genuinely depends on a property of one
-#                          particular matched molecule (e.g. "how many ligands
-#                          are bound directly to *this* receptor"). For a
-#                          whole-complex property like this one, it also works,
-#                          but only if the observable is written to be
-#                          anchor-invariant (same value regardless of which R
-#                          is matched) -- get that wrong and BNG will silently
-#                          keep an arbitrary one of the differing per-match
-#                          values rather than summing or erroring.  {MatchOnce}
-#                          on the reactant pattern is good practice with this
-#                          form, to guarantee a single reaction independent of
-#                          that concern.
+# (BNGL also supports a molecule-level tag, R%x(), where x refers to one specific
+# matched R instance -- useful when a rate genuinely depends on a property of one
+# particular matched molecule, e.g. "how many ligands are bound directly to *this*
+# receptor". That form isn't needed here, since the property of interest -- does
+# the complex contain a ligand -- is a property of the whole complex, not of any
+# one receptor in it.)
 #
 # Verified with BNG2.pl 2.9.3: a complex with 2 receptors (bridged by a ligand
 # dimer) and a complex with 3 receptors (asymmetric chain, ligand on one end
@@ -85,14 +66,11 @@ begin seed species
 end seed species
 
 begin observables
-  # No R() anchor needed -- see header note on species- vs molecule-level tags.
+  # No R() anchor needed -- see header note on species-level tags.
   Molecules  Lig_local   L()
 
   Molecules  R_PM   R()@PM
   Molecules  R_EM   R()@EM
-
-  # Alternative (molecule-level tag) would instead need:
-  #   Molecules  Lig_local_anchored   R().L()   # must start with R() -- see header
 end observables
 
 begin functions
@@ -101,9 +79,6 @@ begin functions
   # if(...) collapses that to a 0/1-style switch, so the modifier is applied
   # once per complex, not once per bound L.
   rate_endo(x) = k_endo*if(Lig_local(x)>=1, mod_endo_lig, 1)
-
-  # Alternative (molecule-level tag) would instead need:
-  #   rate_endo_mol(x) = k_endo*if(Lig_local_anchored(x)>=1, mod_endo_lig, 1)
 end functions
 
 begin reaction rules
@@ -119,9 +94,6 @@ begin reaction rules
   # isn't needed -- see header note on why a complex with several R's still
   # produces exactly one reaction at rate_endo(x), not n*rate_endo(x).
   Rule_endo: %x@PM:R() -> %x@EM:R()   rate_endo(x)
-
-  # Alternative (molecule-level tag), for comparison -- see header note:
-  #   Rule_endo_molecule_tagged: @PM:R%x(){MatchOnce} -> @EM:R%x()   rate_endo_mol(x)
 end reaction rules
 
 end model
