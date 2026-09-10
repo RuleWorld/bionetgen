@@ -1,0 +1,65 @@
+# Simple model of protein polymerization: a multivalent scaffold (LAT) is
+# cross-linked into chains and branched aggregates of arbitrary size by a
+# divalent adaptor pair (Grb2-SOS), using only 3 reaction rules. Inspired by
+# the LAT-Grb2-SOS1 signalosome studied in Nag, Monine, Faeder & Goldstein
+# (2009); simplified here (2 identical phosphotyrosines instead of LAT's
+# several distinct sites, no upstream kinase step -- LAT starts already
+# phosphorylated) to isolate the aggregation mechanism itself.
+#
+# generate_network can only enumerate a *finite* network, so max_stoich
+# below caps aggregate size for demonstration; true unbounded polymer size
+# distributions (as in the cited paper) are a case for network-free
+# simulation (NFsim) instead. See docs/source/lat_polymerization.rst.
+#
+# Nag A, Monine MI, Faeder JR, Goldstein B. Aggregation of membrane
+# proteins by cytosolic cross-linkers: theory and simulation of the
+# LAT-Grb2-SOS1 system. Biophysical Journal 96(7):2604-2623, 2009.
+
+begin model
+
+begin parameters
+  LAT_0    100
+  Grb2_0   200
+  SOS_0    100
+
+  kp1  1e-3   # Grb2 SH2 -- LAT phosphotyrosine
+  km1  1e-1
+  kp2  1e-3   # Grb2 SH3 -- SOS proline-rich motif
+  km2  1e-1
+end parameters
+
+begin molecule types
+  LAT(Y~P,Y~P)     # 2 identical, independently-tracked phosphotyrosines
+  Grb2(SH2,SH3)
+  SOS(pr,pr)       # 2 identical Grb2-binding (proline-rich) motifs
+end molecule types
+
+begin seed species
+  LAT(Y~P,Y~P)   LAT_0
+  Grb2(SH2,SH3)  Grb2_0
+  SOS(pr,pr)     SOS_0
+end seed species
+
+begin observables
+  Molecules  LAT_total    LAT()
+  Molecules  Grb2_on_LAT  LAT(Y!1).Grb2(SH2!1)
+end observables
+
+begin reaction rules
+  # Grb2 binds a free phosphotyrosine on LAT.
+  LAT(Y~P) + Grb2(SH2,SH3) <-> LAT(Y~P!1).Grb2(SH2!1,SH3)  kp1, km1
+
+  # SOS binds a free Grb2 SH3 domain.
+  Grb2(SH3) + SOS(pr,pr) <-> Grb2(SH3!1).SOS(pr!1,pr)  kp2, km2
+
+  # SOS's second proline-rich motif binds another free Grb2 SH3 domain --
+  # if both Grb2's happen to be LAT-bound, this bridges two LAT molecules.
+  # (Compare to Models2/fceri_ji.bngl rules R1/R2: the same "bind one, then
+  # bind more via a wildcard on the already-bound partner" idiom produces
+  # unbounded aggregation there too.)
+  Grb2(SH3) + SOS(pr,pr!+) <-> Grb2(SH3!1).SOS(pr!1,pr!+)  kp2, km2
+end reaction rules
+
+end model
+
+generate_network({overwrite=>1,max_stoich=>{LAT=>3,Grb2=>4,SOS=>3},max_iter=>50})

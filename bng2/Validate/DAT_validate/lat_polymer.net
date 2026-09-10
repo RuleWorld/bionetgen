@@ -1,0 +1,118 @@
+# Created by BioNetGen 2.9.3
+begin parameters
+    1 LAT_0        100  # Constant
+    2 Grb2_0       200  # Constant
+    3 SOS_0        100  # Constant
+    4 kp1          1e-3  # Constant
+    5 km1          1e-1  # Constant
+    6 kp2          1e-3  # Constant
+    7 km2          1e-1  # Constant
+end parameters
+begin species
+    1 LAT(Y~P,Y~P) LAT_0
+    2 Grb2(SH2,SH3) Grb2_0
+    3 SOS(pr,pr) SOS_0
+    4 Grb2(SH2!1,SH3).LAT(Y~P!1,Y~P) 0
+    5 Grb2(SH2,SH3!1).SOS(pr!1,pr) 0
+    6 Grb2(SH2!1,SH3).Grb2(SH2!2,SH3).LAT(Y~P!1,Y~P!2) 0
+    7 Grb2(SH2!1,SH3!2).LAT(Y~P!1,Y~P).SOS(pr!2,pr) 0
+    8 Grb2(SH2,SH3!1).Grb2(SH2,SH3!2).SOS(pr!2,pr!1) 0
+    9 Grb2(SH2!1,SH3!2).Grb2(SH2,SH3!3).LAT(Y~P!1,Y~P).SOS(pr!3,pr!2) 0
+   10 Grb2(SH2!1,SH3!2).Grb2(SH2!3,SH3).LAT(Y~P!1,Y~P!3).SOS(pr!2,pr) 0
+   11 Grb2(SH2!1,SH3!2).Grb2(SH2!3,SH3).Grb2(SH2,SH3!4).LAT(Y~P!1,Y~P!3).SOS(pr!4,pr!2) 0
+   12 Grb2(SH2!1,SH3!2).Grb2(SH2!3,SH3!4).LAT(Y~P!1,Y~P).LAT(Y~P!3,Y~P).SOS(pr!4,pr!2) 0
+   13 Grb2(SH2!1,SH3!2).Grb2(SH2!3,SH3!4).Grb2(SH2!5,SH3).LAT(Y~P!1,Y~P!5).LAT(Y~P!3,Y~P).SOS(pr!4,pr!2) 0
+   14 Grb2(SH2!1,SH3!2).Grb2(SH2!3,SH3!4).Grb2(SH2!5,SH3).Grb2(SH2!6,SH3).LAT(Y~P!1,Y~P!5).LAT(Y~P!3,Y~P!6).SOS(pr!4,pr!2) 0
+   15 Grb2(SH2!1,SH3!2).Grb2(SH2!3,SH3!4).LAT(Y~P!1,Y~P!3).SOS(pr!2,pr).SOS(pr!4,pr) 0
+   16 Grb2(SH2!1,SH3!2).Grb2(SH2!3,SH3!4).Grb2(SH2,SH3!5).LAT(Y~P!1,Y~P!3).SOS(pr!5,pr!2).SOS(pr!4,pr) 0
+   17 Grb2(SH2!1,SH3!2).Grb2(SH2!3,SH3!4).Grb2(SH2!5,SH3!6).LAT(Y~P!1,Y~P!5).LAT(Y~P!3,Y~P).SOS(pr!4,pr!2).SOS(pr!6,pr) 0
+   18 Grb2(SH2!1,SH3!2).Grb2(SH2!3,SH3!4).Grb2(SH2!5,SH3!6).Grb2(SH2!7,SH3).LAT(Y~P!1,Y~P!3).LAT(Y~P!5,Y~P!7).SOS(pr!6,pr!4).SOS(pr!2,pr) 0
+   19 Grb2(SH2!1,SH3!2).Grb2(SH2!3,SH3!4).Grb2(SH2,SH3!5).Grb2(SH2,SH3!6).LAT(Y~P!1,Y~P!3).SOS(pr!5,pr!2).SOS(pr!6,pr!4) 0
+   20 Grb2(SH2!1,SH3!2).Grb2(SH2!3,SH3!4).Grb2(SH2!5,SH3!6).Grb2(SH2,SH3!7).LAT(Y~P!1,Y~P!3).LAT(Y~P!5,Y~P).SOS(pr!7,pr!2).SOS(pr!6,pr!4) 0
+   21 Grb2(SH2!1,SH3!2).Grb2(SH2!3,SH3!4).Grb2(SH2!5,SH3!6).Grb2(SH2!7,SH3!8).LAT(Y~P!1,Y~P!5).LAT(Y~P!3,Y~P).LAT(Y~P!7,Y~P).SOS(pr!4,pr!2).SOS(pr!8,pr!6) 0
+   22 Grb2(SH2!1,SH3!2).Grb2(SH2!3,SH3!4).Grb2(SH2!5,SH3!6).Grb2(SH2!7,SH3!8).LAT(Y~P!1,Y~P!3).LAT(Y~P!5,Y~P!7).SOS(pr!6,pr!4).SOS(pr!2,pr).SOS(pr!8,pr) 0
+end species
+begin reactions
+    1 1,2 4 2*kp1 #_R1
+    2 2,3 5 2*kp2 #_R2
+    3 2,4 6 kp1 #_R1
+    4 4 1,2 km1 #_reverse__R1
+    5 3,4 7 2*kp2 #_R2
+    6 5 2,3 km2 #_reverse__R2
+    7 2,5 8 kp2 #_R3
+    8 4,5 9 kp2 #_R3
+    9 2,7 10 kp1 #_R1
+   10 2,9 11 kp1 #_R1
+   11 6 2,4 2*km1 #_reverse__R1
+   12 3,6 10 4*kp2 #_R2
+   13 7 3,4 km2 #_reverse__R2
+   14 2,7 9 kp2 #_R3
+   15 4,7 12 kp2 #_R3
+   16 5,6 11 2*kp2 #_R3
+   17 6,7 13 2*kp2 #_R3
+   18 8 2,5 2*km2 #_reverse__R3
+   19 9 4,5 km2 #_reverse__R3
+   20 9 2,7 km2 #_reverse__R3
+   21 2,12 13 2*kp1 #_R1
+   22 2,13 14 kp1 #_R1
+   23 10 2,7 km1 #_reverse__R1
+   24 11 2,9 km1 #_reverse__R1
+   25 13 2,12 km1 #_reverse__R1
+   26 3,10 15 2*kp2 #_R2
+   27 3,11 16 2*kp2 #_R2
+   28 3,13 17 2*kp2 #_R2
+   29 10 3,6 km2 #_reverse__R2
+   30 2,10 11 kp2 #_R3
+   31 4,10 13 kp2 #_R3
+   32 6,10 14 2*kp2 #_R3
+   33 5,10 16 kp2 #_R3
+   34 7,10 17 kp2 #_R3
+   35 10,10 18 kp2 #_R3
+   36 5,11 19 kp2 #_R3
+   37 7,11 20 kp2 #_R3
+   38 5,13 20 kp2 #_R3
+   39 7,13 21 kp2 #_R3
+   40 11 5,6 km2 #_reverse__R3
+   41 11 2,10 km2 #_reverse__R3
+   42 12 4,7 2*km2 #_reverse__R3
+   43 13 6,7 km2 #_reverse__R3
+   44 13 4,10 km2 #_reverse__R3
+   45 2,17 18 kp1 #_R1
+   46 14 2,13 2*km1 #_reverse__R1
+   47 18 2,17 km1 #_reverse__R1
+   48 3,14 18 4*kp2 #_R2
+   49 3,18 22 2*kp2 #_R2
+   50 15 3,10 2*km2 #_reverse__R2
+   51 16 3,11 km2 #_reverse__R2
+   52 17 3,13 km2 #_reverse__R2
+   53 18 3,14 km2 #_reverse__R2
+   54 2,15 16 2*kp2 #_R3
+   55 2,16 19 kp2 #_R3
+   56 2,17 20 kp2 #_R3
+   57 4,15 17 2*kp2 #_R3
+   58 4,16 20 kp2 #_R3
+   59 4,17 21 kp2 #_R3
+   60 6,15 18 4*kp2 #_R3
+   61 10,15 22 2*kp2 #_R3
+   62 14 6,10 2*km2 #_reverse__R3
+   63 16 5,10 km2 #_reverse__R3
+   64 16 2,15 km2 #_reverse__R3
+   65 17 7,10 km2 #_reverse__R3
+   66 17 4,15 km2 #_reverse__R3
+   67 18 10,10 km2 #_reverse__R3
+   68 18 6,15 km2 #_reverse__R3
+   69 19 5,11 2*km2 #_reverse__R3
+   70 19 2,16 2*km2 #_reverse__R3
+   71 20 5,13 km2 #_reverse__R3
+   72 20 7,11 km2 #_reverse__R3
+   73 20 4,16 km2 #_reverse__R3
+   74 20 2,17 km2 #_reverse__R3
+   75 21 7,13 2*km2 #_reverse__R3
+   76 21 4,17 2*km2 #_reverse__R3
+   77 22 3,18 2*km2 #_reverse__R2
+   78 22 10,15 2*km2 #_reverse__R3
+end reactions
+begin groups
+    1 LAT_total            1,4,6,7,9,10,11,2*12,2*13,2*14,15,16,2*17,2*18,19,2*20,3*21,2*22
+    2 Grb2_on_LAT          4,2*6,7,9,2*10,2*11,2*12,3*13,4*14,2*15,2*16,3*17,4*18,2*19,3*20,4*21,4*22
+end groups
