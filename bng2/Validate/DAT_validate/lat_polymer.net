@@ -1,12 +1,12 @@
 # Created by BioNetGen 2.9.3
 begin parameters
-    1 LAT_0        100  # Constant
-    2 Grb2_0       200  # Constant
-    3 SOS_0        100  # Constant
-    4 kp1          1e-3  # Constant
-    5 km1          1e-1  # Constant
-    6 kp2          1e-3  # Constant
-    7 km2          1e-1  # Constant
+    1 LAT_0         500  # Constant
+    2 Grb2_0        1000  # Constant
+    3 SOS_0         500  # Constant
+    4 kp1           1e-3  # Constant
+    5 km1           1e-1  # Constant
+    6 kp2           1e-3  # Constant
+    7 km2           1e-1  # Constant
 end parameters
 begin species
     1 LAT(Y~P,Y~P) LAT_0
@@ -115,4 +115,5 @@ end reactions
 begin groups
     1 LAT_total            1,4,6,7,9,10,11,2*12,2*13,2*14,15,16,2*17,2*18,19,2*20,3*21,2*22
     2 Grb2_on_LAT          4,2*6,7,9,2*10,2*11,2*12,3*13,4*14,2*15,2*16,3*17,4*18,2*19,3*20,4*21,4*22
+    3 LAT_LAT_link         2*12,2*13,2*14,2*17,2*18,2*20,4*21,2*22
 end groups

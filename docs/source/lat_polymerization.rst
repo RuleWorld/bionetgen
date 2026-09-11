@@ -101,16 +101,40 @@ the species list, and is the appropriate tool for genuinely unbounded
 polymerization -- which is how the full LAT-Grb2-SOS aggregate size
 distribution is actually studied in [Nag2009]_.
 
+Running the same rules network-free
+======================================
+
+``Models2/lat_polymer.bngl`` also includes an NFsim run of the
+*identical, uncapped* rules:
+
+.. code-block:: bngl
+
+   simulate_nf({suffix=>"nf",t_start=>0,t_end=>200,n_steps=>20,get_final_state=>1,seed=>1})
+
+``get_final_state=>1`` writes out every distinct aggregate present at
+``t_end``, so the size distribution can be inspected directly rather
+than inferred. With 500 LAT, 1000 Grb2, and 500 SOS molecules, this
+run finds a species containing **7** LAT molecules, bridged by 6
+Grb2-SOS-Grb2 links -- more than double the trimer the capped ODE
+network can represent, discovered without ever enumerating a species
+list. The ``LAT_LAT_link`` observable makes the difference
+quantitative, too: it plateaus around 197 under the capped ODE model,
+but is still climbing past 280 by ``t_end`` under NFsim, since chains
+there aren't cut off at 3 LAT.
+
 Running it
 ==========
 
 ``Models2/lat_polymer.bngl`` ships with BioNetGen and has a validated
-regression test (``Validate/lat_polymer.bngl``).
+regression test (``Validate/lat_polymer.bngl``) covering the ODE run;
+the NFsim run is demonstrative and not diffed against a reference,
+since its output is stochastic by nature.
 
 .. code-block:: bngl
 
    generate_network({overwrite=>1, max_stoich=>{LAT=>3,Grb2=>4,SOS=>3}, max_iter=>50})
    simulate({method=>"ode",t_end=>500,n_steps=>50})
+   simulate_nf({suffix=>"nf",t_start=>0,t_end=>200,n_steps=>20,get_final_state=>1,seed=>1})
 
 References
 ==========

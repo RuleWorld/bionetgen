@@ -7,9 +7,10 @@
 # phosphorylated) to isolate the aggregation mechanism itself.
 #
 # generate_network can only enumerate a *finite* network, so max_stoich
-# below caps aggregate size for demonstration; true unbounded polymer size
-# distributions (as in the cited paper) are a case for network-free
-# simulation (NFsim) instead. See docs/source/lat_polymerization.rst.
+# below caps aggregate size for demonstration; the simulate_nf() action
+# further down runs the same rules network-free (NFsim), with no such cap,
+# so true unbounded polymer size distributions (as in the cited paper) can
+# actually form. See docs/source/lat_polymerization.rst.
 #
 # Nag A, Monine MI, Faeder JR, Goldstein B. Aggregation of membrane
 # proteins by cytosolic cross-linkers: theory and simulation of the
@@ -18,9 +19,9 @@
 begin model
 
 begin parameters
-  LAT_0    100
-  Grb2_0   200
-  SOS_0    100
+  LAT_0    500
+  Grb2_0   1000
+  SOS_0    500
 
   kp1  1e-3   # Grb2 SH2 -- LAT phosphotyrosine
   km1  1e-1
@@ -41,8 +42,11 @@ begin seed species
 end seed species
 
 begin observables
-  Molecules  LAT_total    LAT()
-  Molecules  Grb2_on_LAT  LAT(Y!1).Grb2(SH2!1)
+  Molecules  LAT_total     LAT()
+  Molecules  Grb2_on_LAT   LAT(Y!1).Grb2(SH2!1)
+  # A LAT-Grb2-SOS-Grb2-LAT bridge: counts links between LAT molecules,
+  # regardless of how large the overall aggregate they belong to is.
+  Molecules  LAT_LAT_link  LAT(Y!1).Grb2(SH2!1,SH3!2).SOS(pr!2,pr!3).Grb2(SH3!3,SH2!4).LAT(Y!4)
 end observables
 
 begin reaction rules
@@ -64,3 +68,9 @@ end model
 
 generate_network({overwrite=>1,max_stoich=>{LAT=>3,Grb2=>4,SOS=>3},max_iter=>50})
 simulate({method=>"ode",t_end=>500,n_steps=>50})
+
+# Network-free (NFsim) run of the SAME, uncapped rules: no max_stoich needed,
+# since NFsim never enumerates a species list. get_final_state=>1 writes out
+# every distinct aggregate present at t_end, so its size distribution can be
+# inspected directly (see docs/source/lat_polymerization.rst).
+simulate_nf({suffix=>"nf",t_start=>0,t_end=>200,n_steps=>20,get_final_state=>1,seed=>1})
