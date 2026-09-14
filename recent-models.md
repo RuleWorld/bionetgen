@@ -3,7 +3,7 @@ title: Recent Models
 layout: default
 permalink: /recent-models
 parent: Uses of BioNetGen
-nav_order: 2
+nav_order: 3
 ---
 
 # Recent BioNetGen Models
