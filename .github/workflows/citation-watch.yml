@@ -1,9 +1,9 @@
-name: Citation watch (gh-pages published.md)
+name: Citation watch (gh-pages _data/publications.yaml)
 
 # This workflow file must live on the default branch (master) for the
 # `schedule` trigger to fire, but all actual work happens against the
-# gh-pages branch, which is where published.md, the script, and the
-# seen-citations data file live. See scripts/citation_watch.py on gh-pages.
+# gh-pages branch, which is where _data/publications.yaml, the script, and
+# the seen-citations data file live. See scripts/citation_watch.py on gh-pages.
 
 on:
   schedule:
@@ -27,6 +27,9 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.x"
+
+      - name: Install Python dependencies
+        run: pip install pyyaml
 
       - name: Find new citing works
         run: python3 scripts/citation_watch.py --out candidates.md
