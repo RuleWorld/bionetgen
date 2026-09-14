@@ -10,6 +10,12 @@ nav_order: 3
 
 A closer look at the 10 most recent publications from [Published BioNetGen Models](applications), with a link to the model code in [RuleHub](https://github.com/RuleWorld/RuleHub) where one has been curated. *Auto-generated — do not edit by hand.*
 
+## A cellular Digital Twin framework for predictive and mechanistic modeling of drug responses in precision medicine.
+
+*Danishuddin et al. — Biotechnol. Adv., 2026. [Read the paper](https://doi.org/10.1016/j.biotechadv.2026.109040).*
+
+*Not yet archived in RuleHub. [Help add it](https://github.com/RuleWorld/RuleHub/blob/main/AddingModels.md).*
+
 ## Quantitative modelling of P-TEFb mediated CTD phosphorylation identifies local cooperativity.
 
 *Callenbach A et al. — PLOS Comput. Biol., 2026. [Read the paper](https://doi.org/10.1371/journal.pcbi.1014531).*
@@ -61,11 +67,5 @@ A closer look at the 10 most recent publications from [Published BioNetGen Model
 ## A spatial model of autophosphorylation of CaMKII predicts that the lifetime of phospho-CaMKII after induction of synaptic plasticity is greatly prolonged by CaM-trapping.
 
 *Bartol TM et al. — Front. Synaptic Neurosci., 2025. [Read the paper](https://doi.org/10.3389/fnsyn.2025.1547948).*
-
-*Not yet archived in RuleHub. [Help add it](https://github.com/RuleWorld/RuleHub/blob/main/AddingModels.md).*
-
-## SYK negatively regulates ITAM-mediated human NK cell signaling and CD19-CAR NK cell efficacy.
-
-*Millan AJ et al. — J. Immunol., 2025. [Read the paper](https://doi.org/10.1093/jimmun/vkaf012).*
 
 *Not yet archived in RuleHub. [Help add it](https://github.com/RuleWorld/RuleHub/blob/main/AddingModels.md).*
