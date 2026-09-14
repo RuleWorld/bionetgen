@@ -1,10 +1,17 @@
 name: Recent models page (gh-pages recent-models.md)
 
-# No `schedule` trigger here (unlike citation-watch.yml): GitHub only fires
-# cron schedules from the workflow file on the default branch (master), and
-# this page only needs to regenerate when _data/publications.yaml changes or
-# on demand (e.g. after a new model is curated into RuleHub) — both covered
-# below without touching master.
+# Thin wrapper -- keep this file stable; it should rarely need to change.
+# All the logic is in scripts/recent_models_ci.sh. Edit that, not this file.
+#
+# This workflow lives on gh-pages, not master (the opposite of
+# citation-watch.yml): it triggers on pushes to gh-pages, and push events run
+# the workflow file from the branch that was pushed, so a copy on master could
+# never fire. One did exist there, drifted ahead of this file, and was deleted.
+#
+# No `schedule` trigger, since GitHub fires cron only from the default branch:
+# this page only needs regenerating when _data/publications.yaml changes or on
+# demand (e.g. after a new model is curated into RuleHub), both covered below.
+
 on:
   push:
     branches: [gh-pages]
@@ -26,20 +33,5 @@ jobs:
         with:
           python-version: "3.x"
 
-      - name: Install graphviz
-        run: sudo apt-get update && sudo apt-get install -y graphviz
-
-      - name: Install Python dependencies
-        run: pip install bionetgen networkx pyyaml
-
-      - name: Generate recent-models.md
-        run: python3 scripts/generate_recent_models.py
-
-      - name: Commit changes
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add recent-models.md assets/recent-models
-          git diff --cached --quiet && echo "No change to recent-models.md." && exit 0
-          git commit -m "Regenerate recent-models.md [skip ci]"
-          git push origin HEAD:gh-pages
+      - name: Regenerate recent-models.md
+        run: bash scripts/recent_models_ci.sh
