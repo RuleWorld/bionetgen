@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <string_view>
 
 #include <cmath>
 #include <fstream>
@@ -105,23 +106,39 @@ double evaluateRateString(const std::string& rateStr,
     return resolve(s);
 }
 
-// Checks if 'target' exists in 'text' bounded by non-word characters
-// Word characters are defined as alphanumeric or underscore.
-bool hasWordBoundaryMatch(const std::string& text, const std::string& target) {
+// Checks if 'target' exists in 'text' bounded by non-word characters,
+// comparing ASCII letters case-insensitively without allocating lower-case
+// copies. Word characters are alphanumeric or '_'.
+bool hasWordBoundaryMatchCaseInsensitive(std::string_view text,
+                                         std::string_view target) {
     if (target.empty() || text.length() < target.length()) {
         return false;
     }
 
-    std::size_t pos = text.find(target);
-    while (pos != std::string::npos) {
+    const std::size_t targetLength = target.length();
+    for (std::size_t pos = 0; pos <= text.length() - targetLength; ++pos) {
+        if (std::tolower(static_cast<unsigned char>(text[pos])) !=
+            std::tolower(static_cast<unsigned char>(target[0]))) {
+            continue;
+        }
+
+        bool matches = true;
+        for (std::size_t i = 1; i < targetLength; ++i) {
+            if (std::tolower(static_cast<unsigned char>(text[pos + i])) !=
+                std::tolower(static_cast<unsigned char>(target[i]))) {
+                matches = false;
+                break;
+            }
+        }
+        if (!matches) continue;
+
         bool leftBoundary = (pos == 0) || (!std::isalnum(static_cast<unsigned char>(text[pos - 1])) && text[pos - 1] != '_');
-        bool rightBoundary = (pos + target.length() == text.length()) ||
-                             (!std::isalnum(static_cast<unsigned char>(text[pos + target.length()])) && text[pos + target.length()] != '_');
+        bool rightBoundary = (pos + targetLength == text.length()) ||
+                             (!std::isalnum(static_cast<unsigned char>(text[pos + targetLength])) && text[pos + targetLength] != '_');
 
         if (leftBoundary && rightBoundary) {
             return true;
         }
-        pos = text.find(target, pos + 1);
     }
     return false;
 }
@@ -539,23 +556,10 @@ void OdeIntegrator::compile() {
         bool isFunctional = crxn.isFunctional;  // May already be set by Sat/MM/Hill
         const auto& rateExpr = rxn.getRateExpression();
 
-        std::string lowerRawRL;
-        bool hasLowerRawRL = false;
-
-        auto ensureLowerRawRL = [&]() {
-            if (!hasLowerRawRL) {
-                lowerRawRL = rawRateLaw;
-                std::transform(lowerRawRL.begin(), lowerRawRL.end(), lowerRawRL.begin(), [](unsigned char c) { return std::tolower(c); });
-                hasLowerRawRL = true;
-            }
-        };
-
         bool checkedFunctions = false;
 
         if (!isFunctional && rateExpr.has_value()) {
-            ensureLowerRawRL();
-            std::string timeStr = "time";
-            if (lowerRawRL.find(timeStr) != std::string::npos) {
+            if (hasWordBoundaryMatchCaseInsensitive(rawRateLaw, "time")) {
                 isFunctional = true;
             } else {
                 // Check for observable dependencies
@@ -573,7 +577,7 @@ void OdeIntegrator::compile() {
                 std::size_t fIdx = 0;
                 for (const auto& func : model_.getFunctions()) {
                     const auto& lowerFname = lowerFuncNames[fIdx++];
-                    if (hasWordBoundaryMatch(lowerRawRL, lowerFname)) {
+                    if (hasWordBoundaryMatchCaseInsensitive(rawRateLaw, lowerFname)) {
                         isFunctional = true;
                         matchedFuncName = func.getName();
                         break;
@@ -605,12 +609,10 @@ void OdeIntegrator::compile() {
         }
 
         if (!crxn.isFunctional && !checkedFunctions) {
-            ensureLowerRawRL();
-
             std::size_t fIdx = 0;
             for (const auto& func : model_.getFunctions()) {
                 const auto& lowerFname = lowerFuncNames[fIdx++];
-                if (hasWordBoundaryMatch(lowerRawRL, lowerFname)) {
+                if (hasWordBoundaryMatchCaseInsensitive(rawRateLaw, lowerFname)) {
                     crxn.isFunctional = true;
                     // Parse the full rate law string into an expression so that
                     // compound expressions like "k * funcName()" are preserved.
@@ -702,7 +704,7 @@ void OdeIntegrator::compile() {
                     // name is not a built-in).
                     if (!needsRuntime && str.find('(') != std::string::npos) {
                         for (const auto& func : model_.getFunctions()) {
-                            if (hasWordBoundaryMatch(str, func.getName())) {
+                            if (hasWordBoundaryMatchCaseInsensitive(str, func.getName())) {
                                 needsRuntime = true;
                                 break;
                             }
@@ -755,7 +757,10 @@ void OdeIntegrator::compile() {
     // 1. Observable name→index map for O(1) lookup in derivs()
     observableIndex_.clear();
     for (std::size_t i = 0; i < compiledGroups_.size(); ++i) {
-        observableIndex_[compiledGroups_[i].name] = i;
+        // Preserve the existing first-match behavior if a model contains
+        // duplicate observable names; operator[] would silently select the
+        // last duplicate instead.
+        observableIndex_.emplace(compiledGroups_[i].name, i);
     }
 
     // 2. Pre-allocate groupValues for reuse in derivs()
@@ -1263,10 +1268,9 @@ OdeResult OdeIntegrator::integrateEuler(const OdeOptions& opts) {
 
                 auto resolver = [&](const std::string& name) -> double {
                     if (name == "time") return t;
-                    for (std::size_t g = 0; g < compiledGroups_.size(); ++g) {
-                        if (compiledGroups_[g].name == name) {
-                            return groupValues[g];
-                        }
+                    auto it = observableIndex_.find(name);
+                    if (it != observableIndex_.end()) {
+                        return groupValues[it->second];
                     }
                     return model_.getParameters().evaluate(name);
                 };
@@ -1292,7 +1296,7 @@ OdeResult OdeIntegrator::integrateEuler(const OdeOptions& opts) {
 
     // Compute observables for each time point
     result.observables.resize(result.timePoints.size());
-    for (std::size_t step = 0; step <= opts.nSteps; ++step) {
+    for (std::size_t step = 0; step < result.timePoints.size(); ++step) {
         updateGroups(result.concentrations[step].data(), result.observables[step]);
     }
 
@@ -1366,10 +1370,9 @@ OdeResult OdeIntegrator::integrateRK4(const OdeOptions& opts) {
 
                 auto resolver = [&](const std::string& name) -> double {
                     if (name == "time") return t;
-                    for (std::size_t g = 0; g < compiledGroups_.size(); ++g) {
-                        if (compiledGroups_[g].name == name) {
-                            return groupValues[g];
-                        }
+                    auto it = observableIndex_.find(name);
+                    if (it != observableIndex_.end()) {
+                        return groupValues[it->second];
                     }
                     return model_.getParameters().evaluate(name);
                 };
@@ -1434,7 +1437,7 @@ OdeResult OdeIntegrator::integrateRK4(const OdeOptions& opts) {
 
     // Compute observables for each time point
     result.observables.resize(result.timePoints.size());
-    for (std::size_t step = 0; step <= opts.nSteps; ++step) {
+    for (std::size_t step = 0; step < result.timePoints.size(); ++step) {
         updateGroups(result.concentrations[step].data(), result.observables[step]);
     }
 
@@ -1725,10 +1728,9 @@ OdeResult OdeIntegrator::integrateCvode(const OdeOptions& opts) {
 
             auto resolver = [&](const std::string& name) -> double {
                 if (name == "time") return tOut;
-                for (std::size_t g = 0; g < compiledGroups_.size(); ++g) {
-                    if (compiledGroups_[g].name == name) {
-                        return groupValues[g];
-                    }
+                auto it = observableIndex_.find(name);
+                if (it != observableIndex_.end()) {
+                    return groupValues[it->second];
                 }
                 return model_.getParameters().evaluate(name);
             };
@@ -2033,8 +2035,9 @@ OdeResult OdeIntegrator::integrateCvodesForwardSens(const OdeOptions& opts) {
             updateGroups(conc.data(), groupValues);
             auto resolver = [&](const std::string& name) -> double {
                 if (name == "time") return tOut;
-                for (std::size_t g = 0; g < compiledGroups_.size(); ++g) {
-                    if (compiledGroups_[g].name == name) return groupValues[g];
+                auto it = observableIndex_.find(name);
+                if (it != observableIndex_.end()) {
+                    return groupValues[it->second];
                 }
                 return model_.getParameters().evaluate(name);
             };

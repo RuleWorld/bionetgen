@@ -9,8 +9,22 @@
 #include "../src/ast/Rxn.hpp"
 #include "../src/ast/Species.hpp"
 #include "../src/ast/SpeciesGraph.hpp"
+#include "../src/parser/PatternGraphBuilder.hpp"
+#include "BNGLexer.h"
+#include "BNGParser.h"
 
 using namespace bng::engine;
+
+static bng::ast::SpeciesGraph makeSpeciesGraph(const std::string& patternText,
+                                                bng::ast::Model& model) {
+    antlr4::ANTLRInputStream input(patternText);
+    BNGLexer lexer(&input);
+    antlr4::CommonTokenStream tokens(&lexer);
+    BNGParser parser(&tokens);
+    auto* species = parser.species_def();
+    auto graph = bng::parser::buildPatternGraph(species, model, false);
+    return bng::ast::SpeciesGraph(std::move(graph));
+}
 
 TEST_CASE("OdeIntegrator handles expression parsing fallback", "[OdeIntegrator]") {
     bng::ast::Model model;
@@ -129,6 +143,49 @@ TEST_CASE("OdeIntegrator preserves case-insensitive rate classification", "[OdeI
 
         REQUIRE_THAT(derivatives[0], Catch::Matchers::WithinAbs(-2.0, 1e-12));
         REQUIRE_THAT(derivatives[1], Catch::Matchers::WithinAbs(2.0, 1e-12));
+    }
+}
+
+TEST_CASE("OdeIntegrator resolves stop_if observables consistently", "[OdeIntegrator]") {
+    for (const auto& method : {std::string("euler"), std::string("rk4"), std::string("cvode"),
+                               std::string("cvode-sens")}) {
+        INFO("method: " << method);
+        bng::ast::Model model;
+        model.addMoleculeType(bng::ast::MoleculeType("A", {}));
+        model.addMoleculeType(bng::ast::MoleculeType("B", {}));
+
+        // Duplicate names are intentionally retained to verify that the
+        // lookup map preserves the existing first-match behavior.
+        model.addObservable(bng::ast::Observable("tracked", "Molecules", {"A()"}));
+        model.addObservable(bng::ast::Observable("tracked", "Molecules", {"B()"}));
+
+        GeneratedNetwork network;
+        network.species.setCheckIso(false);
+        network.species.add(bng::ast::Species(makeSpeciesGraph("A()", model), 10.0));
+        network.species.add(bng::ast::Species(makeSpeciesGraph("B()", model), 0.0));
+
+        const bool useSensitivity = method == "cvode-sens";
+        if (useSensitivity) {
+            model.addParameter(bng::ast::Parameter("k", bng::ast::Expression::number(1.0)));
+            network.reactions.add(bng::ast::Rxn(
+                "R1", {0}, {1}, "k", 1.0, "dummy_rule",
+                bng::ast::Expression::identifier("k")));
+        }
+
+        OdeOptions options;
+        options.method = useSensitivity ? "cvode" : method;
+        options.tStart = 0.0;
+        options.tEnd = 1.0;
+        options.nSteps = 4;
+        options.stopIf = "tracked > 5";
+        options.printCDAT = false;
+        if (useSensitivity) options.sensParams = {"k"};
+
+        OdeIntegrator integrator(model, network);
+        OdeResult result;
+        REQUIRE_NOTHROW(result = integrator.integrate(options));
+        REQUIRE(result.timePoints.size() == 2);
+        REQUIRE_THAT(result.timePoints.back(), Catch::Matchers::WithinAbs(0.25, 1e-12));
     }
 }
 
