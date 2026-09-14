@@ -36,3 +36,6 @@ build-cpp
 lib
 out-codex-check
 comparison_results
+
+# Scratch output from scripts/citation_watch_ci.sh
+candidates.md
