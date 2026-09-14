@@ -2,6 +2,14 @@
 # Recent Models page (recent-models.md). Maintained by scripts/citation_watch.py
 # (new entries) plus manual curation (system/rulehub fields).
 - year: 2026
+  authors: Danishuddin et al.
+  title: A cellular Digital Twin framework for predictive and mechanistic modeling of drug responses
+    in precision medicine.
+  journal: Biotechnol. Adv.
+  doi: 10.1016/j.biotechadv.2026.109040
+  system: Digital twins
+  pmid: '42716356'
+- year: 2026
   authors: Callenbach A et al.
   title: Quantitative modelling of P-TEFb mediated CTD phosphorylation identifies local cooperativity.
   journal: PLOS Comput. Biol.
