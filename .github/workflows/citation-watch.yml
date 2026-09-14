@@ -1,9 +1,17 @@
-name: Citation watch (gh-pages _data/publications.yaml)
+name: Citation watch (gh-pages)
 
-# This workflow file must live on the default branch (master) for the
-# `schedule` trigger to fire, but all actual work happens against the
-# gh-pages branch, which is where _data/publications.yaml, the script, and
-# the seen-citations data file live. See scripts/citation_watch.py on gh-pages.
+# Thin wrapper -- keep this file stable; it should rarely need to change.
+#
+# This workflow must live on master because GitHub fires `schedule` only from
+# the workflow file on the default branch. Everything it acts on, though, lives
+# on gh-pages: _data/publications.yaml, _data/citation_seen.json, and
+# scripts/citation_watch.py.
+#
+# All the actual logic is in scripts/citation_watch_ci.sh on gh-pages. Edit
+# that, not this file. Steps used to be spelled out here as well as in a second
+# copy of this workflow on gh-pages, and the two drifted: the 2026-09-01
+# scheduled run died with ModuleNotFoundError for yaml because only the
+# gh-pages copy had been given `pip install pyyaml`.
 
 on:
   schedule:
@@ -28,32 +36,7 @@ jobs:
         with:
           python-version: "3.x"
 
-      - name: Install Python dependencies
-        run: pip install pyyaml
-
-      - name: Find new citing works
-        run: python3 scripts/citation_watch.py --out candidates.md
-
-      - name: Create issue if there are new candidates
+      - name: Run citation watch
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh label create "citation-candidates" --color "0e8a16" \
-            --description "New BioNetGen citations awaiting triage for published.md" || true
-          if grep -q "No new candidate citations" candidates.md; then
-            echo "Nothing new, skipping issue creation."
-          else
-            gh issue create \
-              --title "New BioNetGen citations to review - $(date +%Y-%m-%d)" \
-              --label "citation-candidates" \
-              --body-file candidates.md
-          fi
-
-      - name: Commit updated seen-list
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add _data/citation_seen.json
-          git diff --cached --quiet && echo "No change to seen-list." && exit 0
-          git commit -m "Update citation_seen.json [skip ci]"
-          git push origin HEAD:gh-pages
+        run: bash scripts/citation_watch_ci.sh
