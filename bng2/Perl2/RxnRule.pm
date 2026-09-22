@@ -3254,12 +3254,14 @@ sub build_reaction
             # (2) Assign product species to inferred compartment (possibly undefined).  Note that
             #  this will force all unassigned molecules to the inferred compartment.
 		    $err = $p->assignCompartment($infer_comp);
-		    if ($err)
-		    {
-			    exit_error("$err\n" . "RxnRule>" . $rr->toString() . "\n");
-		    }
 
-            # (3) Check topology of bonds wwith 
+            # (3) Check topology of bonds with respect to compartments.  This is checked
+            #  first (ahead of the $err handling below) because a product with bonds
+            #  spanning non-adjacent compartments is a normal, recoverable outcome of
+            #  applying a compartment-agnostic rule broadly -- the reaction is rejected
+            #  rather than aborting the whole run.  assignCompartment() above may fail
+            #  for this same reason (it independently validates bond compartments), so
+            #  this check must run regardless of $err.
 		    unless ( $p->verifyTopology(1) )
 		    {
 			    print "WARNING: Reaction rule generated a product with invalid bonds with respect"
@@ -3268,6 +3270,13 @@ sub build_reaction
 				     ."RxnRule>", $rr->toString(), "\n"
                      ."Product> ", $p->toString(), "\n";
 			    return undef;
+		    }
+
+            # Any remaining $err reflects a genuine compartment-assignment problem
+            # unrelated to bond topology (e.g. an incompletely-specified compartment).
+		    if ($err)
+		    {
+			    exit_error("$err\n" . "RxnRule>" . $rr->toString() . "\n");
 		    }
 
 		    # Check that product species is same compartment as the product pattern!
