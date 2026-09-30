@@ -1298,6 +1298,33 @@ sub validate
             my ($actE_param, $err2) = $model->ParamList->lookup($rl->Constants->[1]);
             if ( !$err2 && defined $actE_param && defined $actE_param->Expr && defined $model->EnergyPatterns )
             {
+                # A variable that appears in *every* energy pattern's Gf expression (e.g.
+                # RT, used by convention to nondimensionalize free energies: Gf_x/RT) is a
+                # shared normalization constant, not a per-pattern free-energy parameter --
+                # it isn't tied to any specific structural motif, so actE depending on it
+                # cannot double-count a motif's contribution to deltaG. Only variables that
+                # are NOT common to all patterns are checked below.
+                my $shared_vars;    # hashref of varname => 1, or undef if not yet computed
+                foreach my $epatt ( @{$model->EnergyPatterns} )
+                {
+                    next unless defined $epatt->Gf;
+                    my $epatt_vars = $epatt->Gf->getVariables( $model->ParamList );
+                    my %varnames = ();
+                    foreach my $type ( keys %$epatt_vars )
+                    {
+                        foreach my $varname ( keys %{$epatt_vars->{$type}} )
+                        {   $varnames{$varname} = 1;   }
+                    }
+                    if ( !defined $shared_vars )
+                    {   $shared_vars = { %varnames };   }
+                    else
+                    {
+                        foreach my $varname ( keys %$shared_vars )
+                        {   delete $shared_vars->{$varname} unless exists $varnames{$varname};   }
+                    }
+                }
+                $shared_vars ||= {};
+
                 foreach my $epatt ( @{$model->EnergyPatterns} )
                 {
                     if ( defined $epatt->Gf )
@@ -1307,6 +1334,7 @@ sub validate
                         {
                             foreach my $varname ( keys %{$epatt_vars->{$type}} )
                             {
+                                next if exists $shared_vars->{$varname};
                                 my ($dep, $dep_err) = $actE_param->Expr->depends( $model->ParamList, $varname );
                                 if ( $dep )
                                 {
