@@ -241,6 +241,16 @@ if(BNG_PERL_EXECUTABLE)
             -DOUTPUT_PATH=${CMAKE_CURRENT_BINARY_DIR}/issue_090_implicit_bonds.net
             -P ${CMAKE_CURRENT_SOURCE_DIR}/test_bng2_symmetry_factor.cmake
     )
+
+    add_test(
+        NAME bng2_cross_rule_duplicate_merge
+        COMMAND ${CMAKE_COMMAND}
+            -DBNG_PERL_EXECUTABLE=${BNG_PERL_EXECUTABLE}
+            -DBNG2_PATH=${CMAKE_CURRENT_SOURCE_DIR}/../bng2/BNG2.pl
+            -DMODEL_PATH=${CMAKE_CURRENT_SOURCE_DIR}/fixtures/cross_rule_duplicate_rxn.bngl
+            -DOUTPUT_PATH=${CMAKE_CURRENT_BINARY_DIR}/cross_rule_duplicate_rxn.net
+            -P ${CMAKE_CURRENT_SOURCE_DIR}/test_bng2_cross_rule_merge.cmake
+    )
 endif()
 
 add_executable(test_GraphTypeRegistry ast/test_GraphTypeRegistry.cpp)

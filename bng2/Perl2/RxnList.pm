@@ -83,7 +83,7 @@ sub add
             if ( $rxn->Priority == $rxn2->Priority )
             {
                 # Reaction with same rate law as previous reaction is combined with it
-                if ( $rxn->RateLaw == $rxn2->RateLaw )
+                if ( RateLaw::equivalent($rxn->RateLaw, $rxn2->RateLaw, $plist) )
                 {
                 	    $rxn2->StatFactor( $rxn2->StatFactor + $rxn->StatFactor );
                 	    $add_rxn = 0;
