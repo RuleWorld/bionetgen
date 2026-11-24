@@ -1,0 +1,25 @@
+# Created by BioNetGen 2.9.3
+begin parameters
+    1 kD         0.7  # Constant
+    2 kA         2  # Constant
+    3 kB         3  # Constant
+    4 pIf        if((kD-0.5),kA,kB)  # ConstantExpression
+    5 _rateLaw1  0.1  # Constant
+end parameters
+begin functions
+    1 fPos() if((kD-0.5),kA,kB)
+    2 fNeg() if(((0.5-kD)-0.8),kA,kB)
+    3 fHalf() if((kD-0.2),kA,kB)
+    4 fZero() if((kD-0.7),kA,kB)
+    5 fCmp() if(((kD-0.5)>0),kA,kB)
+    6 gIf() pIf
+end functions
+begin species
+    1 A() 1
+end species
+begin reactions
+    1 1 0 _rateLaw1 #_R1
+end reactions
+begin groups
+    1 Atot                 1
+end groups

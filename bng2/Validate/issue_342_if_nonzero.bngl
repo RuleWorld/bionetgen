@@ -1,0 +1,36 @@
+# Regression test for issue #342: if(cond,a,b) in run_network.
+# Any nonzero condition is true, as in BNG2.pl and NFsim. run_network used to
+# treat a condition as true only above 0.5.
+# Expected (kA = 2, kB = 3): fPos = fNeg = fHalf = fCmp = gIf = 2; fZero = 3.
+begin model
+begin parameters
+  kD 0.7
+  kA 2
+  kB 3
+  pIf if(kD-0.5, kA, kB)
+end parameters
+begin molecule types
+  A()
+end molecule types
+begin seed species
+  A() 1
+end seed species
+begin observables
+  Molecules Atot A()
+end observables
+begin functions
+  fPos()  = if(kD-0.5, kA, kB)
+  fNeg()  = if(0.5-kD-0.8, kA, kB)
+  fHalf() = if(kD-0.2, kA, kB)
+  fZero() = if(kD-0.7, kA, kB)
+  fCmp()  = if(kD-0.5 > 0, kA, kB)
+  gIf()   = pIf
+end functions
+begin reaction rules
+  A() -> 0 0.1
+end reaction rules
+end model
+begin actions
+generate_network({overwrite=>1})
+simulate({method=>"ode",t_end=>1,n_steps=>1,print_functions=>1})
+end actions
