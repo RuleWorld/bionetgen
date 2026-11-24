@@ -1,0 +1,35 @@
+# Regression test for issue #343: && and || in the NFsim XML.
+# NFsim reads 'and'/'or' as bitwise operators and needs spaces around them,
+# so BNG2.pl writes a && b as (a!=0) and (b!=0). The reference XML pins that
+# form; the ODE run checks run_network: fAnd = 0, fOr = 1, fObs = 1 at t = 0,
+# and fCmp = 2 (comparisons as operands).
+begin model
+begin parameters
+  kA 2
+  kB 0
+  kD 0.7
+end parameters
+begin molecule types
+  A()
+end molecule types
+begin seed species
+  A() 1
+end seed species
+begin observables
+  Molecules Atot A()
+end observables
+begin functions
+  fAnd() = kA && kB
+  fOr()  = kA || kB
+  fObs() = Atot && kA
+  fCmp() = if(kD > 0.5 && kA > 1, kA, kB)
+end functions
+begin reaction rules
+  A() -> 0 0.1
+end reaction rules
+end model
+begin actions
+writeXML()
+generate_network({overwrite=>1})
+simulate({method=>"ode",t_end=>1,n_steps=>1,print_functions=>1})
+end actions
