@@ -1,0 +1,18 @@
+# Created by BioNetGen 2.9.3
+setOption("NumberPerQuantityUnit","2")
+begin parameters
+    1 kf  0.01  # Constant
+    2 kr  0.1  # Constant
+end parameters
+begin species
+    1 @EC::A(b) 300
+    2 @EC::B(a) 300
+    3 @EC::A(b!1).B(a!1) 0
+end species
+begin reactions
+    1 1,2 3 0.5*kf #_R1 unit_conversion=1/(2*1)
+    2 3 1,2 kr #_reverse__R1
+end reactions
+begin groups
+    1 AB                   3
+end groups

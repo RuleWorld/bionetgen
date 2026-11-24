@@ -1,0 +1,32 @@
+# Regression test for issue #348: writeXML writes the NumberPerQuantityUnit option
+# as an attribute of <model>, which NFsim reads, so NFsim applies the same unit
+# conversion as generate_network. The reference XML pins the attribute.
+setOption("NumberPerQuantityUnit",2)
+begin model
+begin parameters
+  kf 0.01
+  kr 0.1
+end parameters
+begin compartments
+  EC 3 1
+end compartments
+begin molecule types
+  A(b)
+  B(a)
+end molecule types
+begin seed species
+  A(b)@EC 300
+  B(a)@EC 300
+end seed species
+begin observables
+  Molecules AB A(b!1).B(a!1)
+end observables
+begin reaction rules
+  A(b)@EC + B(a)@EC <-> A(b!1)@EC.B(a!1)@EC kf, kr
+end reaction rules
+end model
+begin actions
+generate_network({overwrite=>1})
+writeXML()
+simulate({method=>"ode",t_end=>5,n_steps=>5})
+end actions
