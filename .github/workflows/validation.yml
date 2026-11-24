@@ -134,6 +134,21 @@ jobs:
           mkdir -p /cygdrive/d/a/bionetgen/bionetgen/bng2/bin
           cp src/run_network.exe /cygdrive/d/a/bionetgen/bionetgen/bng2/bin/run_network.exe
 
+      # NFsim is not built here: BioNetGen releases bundle the latest NFsim
+      # release (see make_bundles). Without it validate_examples.pl skips
+      # every NFsim check, so install that release binary for the tests.
+      - name: Install NFsim release for validation (mac/linux)
+        if: ${{ startsWith(matrix.config.name, 'mac') || startsWith(matrix.config.name, 'linux') }}
+        working-directory: ./bng2
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download --repo RuleWorld/nfsim --pattern "NFsim_*_${{ matrix.config.name }}.tgz" --output nfsim.tgz
+          tar xzf nfsim.tgz -C bin ./NFsim
+          rm nfsim.tgz
+          chmod +x bin/NFsim
+          ls -l bin/NFsim
+
       # now everything is compiled, we validate
       # windows validation
       - name: validate for windows
