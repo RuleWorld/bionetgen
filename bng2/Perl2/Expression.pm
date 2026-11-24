@@ -1562,6 +1562,9 @@ sub toString
     {
         # if number, print the numerical value!
         $string = $expr->Arglist->[0];
+        # A negative number that is an operand must keep its sign attached:
+        # (-2)^k, not -2^k, which every reader takes as -(2^k) (issue #341).
+        if ( $level  and  $string =~ /^-/ ) {  $string = '(' . $string . ')';  }
         #print "NUM=$string\n";
     }
     elsif ( $type eq 'VAR' )
@@ -1709,6 +1712,8 @@ sub toXML
     {
         # if number, print the numerical value!
         $string = $expr->Arglist->[0];
+        # keep a negative operand's sign attached: (-2)^k (issue #341)
+        if ( $level  and  $string =~ /^-/ ) {  $string = '(' . $string . ')';  }
     }
     elsif ( $type eq 'VAR' )
     {
@@ -2013,6 +2018,8 @@ sub toMatlabString
     if ( $type eq 'NUM' )
     {
         $string = $expr->Arglist->[0];
+        # keep a negative operand's sign attached: (-2)^k (issue #341)
+        if ( $level  and  $string =~ /^-/ ) {  $string = '(' . $string . ')';  }
     }
     elsif ( $type eq 'VAR' )
     {   

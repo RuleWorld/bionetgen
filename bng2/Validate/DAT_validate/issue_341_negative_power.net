@@ -1,0 +1,28 @@
+# Created by BioNetGen 2.9.3
+begin parameters
+    1 k          2  # Constant
+    2 pA         (-2)^k  # ConstantExpression
+    3 pB         (-k)^2  # ConstantExpression
+    4 pC         (-2)^k  # ConstantExpression
+    5 pD         0-(2^k)  # ConstantExpression
+    6 _rateLaw1  0.1  # Constant
+end parameters
+begin functions
+    1 fA() (-2)^k
+    2 fB() (-k)^2
+    3 fC() (-2)^k
+    4 fD() 0-(2^k)
+    5 gA() pA
+    6 gB() pB
+    7 gC() pC
+    8 gD() pD
+end functions
+begin species
+    1 A() 1
+end species
+begin reactions
+    1 1 0 _rateLaw1 #_R1
+end reactions
+begin groups
+    1 Atot                 1
+end groups
