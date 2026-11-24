@@ -58,10 +58,15 @@ jobs:
         with:
           submodules: recursive
       # Windows setup
+      # Cygwin's own installer downloads from cygwin.com mirrors. The previous
+      # action (egor-tensin/setup-cygwin) installs Cygwin through Chocolatey,
+      # and failed whenever the Chocolatey feed was unavailable (503).
+      # install-dir keeps the C:\tools\cygwin path the later steps use.
       - name: Set up Cygwin
         if: startsWith(matrix.config.os, 'windows') 
-        uses: egor-tensin/setup-cygwin@v4
+        uses: cygwin/cygwin-install-action@v4
         with:
+          install-dir: C:\tools\cygwin
           packages: cmake gcc-g++ autoconf automake libtool dos2unix pkg-config make
 
       # - name: Setup tmate session
