@@ -19,7 +19,7 @@ https://github.com/RuleWorld/bionetgen/
 * On-the-fly SSA can hang when the network has to be expanded (#292). Generate the full network first.
 * writeSBML exports Sat, MM and Hill rate laws with the catalyst species included (#277).
 * writeXML writes a compartment's size as a number, so changing the parameter behind it after loading has no effect in NFsim (#347, nfsim#105).
-* A compartmental model cannot be handed from NFsim to the network simulators (`simulate_nf` followed by `simulate_ode` with `continue=>1`): NFsim's species file has no compartments, and BNG2.pl refuses it. This also failed with 2.9.3.
+* A compartmental model cannot be handed from NFsim to the network simulators (`simulate_nf` followed by `simulate_ode` with `continue=>1`): NFsim's species file has no compartments, and BNG2.pl refuses it (nfsim#159). This also failed with 2.9.3.
 * On macOS, binaries extracted from a downloaded archive keep the quarantine flag, and macOS may stop NFsim or run_network. Run `xattr -dr com.apple.quarantine BioNetGen-2.9.4` once after unpacking.
 
 == BioNetGen-2.9.3==
