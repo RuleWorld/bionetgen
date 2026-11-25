@@ -14,6 +14,7 @@ https://github.com/RuleWorld/bionetgen/
 * run_network's `if()` treated a condition as true only above 0.5; any nonzero value is now true, as in BNG2.pl and NFsim (#342).
 * `&&` and `||` were written to the NFsim XML in a form NFsim could not read, or read as bitwise operators (#343).
 * writeXML dropped the NumberPerQuantityUnit option (#348).
+* `parameter_scan` with `parallel=>1` ran past the last scan point when the number of points was not a multiple of the number of cores, and a failing run went on to execute the rest of the script (#357). Models2/LV.bngl failed because of this.
 
 == Known issues ==
 * On-the-fly SSA can hang when the network has to be expanded (#292). Generate the full network first.
