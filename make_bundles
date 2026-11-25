@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Set the BioNetGen version variable
-VERSION="2.9.3" # Replace with the desired version
+VERSION="2.9.4" # Replace with the desired version
 
 # List of additional files to extract from the BioNetGen distribution (Windows only)
 FILES_TO_EXTRACT=(
@@ -11,8 +11,17 @@ FILES_TO_EXTRACT=(
     "bin/sundials-config"
 )
 
-# Loop through all zip files in the current directory
-for zipfile in *.zip; do
+# Run it in a directory holding the CI artifacts bng_bundle_<os>, either as
+# zips downloaded from the Actions page or as the directories that
+#   gh run download <run-id> -R RuleWorld/bionetgen
+# creates. It fetches the latest NFsim release, so publish that first.
+
+# Keep macOS tar from adding AppleDouble (._*) files to the archives.
+export COPYFILE_DISABLE=1
+
+# Loop through the artifacts in the current directory
+shopt -s nullglob
+for zipfile in bng_bundle_*; do
     # Extract the base name of the zip file (without extension)
     BASENAME=$(basename "$zipfile" .zip)
 
@@ -30,11 +39,16 @@ for zipfile in *.zip; do
     # Truncate basename to remove the OS part
     BASENAME="${BASENAME%_*}"
 
-    # Unzip and untar the base file
-    unzip -q "$zipfile"
-    tar xf "${BASENAME}.tar"
+    # Unpack the artifact (a zip, or a directory from gh run download), then
+    # untar the bundle inside it
+    if [[ -d "$zipfile" ]]; then
+        tar xf "$zipfile/${BASENAME}.tar"
+    else
+        unzip -q "$zipfile"
+        tar xf "${BASENAME}.tar"
+    fi
     # Remove the .tar file
-    rm "${BASENAME}.tar"
+    rm -f "${BASENAME}.tar"
 
     # Name of the top-level directory for the distribution
     DNAME="BioNetGen-${VERSION}"

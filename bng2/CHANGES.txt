@@ -1,6 +1,27 @@
 CHANGES to BioNetGen
-updated 28 September 2021
+updated 25 November 2026
 https://github.com/RuleWorld/bionetgen/
+
+== BioNetGen-2.9.4==
+'''''2026 November'''''
+
+== NFsim 2 ==
+* Bundles NFsim 2.0.1, the first BioNetGen release with NFsim 2. See the release notes for [v2.0.0](https://github.com/RuleWorld/nfsim/releases/tag/v2.0.0) and [v2.0.1](https://github.com/RuleWorld/nfsim/releases/tag/v2.0.1). NFsim 2 adds compartmental (cBNGL) and energy-based models, fixed species and table functions, and corrects a number of rate errors, so results of `simulate_nf` for existing models can differ from BioNetGen 2.9.3.
+* Changes `simulate_nf` users are most likely to notice: `+` and `.` in rules are enforced by default, as in network generation (NFsim's `-no-bscb` restores the old behavior); a rule that deletes a whole species is counted once per complex; NFsim refuses, with an error, a rate law that reads `time()`, a rate law type it does not implement (such as Hill), and its RuleMonkey mode (`-rm`), where earlier versions ran and gave wrong results.
+
+== Bug fixes ==
+* A negative number raised to a power, such as `(-2)^k`, was written to the .net and XML files as `-2^k`, so run_network and NFsim computed -(2^k) (#341).
+* run_network's `if()` treated a condition as true only above 0.5; any nonzero value is now true, as in BNG2.pl and NFsim (#342).
+* `&&` and `||` were written to the NFsim XML in a form NFsim could not read, or read as bitwise operators (#343).
+* writeXML dropped the NumberPerQuantityUnit option (#348).
+* `parameter_scan` with `parallel=>1` ran past the last scan point when the number of points was not a multiple of the number of cores, and a failing run went on to execute the rest of the script (#357). Models2/LV.bngl failed because of this.
+
+== Known issues ==
+* On-the-fly SSA can hang when the network has to be expanded (#292). Generate the full network first.
+* writeSBML exports Sat, MM and Hill rate laws with the catalyst species included (#277).
+* writeXML writes a compartment's size as a number, so changing the parameter behind it after loading has no effect in NFsim (#347, nfsim#105).
+* A compartmental model cannot be handed from NFsim to the network simulators (`simulate_nf` followed by `simulate_ode` with `continue=>1`): NFsim's species file has no compartments, and BNG2.pl refuses it (nfsim#159). This also failed with 2.9.3.
+* On macOS, binaries extracted from a downloaded archive keep the quarantine flag, and macOS may stop NFsim or run_network. Run `xattr -dr com.apple.quarantine BioNetGen-2.9.4` once after unpacking.
 
 == BioNetGen-2.9.3==
 '''''2025 April 17'''''
