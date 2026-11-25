@@ -2,6 +2,19 @@ CHANGES to BioNetGen
 updated 25 November 2026
 https://github.com/RuleWorld/bionetgen/
 
+== BioNetGen-2.9.5==
+'''''2026 November'''''
+
+== Bug fixes ==
+* BioNetGen 2.9.4 refused an Arrhenius rate law whose activation energy is written in terms of an energy pattern's free energy, such as `Ea0 = -ln(kf) - phi*Gf`, when the model had more than one energy pattern. The check is removed: the ratio of the forward and reverse rates is exp(deltaG) whatever the activation energy is, so such a model cannot break detailed balance. Models such as the MARM2.0 model of Froehlich et al. (2023) load again, as they did with 2.9.3 (#360).
+* Partial scaling (`method=>"psa"`) crashed, or stopped with "scaling factor of 0 th reaction < 1", on a network with a zeroth-order reaction such as `0 -> A`. A reaction with no reactants is now scaled by its products, as in Lin, Feng & Hlavacek, J Chem Phys 150:244101 (2019) (#358).
+
+== NFsim ==
+* Bundles NFsim 2.0.1, as 2.9.4 does.
+
+== Known issues ==
+* Those of 2.9.4, below, and: run_network, run directly rather than through BNG2.pl, can crash when a species that is never a reactant is first populated (#361).
+
 == BioNetGen-2.9.4==
 '''''2026 November'''''
 

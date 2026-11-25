@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Set the BioNetGen version variable
-VERSION="2.9.4" # Replace with the desired version
+VERSION="2.9.5" # Replace with the desired version
 
 # List of additional files to extract from the BioNetGen distribution (Windows only)
 FILES_TO_EXTRACT=(
