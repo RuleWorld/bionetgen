@@ -531,12 +531,18 @@ sub toXML
     # are we evaluating expressions?
     my $evaluate_expressions = $params{'evaluate_expressions'};
 
+    # NumberPerQuantityUnit: NFsim reads it from <model> and applies the same
+    # unit conversion as generate_network (issue #348)
+    my $model_attrs = '';
+    if ( exists $model->Options->{NumberPerQuantityUnit} )
+    {   $model_attrs = " NumberPerQuantityUnit=\"" . $model->Options->{NumberPerQuantityUnit} . "\"";   }
+
     # Begin writing XML #
 	# HEADER
 	my $xml =  "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
               ."<!-- Created by BioNetGen $version  -->\n"
               ."<sbml xmlns=\"http://www.sbml.org/sbml/level3\" level=\"3\" version=\"1\">\n"
-              ."  <model id=\"$model_name\">\n";
+              ."  <model id=\"$model_name\"$model_attrs>\n";
 
 
 	# Parameters
