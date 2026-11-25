@@ -2667,6 +2667,35 @@ static double rxn_rate(Rxn* rxn, double* X, int discrete) {
 	return (rate);
 }
 
+/* Scaling factor of a reaction for the partial scaling algorithm (PSA):
+ * floor(Nmin/poplevel), where Nmin is the smallest population among the
+ * reaction's reactants (and its products, if pScaleChecker is set), and 1 if
+ * any of those populations is below 2*poplevel (Lin, Feng & Hlavacek, J Chem
+ * Phys 150:244101, 2019, Eq. 9). A reaction with no reactants, such as 0 -> A,
+ * is scaled by its products whether or not pScaleChecker is set; one with no
+ * reactants and no products is not scaled. */
+static double psa_scaling(Rxn* rxn, double* X, double poplevel, bool pScaleChecker) {
+	double upperBound = 2 * poplevel;
+	double tempPop = -1.0; // no population seen yet
+	int i;
+
+	for (i = 0; i < rxn->n_reactants; ++i) {
+		double x = X[rxn->r_index[i]];
+		if (x < upperBound) return (1.0);
+		if (tempPop < 0.0 || x < tempPop) tempPop = x;
+	}
+	if (pScaleChecker || rxn->n_reactants == 0) {
+		for (i = 0; i < rxn->n_products; ++i) {
+			double x = X[rxn->p_index[i]];
+			if (x < upperBound) return (1.0);
+			if (tempPop < 0.0 || x < tempPop) tempPop = x;
+		}
+	}
+	if (tempPop < 0.0) return (1.0);
+	double iScaling = floor(tempPop / poplevel);
+	return (iScaling < 1.0 ? 1.0 : iScaling);
+}
+
 /* Return the rate of rxn with scaled -- for internal use only */
 static double rxn_rate_scaled(Rxn* rxn, double* X, int discrete, double & iScaling, double poplevel, bool pScaleChecker) {
 	double rate;
@@ -2697,44 +2726,7 @@ static double rxn_rate_scaled(Rxn* rxn, double* X, int discrete, double & iScali
 		// NOTE: Will only apply correct formula if repeated species are grouped together (which is done
 		//       automatically by BNG).
 		if (discrete) {
-			if (iarr) {
-				if (X[*iarr] < upperBound) {
-					tempPop = poplevel;
-				} else {
-					tempPop = X[*iarr];
-					for (index = iarr + 1; index < iarr + rxn->n_reactants; ++index) {
-						if (X[*index] < upperBound) {
-							tempPop = poplevel;
-							break;
-						} else {
-							if (X[*index] < tempPop) {
-								tempPop = X[*index];
-							}
-						}
-					}
-					// check the product to get the smallest scaling factor
-					if (pScaleChecker && tempPop >= upperBound) {
-						int pi = 0;
-						for (i = 0; i < rxn->n_products; ++i) {
-							pi = rxn->p_index[i];
-							if (X[pi] < upperBound) {
-								tempPop = poplevel;
-								break;
-							} else {
-								if (X[pi] < tempPop) {
-									tempPop = X[pi];
-								}
-							}
-						}
-					}
-				}
-				iScaling = floor(tempPop / poplevel);
-				if (iScaling < 1.0) {
-					iScaling = 1.0;
-				}
-			} else {
-                iScaling = poplevel;
-            }
+			iScaling = psa_scaling(rxn, X, poplevel, pScaleChecker);
 			double n = 0.0;
 			//rate*= X[*iarr]; // NOTE: This assumes at least one reactant species (no zeroth-order rxns)
 			//for (index=iarr+1; index<iarr+rxn->n_reactants; ++index){
@@ -2984,54 +2976,21 @@ static double rxn_rate_scaled(Rxn* rxn, double* X, int discrete, double & iScali
 		// Handle reactions with discrete molecules with multiple copies of the same reactants.
 		// NOTE: Will only apply correct formula if repeated species are grouped together (which is done
 		//       automatically by BNG).
-		if (discrete && rxn->n_reactants) { // Make sure the rxn has reactants (not pure synth)
-			if (X[*iarr] < upperBound) {
-				tempPop = poplevel;
-			} else {
-				tempPop = X[*iarr];
-				for (index = iarr + 1; index < iarr + rxn->n_reactants; ++index) {
-					if (X[*index] < upperBound) {
-						tempPop = poplevel;
-						break;
-					} else {
-						if (X[*index] < tempPop) {
-							tempPop = X[*index];
-						}
-					}
-				}
-			}
-			// check the product to get the smallest scaling factor
-			if (pScaleChecker && tempPop >= upperBound) {
-				int pi = 0;
-				for (i = 0; i < rxn->n_products; ++i) {
-					pi = rxn->p_index[i];
-					if (X[pi] < upperBound) {
-						tempPop = poplevel;
-						break;
-					} else {
-						if (X[pi] < tempPop) {
-							tempPop = X[pi];
-						}
-					}
-				}
-			}
-			iScaling = floor(tempPop / poplevel);
-			if (iScaling < 1.0) {
-				iScaling = 1.0;
-			}
-
+		if (discrete) {
+			iScaling = psa_scaling(rxn, X, poplevel, pScaleChecker);
 			double n = 0.0;
-			rate *= X[*iarr] / iScaling;
-			for (index = iarr + 1; index < iarr + rxn->n_reactants; ++index) {
-				if (*index == *(index-1)) {
-					n += 1.0;
-				} else {
-					n = 0.0;
+			for (index = iarr; index < iarr + rxn->n_reactants; ++index) {
+				scalingExp += 1.0;
+				if (index > iarr) {
+					if (*index == *(index-1)) {
+						n += 1.0;
+					} else {
+						n = 0.0;
+					}
 				}
 				rate *= (X[*index] / iScaling - n);
-				scalingExp += 1.0;
 			}
-			rate = rate * pow(iScaling, scalingExp);
+			rate = rate * pow(iScaling, (scalingExp - 1.0));
 		}
 		// Continuous case
 		else {
@@ -5959,7 +5918,7 @@ int update_concentrations_psa(int irxn) {
 		int ri = rxn->r_index[i] - offset;
 		if (!spec[ri]->fixed) {
             if (GSP.s[irxn] < 1.0) {
-                fprintf(stderr, "ERROR: scaling factor of %d th reaction < 1\n", ri);
+                fprintf(stderr, "ERROR: scaling factor of reaction %d < 1 (reactant species %d)\n", irxn+1, ri+1);
                 exit(1);
             }
 			GSP.c[ri] -= GSP.s[irxn];
@@ -5978,7 +5937,7 @@ int update_concentrations_psa(int irxn) {
 		int pi = rxn->p_index[i] - offset;
 		if (!spec[pi]->fixed) {
             if (GSP.s[irxn] < 1.0) {
-                fprintf(stderr, "ERROR: scaling factor of %d th reaction < 1\n", pi);
+                fprintf(stderr, "ERROR: scaling factor of reaction %d < 1 (product species %d)\n", irxn+1, pi+1);
                 exit(1);
             }
 			GSP.c[pi] += GSP.s[irxn];
