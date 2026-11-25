@@ -1,0 +1,39 @@
+# Regression test for issue #341: a negative number raised to a power.
+# BNG2.pl parses -2^k and (-2)^k as (-2)^k; the .net and XML writers must
+# write (-2)^k so that run_network and NFsim compute the same value.
+# At k = 2: fA = fC = gA = gC = 4 (was -4), fB = gB = 4, fD = gD = -4.
+begin model
+begin parameters
+  k 2
+  pA -2^k
+  pB -k^2
+  pC (-2)^k
+  pD 0-2^k
+end parameters
+begin molecule types
+  A()
+end molecule types
+begin seed species
+  A() 1
+end seed species
+begin observables
+  Molecules Atot A()
+end observables
+begin functions
+  fA() = -2^k
+  fB() = -k^2
+  fC() = (-2)^k
+  fD() = 0-2^k
+  gA() = pA
+  gB() = pB
+  gC() = pC
+  gD() = pD
+end functions
+begin reaction rules
+  A() -> 0 0.1
+end reaction rules
+end model
+begin actions
+generate_network({overwrite=>1})
+simulate({method=>"ode",t_end=>1,n_steps=>1,print_functions=>1})
+end actions
