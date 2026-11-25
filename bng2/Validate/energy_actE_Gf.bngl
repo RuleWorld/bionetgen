@@ -1,0 +1,44 @@
+# Regression test for #360: an Arrhenius activation energy written in terms of
+# an energy pattern's free energy. Ea0 = -ln(kf) - phi*Gf gives the A.B binding
+# a forward rate kf and a reverse rate kf*kD whatever phi is, since the ratio
+# of the two rates is exp(Gf) for any Ea0. BioNetGen 2.9.4 refused this model
+# when a second energy pattern was present (the C.D binding below). The
+# reference files were made with BioNetGen 2.9.3.
+
+begin model
+begin parameters
+  kf   2
+  kD   0.01
+  phi  0.5
+  Gf   ln(kD)
+  Ea0  -ln(kf) - phi*Gf
+  Gf2  ln(0.5)
+end parameters
+begin molecule types
+  A(b)
+  B(a)
+  C(d)
+  D(c)
+end molecule types
+begin seed species
+  A(b) 1
+  B(a) 1
+  C(d) 1
+  D(c) 1
+end seed species
+begin energy patterns
+  A(b!1).B(a!1) Gf
+  C(d!1).D(c!1) Gf2
+end energy patterns
+begin observables
+  Molecules AB A(b!1).B(a!1)
+  Molecules CD C(d!1).D(c!1)
+end observables
+begin reaction rules
+  A(b) + B(a) <-> A(b!1).B(a!1) Arrhenius(phi, Ea0)
+  C(d) + D(c) <-> C(d!1).D(c!1) Arrhenius(0.5, 0)
+end reaction rules
+end model
+
+generate_network({overwrite=>1})
+simulate({method=>"ode",t_end=>2,n_steps=>20})
