@@ -274,7 +274,7 @@ extern void	  delete_GSP_included();
 
 // Custom muParser functions
 static mu::value_type If(mu::value_type v1, mu::value_type v2, mu::value_type v3){
-	return (v1>0.5?v2:v3); // v1 should equal 0.0 or 1.0. Using v1 > 0.5 for 'true' just to be safe.
+	return (v1 != 0.0 ? v2 : v3); // any nonzero condition is true, as in BNG2.pl and NFsim (issue #342)
 }
 
 static mu::value_type Mratio(mu::value_type a, mu::value_type b, mu::value_type z){
