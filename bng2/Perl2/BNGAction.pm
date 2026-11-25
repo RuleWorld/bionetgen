@@ -1845,8 +1845,10 @@ sub parameter_scan
         {
             if(fork==0)
             {
+                # The last batch can be short: stop at the last scan point
+                # instead of running past it with an undefined parameter value.
                 my $end_point = min($num_batches*($batch+1)-1,$num_pts-1);
-                for my $k($num_batches*$batch .. $num_batches*($batch+1)-1)
+                for my $k($num_batches*$batch .. $end_point)
                 {
                     my $local_prefix = File::Spec->catfile( ($workdir), sprintf("%s_%05d", $file_prefix, $k+1) );                    
                     # define parameter value
@@ -1865,15 +1867,19 @@ sub parameter_scan
                     # run simulation
                     my $err = $model->simulate( $local_params );
                     if ( $err )
-                    {   # return error message
-                        $err = "Error in parameter_scan (step " . ($k+1) . "): $err";
-                        return $err;
-                    } 
+                    {   # A forked child must not return: it would go on to run
+                        # the rest of the script. Report and exit instead.
+                        print STDERR "Error in parameter_scan (step " . ($k+1) . "): $err\n";
+                        exit 1;
+                    }
                 }
-                exit;
-            }          
+                exit 0;
+            }
         }
-        while((wait()) > 0) {};
+        my $failed = 0;
+        while ( wait() > 0 ) { $failed = 1 if $?; }
+        if ( $failed )
+        {   return "Error in parameter_scan: one or more parallel simulations failed (see messages above)";   }
     }
 
     # recover concentrations
